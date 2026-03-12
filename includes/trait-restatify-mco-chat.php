@@ -1,0 +1,376 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+trait Restatify_MCO_Chat_Trait {
+    public function ajax_send_message(): void {
+        $this->verify_chat_nonce();
+
+        $options = $this->get_options();
+        if (empty($options['own_chat_enabled'])) {
+            wp_send_json_error(['message' => __('Chat is currently disabled.', self::TEXT_DOMAIN)], 403);
+        }
+
+        $message = sanitize_textarea_field(wp_unslash($_POST['message'] ?? ''));
+        $message = trim($message);
+        if ($message === '') {
+            wp_send_json_error(['message' => __('Message cannot be empty.', self::TEXT_DOMAIN)], 400);
+        }
+
+        if (function_exists('mb_substr')) {
+            $message = mb_substr($message, 0, 1000);
+        } else {
+            $message = substr($message, 0, 1000);
+        }
+
+        $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
+        $conversation_token = sanitize_text_field(wp_unslash($_POST['conversation_token'] ?? ''));
+        $source_url = esc_url_raw(wp_unslash($_POST['source_url'] ?? home_url('/')));
+
+        $store = $this->get_chat_store();
+        $conversation = $this->resolve_or_create_conversation($store, $conversation_id, $conversation_token, $source_url);
+
+        $conversation['messages'][] = $this->format_chat_message('visitor', $message);
+        $conversation['updated_at_gmt'] = gmdate('c');
+
+        $this->maybe_send_support_email($options, $conversation, $message);
+
+        if (!empty($options['ai_enabled']) && $this->should_ai_reply_for_sender($conversation, 'visitor')) {
+            $ai_reply = $this->generate_ai_reply($options, $conversation, $message);
+            if ($ai_reply !== '') {
+                $conversation['messages'][] = $this->format_chat_message('ai', $ai_reply);
+                $conversation['updated_at_gmt'] = gmdate('c');
+            }
+        }
+
+        $conversation['messages'] = array_slice($conversation['messages'], -self::CHAT_MAX_MESSAGES);
+        $store[$conversation['id']] = $conversation;
+        $this->save_chat_store($store);
+
+        wp_send_json_success([
+            'conversation' => [
+                'id' => $conversation['id'],
+                'token' => $conversation['token'],
+                'updated_at_gmt' => $conversation['updated_at_gmt'],
+                'messages' => $conversation['messages'],
+            ],
+        ]);
+    }
+
+    public function ajax_fetch_chat(): void {
+        $this->verify_chat_nonce();
+
+        $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
+        $conversation_token = sanitize_text_field(wp_unslash($_POST['conversation_token'] ?? ''));
+        if ($conversation_id === '' || $conversation_token === '') {
+            wp_send_json_error(['message' => __('Conversation not found.', self::TEXT_DOMAIN)], 404);
+        }
+
+        $store = $this->get_chat_store();
+        if (empty($store[$conversation_id]) || !hash_equals((string) $store[$conversation_id]['token'], $conversation_token)) {
+            wp_send_json_error(['message' => __('Conversation not found.', self::TEXT_DOMAIN)], 404);
+        }
+
+        wp_send_json_success([
+            'conversation' => [
+                'id' => $store[$conversation_id]['id'],
+                'token' => $store[$conversation_id]['token'],
+                'updated_at_gmt' => (string) ($store[$conversation_id]['updated_at_gmt'] ?? ''),
+                'messages' => $store[$conversation_id]['messages'],
+            ],
+        ]);
+    }
+
+    public function ajax_support_reply(): void {
+        $required_cap = apply_filters('restatify_mco_support_inbox_capability', self::SUPPORT_CAPABILITY);
+        if (!is_string($required_cap) || $required_cap === '') {
+            $required_cap = self::SUPPORT_CAPABILITY;
+        }
+
+        if (!current_user_can($required_cap)) {
+            wp_send_json_error(['message' => __('Insufficient permissions.', self::TEXT_DOMAIN)], 403);
+        }
+
+        check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
+
+        $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
+        $message = sanitize_textarea_field(wp_unslash($_POST['message'] ?? ''));
+        $message = trim($message);
+
+        if ($conversation_id === '' || $message === '') {
+            wp_send_json_error(['message' => __('Conversation and message are required.', self::TEXT_DOMAIN)], 400);
+        }
+
+        if (function_exists('mb_substr')) {
+            $message = mb_substr($message, 0, 1000);
+        } else {
+            $message = substr($message, 0, 1000);
+        }
+
+        $store = $this->get_chat_store();
+        if (empty($store[$conversation_id])) {
+            wp_send_json_error(['message' => __('Conversation does not exist.', self::TEXT_DOMAIN)], 404);
+        }
+
+        $store[$conversation_id]['messages'][] = $this->format_chat_message('support', $message);
+        $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
+
+        $options = $this->get_options();
+        if (!empty($options['ai_enabled']) && $this->should_ai_reply_for_sender($store[$conversation_id], 'support')) {
+            $ai_reply = $this->generate_ai_reply($options, $store[$conversation_id], $message);
+            if ($ai_reply !== '') {
+                $store[$conversation_id]['messages'][] = $this->format_chat_message('ai', $ai_reply);
+                $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
+            }
+        }
+
+        $store[$conversation_id]['messages'] = array_slice($store[$conversation_id]['messages'], -self::CHAT_MAX_MESSAGES);
+
+        $this->save_chat_store($store);
+
+        wp_send_json_success([
+            'conversation_id' => $conversation_id,
+            'updated_at_gmt' => (string) ($store[$conversation_id]['updated_at_gmt'] ?? ''),
+            'messages' => $store[$conversation_id]['messages'],
+        ]);
+    }
+
+    public function ajax_delete_conversation(): void {
+        if (!$this->can_manage_support_inbox()) {
+            wp_send_json_error(['message' => __('Insufficient permissions.', self::TEXT_DOMAIN)], 403);
+        }
+
+        check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
+
+        $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
+        if ($conversation_id === '') {
+            wp_send_json_error(['message' => __('Conversation is required.', self::TEXT_DOMAIN)], 400);
+        }
+
+        $store = $this->get_chat_store();
+        if (empty($store[$conversation_id])) {
+            wp_send_json_success([
+                'deleted' => true,
+                'already_gone' => true,
+            ]);
+        }
+
+        unset($store[$conversation_id]);
+        $this->save_chat_store($store);
+
+        wp_send_json_success([
+            'deleted' => true,
+            'already_gone' => false,
+        ]);
+    }
+
+    public function ajax_set_ai_mode(): void {
+        if (!$this->can_manage_support_inbox()) {
+            wp_send_json_error(['message' => __('Insufficient permissions.', self::TEXT_DOMAIN)], 403);
+        }
+
+        check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
+
+        $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
+        $ai_mode = sanitize_key(wp_unslash($_POST['ai_mode'] ?? 'visitor'));
+        if ($conversation_id === '') {
+            wp_send_json_error(['message' => __('Conversation is required.', self::TEXT_DOMAIN)], 400);
+        }
+
+        $store = $this->get_chat_store();
+        if (empty($store[$conversation_id])) {
+            wp_send_json_error(['message' => __('Conversation does not exist.', self::TEXT_DOMAIN)], 404);
+        }
+
+        $store[$conversation_id]['ai_mode'] = $this->normalize_ai_mode($ai_mode);
+        $this->save_chat_store($store);
+
+        wp_send_json_success(['ai_mode' => $store[$conversation_id]['ai_mode']]);
+    }
+
+    private function verify_chat_nonce(): void {
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce'] ?? ''));
+        if (!wp_verify_nonce($nonce, 'restatify_mco_chat_nonce')) {
+            wp_send_json_error(['message' => __('Invalid request token.', self::TEXT_DOMAIN)], 403);
+        }
+    }
+
+    private function get_chat_store(): array {
+        $store = get_option(self::CHAT_STORE_KEY, []);
+        $store = is_array($store) ? $store : [];
+
+        $options = $this->get_options(false);
+        $max_age_minutes = max(0, (int) ($options['chat_reset_minutes'] ?? 0));
+        $pruned = $this->prune_expired_conversations($store, $max_age_minutes);
+
+        $normalized = [];
+        foreach ($pruned as $id => $conversation) {
+            if (!is_array($conversation)) {
+                continue;
+            }
+
+            $conversation['ai_mode'] = $this->normalize_ai_mode((string) ($conversation['ai_mode'] ?? 'visitor'));
+            $normalized[$id] = $conversation;
+        }
+
+        if (count($normalized) !== count($store)) {
+            update_option(self::CHAT_STORE_KEY, $normalized, false);
+        }
+
+        return $normalized;
+    }
+
+    private function save_chat_store(array $store): void {
+        uasort($store, static function (array $a, array $b): int {
+            return strcmp((string) ($b['updated_at_gmt'] ?? ''), (string) ($a['updated_at_gmt'] ?? ''));
+        });
+
+        $store = array_slice($store, 0, self::CHAT_MAX_CONVERSATIONS, true);
+        update_option(self::CHAT_STORE_KEY, $store, false);
+    }
+
+    private function prune_expired_conversations(array $store, int $max_age_minutes): array {
+        if ($max_age_minutes <= 0 || count($store) === 0) {
+            return $store;
+        }
+
+        $now = time();
+        $max_age_seconds = $max_age_minutes * MINUTE_IN_SECONDS;
+        $filtered = [];
+
+        foreach ($store as $id => $conversation) {
+            if (!is_array($conversation)) {
+                continue;
+            }
+
+            $updated_raw = (string) ($conversation['updated_at_gmt'] ?? '');
+            $created_raw = (string) ($conversation['created_at_gmt'] ?? '');
+            $updated_ts = $updated_raw !== '' ? strtotime($updated_raw) : false;
+            $created_ts = $created_raw !== '' ? strtotime($created_raw) : false;
+            $reference_ts = $updated_ts !== false ? (int) $updated_ts : ($created_ts !== false ? (int) $created_ts : 0);
+
+            if ($reference_ts <= 0) {
+                $filtered[$id] = $conversation;
+                continue;
+            }
+
+            if (($now - $reference_ts) < $max_age_seconds) {
+                $filtered[$id] = $conversation;
+            }
+        }
+
+        return $filtered;
+    }
+
+    private function resolve_or_create_conversation(array $store, string $conversation_id, string $conversation_token, string $source_url): array {
+        // Reuse conversation only when token matches to prevent random id guessing.
+        if ($conversation_id !== '' && isset($store[$conversation_id])) {
+            $existing = $store[$conversation_id];
+            $stored_token = (string) ($existing['token'] ?? '');
+            if ($stored_token !== '' && $conversation_token !== '' && hash_equals($stored_token, $conversation_token)) {
+                $existing['ai_mode'] = $this->normalize_ai_mode((string) ($existing['ai_mode'] ?? 'visitor'));
+                return $existing;
+            }
+        }
+
+        $id = wp_generate_password(20, false, false);
+        $token = wp_generate_password(32, false, false);
+        $now = gmdate('c');
+
+        return [
+            'id' => $id,
+            'token' => $token,
+            'status' => 'open',
+            'source_url' => $source_url !== '' ? $source_url : home_url('/'),
+            'created_at_gmt' => $now,
+            'updated_at_gmt' => $now,
+            'ai_mode' => 'visitor',
+            'messages' => [],
+        ];
+    }
+
+    private function can_manage_support_inbox(): bool {
+        $required_cap = apply_filters('restatify_mco_support_inbox_capability', self::SUPPORT_CAPABILITY);
+        if (!is_string($required_cap) || $required_cap === '') {
+            $required_cap = self::SUPPORT_CAPABILITY;
+        }
+
+        return current_user_can($required_cap);
+    }
+
+    private function normalize_ai_mode(string $mode): string {
+        $allowed = ['off', 'visitor', 'support', 'both'];
+        return in_array($mode, $allowed, true) ? $mode : 'visitor';
+    }
+
+    private function should_ai_reply_for_sender(array $conversation, string $sender): bool {
+        $mode = $this->normalize_ai_mode((string) ($conversation['ai_mode'] ?? 'visitor'));
+        if ($mode === 'off') {
+            return false;
+        }
+
+        if ($mode === 'both') {
+            return true;
+        }
+
+        return $mode === $sender;
+    }
+
+    private function get_ai_mode_options(): array {
+        return [
+            'off' => __('AI off (temporary)', self::TEXT_DOMAIN),
+            'visitor' => __('AI replies to visitor only', self::TEXT_DOMAIN),
+            'support' => __('AI replies to support only', self::TEXT_DOMAIN),
+            'both' => __('AI replies to both sides', self::TEXT_DOMAIN),
+        ];
+    }
+
+    private function format_chat_message(string $sender, string $message): array {
+        return [
+            'sender' => $sender,
+            'message' => $message,
+            'time_gmt' => gmdate('c'),
+        ];
+    }
+
+    private function maybe_send_support_email(array $options, array $conversation, string $latest_message): void {
+        if (empty($options['support_notify_on_message']) || empty($options['support_email']) || !is_email($options['support_email'])) {
+            return;
+        }
+
+        $inbox_link = add_query_arg(
+            [
+                'page' => 'restatify-mco-support-inbox',
+                'conversation' => $conversation['id'],
+            ],
+            admin_url('admin.php')
+        );
+
+        $subject = sprintf(
+            __('[%s] New website chat message', self::TEXT_DOMAIN),
+            wp_specialchars_decode(get_bloginfo('name'), ENT_QUOTES)
+        );
+
+        $source_url = (string) ($conversation['source_url'] ?? home_url('/'));
+        $body = [];
+        $body[] = __('A new visitor message has been received.', self::TEXT_DOMAIN);
+        $body[] = '';
+        $body[] = sprintf(__('Conversation ID: %s', self::TEXT_DOMAIN), (string) $conversation['id']);
+        $body[] = sprintf(__('Source URL: %s', self::TEXT_DOMAIN), $source_url);
+        $body[] = '';
+        $body[] = __('Latest message:', self::TEXT_DOMAIN);
+        $body[] = $latest_message;
+        $body[] = '';
+        $body[] = __('Open chat in admin:', self::TEXT_DOMAIN);
+        $body[] = $inbox_link;
+
+        wp_mail(
+            $options['support_email'],
+            $subject,
+            implode("\n", $body),
+            ['Content-Type: text/plain; charset=UTF-8']
+        );
+    }
+}

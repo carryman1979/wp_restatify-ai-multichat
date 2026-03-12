@@ -1,0 +1,436 @@
+.restatify-mco {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 9999;
+  font-family: "Ubuntu", sans-serif;
+}
+
+.restatify-mco__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9996;
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  background: rgba(12, 16, 22, 0.1);
+  transition: opacity 0.24s ease, backdrop-filter 0.24s ease, -webkit-backdrop-filter 0.24s ease;
+}
+
+.restatify-mco__backdrop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.restatify-mco__fab {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--rs-color-primary, #ff6b00) 90%, #000 10%);
+  background: var(--rs-color-primary, #ff6b00);
+  color: var(--rs-color-contrast, #fff);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.restatify-mco__fab:hover,
+.restatify-mco__fab:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
+}
+
+.restatify-mco__fab .mobi-mbri-chat {
+  font-size: 26px;
+}
+
+.restatify-mco__panel {
+  position: absolute;
+  right: 0;
+  bottom: 82px;
+  width: min(350px, calc(100vw - 28px));
+  max-height: min(78vh, 760px);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--rs-color-text, #0b1221) 15%, transparent);
+  background: color-mix(in srgb, var(--rs-color-background, #f8fafc) 92%, #d7d7d7 8%);
+  color: var(--rs-color-text, #0b1221);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+  transition: width 0.26s ease, max-height 0.26s ease, transform 0.26s ease, box-shadow 0.26s ease;
+}
+
+.restatify-mco__panel[hidden] {
+  display: none !important;
+}
+
+.restatify-mco__panel:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+
+.restatify-mco.is-chat-focus .restatify-mco__panel {
+  position: fixed;
+  right: 50%;
+  bottom: 50%;
+  transform: translate(50%, 50%);
+  width: min(920px, calc(100vw - 9vw));
+  max-height: min(78vh, 780px);
+  border-radius: 16px;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.42);
+  z-index: 9998;
+}
+
+.restatify-mco__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--rs-color-primary, #ff6b00) 72%, #fff 28%);
+  color: var(--rs-color-text, #0b1221);
+}
+
+.restatify-mco__team {
+  margin: 0;
+  font-size: 24px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.restatify-mco__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.restatify-mco__focus,
+.restatify-mco__close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 8px;
+}
+
+.restatify-mco__focus {
+  font-weight: 700;
+}
+
+.restatify-mco__focus:hover,
+.restatify-mco__focus:focus-visible,
+.restatify-mco__close:hover,
+.restatify-mco__close:focus-visible {
+  background: color-mix(in srgb, #ffffff 20%, transparent);
+  outline: none;
+}
+
+.restatify-mco__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+}
+
+.restatify-mco.is-chat-focus .restatify-mco__body {
+  padding: 16px;
+}
+
+.restatify-mco__message {
+  margin: 0 0 14px;
+  padding: 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--rs-color-background, #f8fafc) 85%, #fff 15%);
+  border: 1px solid color-mix(in srgb, var(--rs-color-text, #0b1221) 10%, transparent);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.restatify-mco__cta {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.restatify-mco__channels {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.restatify-mco__channels.is-collapsed .restatify-mco__channel.is-extra {
+  display: none;
+}
+
+.restatify-mco__channels-toggle {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--rs-color-text, #0b1221) 20%, transparent);
+  background: color-mix(in srgb, var(--rs-color-background, #f8fafc) 75%, #fff 25%);
+  color: var(--rs-color-text, #0b1221);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 8px 14px;
+  margin: 0 auto 12px;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.16s ease, background-color 0.16s ease;
+}
+
+.restatify-mco__channels-toggle:hover,
+.restatify-mco__channels-toggle:focus-visible {
+  background: color-mix(in srgb, var(--rs-color-background, #f8fafc) 55%, #fff 45%);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.restatify-mco__channel {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rs-color-contrast, #fff);
+  background: var(--rs-color-primary, #ff6b00);
+  border: 1px solid color-mix(in srgb, var(--rs-color-primary, #ff6b00) 82%, #000 18%);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 0.16s ease, color 0.16s ease;
+}
+
+.restatify-mco__channel:visited,
+.restatify-mco__channel:hover,
+.restatify-mco__channel:focus-visible,
+.restatify-mco__channel:active {
+  background: var(--rs-color-primary, #ff6b00);
+}
+
+.restatify-mco__channel:hover,
+.restatify-mco__channel:focus-visible {
+  color: var(--rs-color-text, #0b1221);
+}
+
+.restatify-mco__channel:hover,
+.restatify-mco__channel:focus-visible {
+  transform: translateY(-2px);
+}
+
+.restatify-mco__channel-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.restatify-mco__channel-icon.is-fallback {
+  font-family: inherit !important;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.restatify-mco__channel-icon[class*="socicon-"] {
+  font-family: 'socicon' !important;
+}
+
+.restatify-mco__channel-icon[class*="mobi-mbri-"] {
+  font-family: 'Moririse2' !important;
+}
+
+.restatify-mco__channel[data-channel="discord"] {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rs-color-contrast, #fff) 20%, transparent), 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.restatify-mco__native-chat {
+  margin-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--rs-color-text, #0b1221) 10%, transparent);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.restatify-mco__native-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.restatify-mco__native-messages {
+  flex: 1 1 auto;
+  min-height: 160px;
+  max-height: none;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--rs-color-text, #0b1221) 12%, transparent);
+  background: color-mix(in srgb, var(--rs-color-background, #f8fafc) 88%, #fff 12%);
+}
+
+.restatify-mco.is-chat-focus .restatify-mco__native-messages {
+  min-height: 220px;
+  padding: 10px;
+}
+
+.restatify-mco__native-bubble {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  color: #0d1117;
+}
+
+.restatify-mco__native-bubble.is-visitor {
+  background: #fff2e9;
+  border: 1px solid #f0b78d;
+  color: #3d200a;
+}
+
+.restatify-mco__native-bubble.is-support {
+  background: #eaf2ff;
+  border: 1px solid #a5c0eb;
+  color: #12253f;
+}
+
+.restatify-mco__native-bubble.is-ai {
+  background: #e6f8ee;
+  border: 1px solid #8fcca7;
+  color: #113a25;
+}
+
+.restatify-mco__native-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.restatify-mco__native-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 42px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--rs-color-text, #0b1221) 22%, transparent);
+  padding: 8px;
+  font: inherit;
+}
+
+.restatify-mco__native-send {
+  appearance: none;
+  border: 0;
+  border-radius: 8px;
+  min-width: 80px;
+  background: var(--rs-color-primary, #ff6b00);
+  color: var(--rs-color-contrast, #fff);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+.restatify-mco__native-send:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.restatify-mco__native-status {
+  margin: 8px 2px 0;
+  font-size: 0.82rem;
+}
+
+.restatify-mco__native-status.is-error {
+  color: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  .restatify-mco__backdrop {
+    background: rgba(0, 0, 0, 0.26);
+  }
+
+  .restatify-mco__panel {
+    background: color-mix(in srgb, var(--rs-color-background, #10151f) 94%, #1b2230 6%);
+    color: var(--rs-color-text, #e7ecf3);
+    border-color: color-mix(in srgb, #d2d8e1 14%, transparent);
+  }
+
+  .restatify-mco__message,
+  .restatify-mco__native-messages {
+    background: color-mix(in srgb, #0f1726 84%, #243042 16%);
+    border-color: color-mix(in srgb, #d2d8e1 16%, transparent);
+    color: #e8edf4;
+  }
+
+  .restatify-mco__native-input {
+    background: #0f1726;
+    border-color: #3a485e;
+    color: #e8edf4;
+  }
+
+  .restatify-mco__native-bubble.is-visitor {
+    background: #4b3018;
+    border-color: #8e6039;
+    color: #ffe6d1;
+  }
+
+  .restatify-mco__native-bubble.is-support {
+    background: #1a2a45;
+    border-color: #4f6f9d;
+    color: #dce9ff;
+  }
+
+  .restatify-mco__native-bubble.is-ai {
+    background: #173625;
+    border-color: #44815d;
+    color: #d8fbe7;
+  }
+}
+
+@media (max-width: 768px) {
+  .restatify-mco {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .restatify-mco__panel {
+    width: min(332px, calc(100vw - 16px));
+    bottom: 76px;
+    max-height: 84vh;
+  }
+
+  .restatify-mco.is-chat-focus .restatify-mco__panel {
+    width: calc(100vw - 14px);
+    max-height: 86vh;
+    right: 50%;
+    bottom: 50%;
+    transform: translate(50%, 50%);
+    border-radius: 12px;
+  }
+
+  .restatify-mco__fab {
+    width: 58px;
+    height: 58px;
+  }
+
+  .restatify-mco__native-form {
+    flex-direction: column;
+  }
+
+  .restatify-mco__native-send {
+    width: 100%;
+  }
+}
