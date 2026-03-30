@@ -490,6 +490,10 @@ trait Restatify_MCO_Render_Trait {
                             <p class="restatify-mco__native-title"><?php echo esc_html($options['chat_title']); ?></p>
                             <div class="restatify-mco__native-messages" data-chat-messages aria-live="polite"></div>
                             <form class="restatify-mco__native-form" data-chat-form>
+                                <label style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+                                    <?php esc_html_e('Leave this field empty', self::TEXT_DOMAIN); ?>
+                                    <input type="text" name="website" value="" tabindex="-1" autocomplete="off" data-chat-honeypot>
+                                </label>
                                 <textarea
                                     class="restatify-mco__native-input"
                                     data-chat-input

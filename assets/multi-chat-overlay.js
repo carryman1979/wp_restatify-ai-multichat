@@ -412,11 +412,30 @@
     var form = container.querySelector('[data-chat-form]');
     var input = container.querySelector('[data-chat-input]');
     var send = container.querySelector('[data-chat-send]');
+    var honeypot = container.querySelector('[data-chat-honeypot]');
     var messagesWrap = container.querySelector('[data-chat-messages]');
     var status = container.querySelector('[data-chat-status]');
     if (!form || !input || !send || !messagesWrap || !status) {
       return;
     }
+
+    input.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) {
+        return;
+      }
+
+      event.preventDefault();
+      if (send.disabled) {
+        return;
+      }
+
+      if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit(send);
+        return;
+      }
+
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
 
     var state = {
       id: loadStorage(CHAT_STORAGE_ID_KEY),
@@ -453,6 +472,7 @@
         conversation_id: state.id,
         conversation_token: state.token,
         message: text,
+        website: honeypot ? String(honeypot.value || '') : '',
         source_url: window.location.href
       }).then(function (payload) {
         if (!payload || !payload.success || !payload.data || !payload.data.conversation) {

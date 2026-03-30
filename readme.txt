@@ -33,6 +33,10 @@ This plugin is designed for small support teams that monitor email and need a qu
 6. Add your support email address.
 7. Save changes.
 
+If "Require cookie consent" is enabled and your site uses a custom theme or custom CMP, add matching cookie rules in the plugin setting "Consent cookie rules".
+Format: cookie_name or cookie_name=expected_value.
+Example: restatify_cookie_consent=accepted,cookiesDirective,_cky-consent=accept
+
 == Frequently Asked Questions ==
 
 = How do I enable the built-in website chat? =
@@ -82,6 +86,15 @@ Translated fields include:
 * Chat input placeholder
 * Send button label
 * AI system prompt
+
+= Why is the overlay not showing although it is enabled? =
+
+Most commonly one of these conditions is not met:
+
+* The overlay is enabled, but no channel URL is configured and built-in website chat is disabled.
+* "Require cookie consent" is enabled, but the configured cookie rules do not match the site's actual consent cookie.
+
+If your site uses a custom theme or consent solution, update "Consent cookie rules" accordingly.
 
 = Is there a German setup guide and a support playbook? =
 

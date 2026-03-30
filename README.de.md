@@ -15,10 +15,17 @@ Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Supp
 2. Team title und Intro message setzen.
 3. Auto-open delay konfigurieren.
 4. Mindestens einen Kanal-Link eintragen (WhatsApp, Telegram, usw.) oder den integrierten Chat aktivieren.
+5. Falls eure Website ein eigenes Cookie-Consent-System oder ein anderes Theme nutzt, im Feld Consent cookie rules die passenden Cookie-Regeln hinterlegen.
 
 Hinweis: Das Overlay wird angezeigt, wenn es aktiviert ist und entweder
 - mindestens ein externer Kanal gesetzt ist, oder
 - der integrierte Website-Chat aktiv ist.
+
+Hinweis zu Cookie-Consent:
+- Wenn Require cookie consent aktiviert ist, rendert das Overlay erst nach erkannter Einwilligung.
+- Bei fremden Themes oder eigener Consent-Logik kann es noetig sein, Consent cookie rules manuell zu pflegen.
+- Format: cookie_name oder cookie_name=expected_value
+- Beispiel: restatify_cookie_consent=accepted,cookiesDirective,_cky-consent=accept
 
 ## 3) Integrierten Website-Chat aktivieren
 

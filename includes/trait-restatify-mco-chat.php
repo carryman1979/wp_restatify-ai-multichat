@@ -13,16 +13,14 @@ trait Restatify_MCO_Chat_Trait {
             wp_send_json_error(['message' => __('Chat is currently disabled.', self::TEXT_DOMAIN)], 403);
         }
 
-        $message = sanitize_textarea_field(wp_unslash($_POST['message'] ?? ''));
-        $message = trim($message);
-        if ($message === '') {
-            wp_send_json_error(['message' => __('Message cannot be empty.', self::TEXT_DOMAIN)], 400);
+        $honeypot = sanitize_text_field(wp_unslash($_POST['website'] ?? ''));
+        if ($honeypot !== '') {
+            wp_send_json_error(['message' => __('Message could not be sent. Please try again.', self::TEXT_DOMAIN)], 400);
         }
 
-        if (function_exists('mb_substr')) {
-            $message = mb_substr($message, 0, 1000);
-        } else {
-            $message = substr($message, 0, 1000);
+        $message = $this->sanitize_chat_message_content((string) wp_unslash($_POST['message'] ?? ''));
+        if ($message === '') {
+            wp_send_json_error(['message' => __('Message cannot be empty.', self::TEXT_DOMAIN)], 400);
         }
 
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
@@ -39,6 +37,7 @@ trait Restatify_MCO_Chat_Trait {
 
         if (!empty($options['ai_enabled']) && $this->should_ai_reply_for_sender($conversation, 'visitor')) {
             $ai_reply = $this->generate_ai_reply($options, $conversation, $message);
+            $ai_reply = $this->sanitize_chat_message_content($ai_reply);
             if ($ai_reply !== '') {
                 $conversation['messages'][] = $this->format_chat_message('ai', $ai_reply);
                 $conversation['updated_at_gmt'] = gmdate('c');
@@ -96,17 +95,10 @@ trait Restatify_MCO_Chat_Trait {
         check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
 
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
-        $message = sanitize_textarea_field(wp_unslash($_POST['message'] ?? ''));
-        $message = trim($message);
+        $message = $this->sanitize_chat_message_content((string) wp_unslash($_POST['message'] ?? ''));
 
         if ($conversation_id === '' || $message === '') {
             wp_send_json_error(['message' => __('Conversation and message are required.', self::TEXT_DOMAIN)], 400);
-        }
-
-        if (function_exists('mb_substr')) {
-            $message = mb_substr($message, 0, 1000);
-        } else {
-            $message = substr($message, 0, 1000);
         }
 
         $store = $this->get_chat_store();
@@ -120,6 +112,7 @@ trait Restatify_MCO_Chat_Trait {
         $options = $this->get_options();
         if (!empty($options['ai_enabled']) && $this->should_ai_reply_for_sender($store[$conversation_id], 'support')) {
             $ai_reply = $this->generate_ai_reply($options, $store[$conversation_id], $message);
+            $ai_reply = $this->sanitize_chat_message_content($ai_reply);
             if ($ai_reply !== '') {
                 $store[$conversation_id]['messages'][] = $this->format_chat_message('ai', $ai_reply);
                 $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
@@ -328,11 +321,30 @@ trait Restatify_MCO_Chat_Trait {
     }
 
     private function format_chat_message(string $sender, string $message): array {
+        $allowed_senders = ['visitor', 'support', 'ai'];
+        if (!in_array($sender, $allowed_senders, true)) {
+            $sender = 'visitor';
+        }
+
         return [
             'sender' => $sender,
             'message' => $message,
             'time_gmt' => gmdate('c'),
         ];
+    }
+
+    private function sanitize_chat_message_content(string $message): string {
+        $clean = sanitize_textarea_field($message);
+        $clean = wp_check_invalid_utf8($clean, true);
+        $clean = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', (string) $clean);
+        $clean = str_replace(["\r\n", "\r"], "\n", (string) $clean);
+        $clean = trim((string) $clean);
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($clean, 0, 1000);
+        }
+
+        return substr($clean, 0, 1000);
     }
 
     private function maybe_send_support_email(array $options, array $conversation, string $latest_message): void {

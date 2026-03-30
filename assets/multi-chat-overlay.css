@@ -317,18 +317,25 @@
 
 .restatify-mco__native-form {
   display: flex;
+  align-items: flex-end;
   gap: 8px;
   margin-top: 8px;
 }
 
 .restatify-mco__native-input {
   width: 100%;
-  resize: vertical;
+  resize: none;
   min-height: 42px;
+  max-height: 180px;
+  overflow-y: auto;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--rs-color-text, #0b1221) 22%, transparent);
   padding: 8px;
   font: inherit;
+}
+
+.restatify-mco.is-chat-focus .restatify-mco__native-input {
+  max-height: 240px;
 }
 
 .restatify-mco__native-send {
