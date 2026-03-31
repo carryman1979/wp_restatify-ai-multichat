@@ -2,6 +2,8 @@
 
 Use this checklist before deploying to production.
 
+German version available: RELEASE-CHECKLIST.de.md
+
 ## 1) Package and Version
 
 1. Verify plugin header version in `restatify-multi-chat-overlay.php`.

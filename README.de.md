@@ -1,5 +1,7 @@
 # Restatify Multi Chat Overlay - Anleitung (DE)
 
+Stand: Version 1.2.0, getestet bis WordPress 6.9.
+
 Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Support-Ablauf.
 
 ## 1) Plugin aktivieren
@@ -17,11 +19,13 @@ Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Supp
 4. Mindestens einen Kanal-Link eintragen (WhatsApp, Telegram, usw.) oder den integrierten Chat aktivieren.
 5. Falls eure Website ein eigenes Cookie-Consent-System oder ein anderes Theme nutzt, im Feld Consent cookie rules die passenden Cookie-Regeln hinterlegen.
 
-Hinweis: Das Overlay wird angezeigt, wenn es aktiviert ist und entweder
+Das Overlay wird angezeigt, wenn es aktiviert ist und entweder:
+
 - mindestens ein externer Kanal gesetzt ist, oder
 - der integrierte Website-Chat aktiv ist.
 
 Hinweis zu Cookie-Consent:
+
 - Wenn Require cookie consent aktiviert ist, rendert das Overlay erst nach erkannter Einwilligung.
 - Bei fremden Themes oder eigener Consent-Logik kann es noetig sein, Consent cookie rules manuell zu pflegen.
 - Format: cookie_name oder cookie_name=expected_value
@@ -42,6 +46,7 @@ Der Besucher kann danach direkt im Overlay schreiben.
 3. Speichern.
 
 Bei jeder neuen Besucher-Nachricht wird eine Mail versendet mit:
+
 - Conversation ID
 - Source URL
 - letzter Nachricht
@@ -73,11 +78,54 @@ Unterstuetzte Anbieter (automatisch per API-URL erkannt):
 - Llama (inkl. Ollama-Endpoints)
 
 Empfehlung:
+
 - KI nur als First-Level einsetzen.
 - Keine sensiblen Daten in Prompts oder Antworten schicken.
 - Regelmaessig Antwortqualitaet pruefen.
 
-## 7) Datenschutz und Betrieb
+## 7) FAQ
+
+### Wo erscheinen eingehende Nachrichten?
+
+Im WordPress-Menuepunkt Support Chat. Dort koennt ihr Konversationen oeffnen und direkt antworten.
+
+### Ist KI zwingend notwendig?
+
+Nein. KI-Antworten sind optional und standardmaessig deaktiviert.
+
+### Warum wird das Overlay trotz Aktivierung nicht angezeigt?
+
+Haeufige Ursachen:
+
+- Kein Kanal-Link gesetzt und integrierter Chat deaktiviert.
+- Require cookie consent ist aktiv, aber Consent cookie rules passen nicht zu eurem Consent-Cookie.
+
+### Unterstuetzt das Plugin Polylang?
+
+Ja. Konfigurierbare Chat-Texte werden in der Gruppe Restatify Multi Chat Overlay registriert.
+
+## 8) Polylang (Mehrsprachigkeit)
+
+Wenn Polylang aktiv ist, registriert das Plugin die konfigurierbaren Chat-Texte automatisch in der Gruppe Restatify Multi Chat Overlay.
+
+Pfad in WordPress:
+
+1. Sprachen > Uebersetzungen
+2. Gruppe Restatify Multi Chat Overlay filtern
+3. Texte je Sprache uebersetzen
+
+Typische Felder:
+
+- Team title
+- Intro message
+- Channel heading
+- Button accessibility label
+- Chat title
+- Placeholder
+- Send button label
+- AI system prompt
+
+## 9) Datenschutz und Betrieb
 
 Wenn der Website-Chat aktiv ist, werden Nachrichten in WordPress gespeichert.
 Wenn Mail-Benachrichtigung aktiv ist, werden Inhalte per E-Mail versendet.
@@ -85,25 +133,7 @@ Wenn KI aktiv ist, werden Chat-Inhalte an den konfigurierten KI-Endpunkt uebertr
 
 Bitte Datenschutzerklaerung entsprechend aktualisieren.
 
-## 8) Polylang (Mehrsprachigkeit)
-
-Wenn Polylang aktiv ist, registriert das Plugin die konfigurierbaren Chat-Texte automatisch in der Gruppe "Restatify Multi Chat Overlay".
-
-Pfad in WordPress:
-
-1. Sprachen > Uebersetzungen
-2. Gruppe "Restatify Multi Chat Overlay" filtern
-3. Texte je Sprache uebersetzen
-
-Typische Felder:
-- Team title
-- Intro message
-- Chat title
-- Placeholder
-- Senden-Label
-- AI System Prompt
-
-## 9) Typischer Go-Live-Check
+## 10) Typischer Go-Live-Check
 
 1. Test-Nachricht als Besucher senden.
 2. Pruefen, ob E-Mail ankommt.
@@ -111,3 +141,10 @@ Typische Felder:
 4. Support-Antwort schicken.
 5. Frontend aktualisieren und Antwort pruefen.
 6. Optional KI-Antwort pruefen.
+
+## 11) Weitere Dokumente im Plugin-Ordner
+
+- readme.txt (englische Standard-Readme)
+- SUPPORT-PLAYBOOK.md
+- RELEASE-CHECKLIST.de.md (deutsche Release-Checkliste)
+- RELEASE-CHECKLIST.md

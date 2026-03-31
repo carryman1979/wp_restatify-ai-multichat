@@ -1,80 +1,80 @@
-# Support Playbook
+# Support Playbook (DE)
 
-This playbook helps support agents handle website chat conversations consistently.
+Dieses Playbook hilft Support-Teams, Website-Chat-Konversationen einheitlich und effizient zu bearbeiten.
 
-## Goals
+## Ziele
 
-- Respond fast.
-- Keep answers clear and actionable.
-- Escalate complex cases quickly.
-- Use AI as assistant, not final authority.
+- Schnell reagieren.
+- Antworten klar und umsetzbar halten.
+- Komplexe Faelle frueh eskalieren.
+- KI als Assistenz nutzen, nicht als letzte Instanz.
 
-## Suggested SLAs
+## Empfohlene SLAs
 
-- First response: within 10 minutes (business hours).
-- Follow-up response: within 30 minutes.
-- Escalation to specialist: within 20 minutes after detection.
+- Erste Antwort: innerhalb von 10 Minuten (waehrend der Supportzeiten).
+- Rueckmeldung/Folgeantwort: innerhalb von 30 Minuten.
+- Eskalation an Spezialisten: innerhalb von 20 Minuten nach Erkennung.
 
-## Standard Workflow
+## Standard-Workflow
 
-1. Open conversation from inbox link (email or admin).
-2. Read latest user message and short history.
-3. Classify request:
-   - simple how-to
-   - account/billing
-   - technical issue
-   - incident/outage
-4. Send first response.
-5. If needed, ask one focused clarification question.
-6. Resolve or escalate.
-7. Confirm resolution with user.
+1. Konversation ueber Inbox-Link oeffnen (E-Mail oder Admin).
+2. Letzte Nachricht und Kurzverlauf lesen.
+3. Anfrage klassifizieren:
+   - einfache Anleitung
+   - Konto/Abrechnung
+   - technisches Problem
+   - Incident/Ausfall
+4. Erste Antwort senden.
+5. Falls noetig, genau eine fokussierte Rueckfrage stellen.
+6. Loesen oder eskalieren.
+7. Loesung mit dem Nutzer bestaetigen.
 
-## Response Templates
+## Antwortvorlagen
 
-### First response
+### Erste Antwort
 
-Hello, thanks for your message. I am checking this now and will get back to you shortly.
+Hallo und danke fuer deine Nachricht. Ich pruefe das jetzt und melde mich in Kuerze mit einem Update.
 
-### Clarification
+### Rueckfrage
 
-Thanks. Could you please share the exact page URL and the time when this happened?
+Danke. Kannst du bitte die genaue Seiten-URL und die Uhrzeit nennen, zu der das Problem aufgetreten ist?
 
-### Resolved
+### Geloest
 
-Great, this should now be fixed. Please refresh and confirm if it works on your side.
+Super, das sollte jetzt behoben sein. Bitte aktualisiere die Seite und gib kurz Bescheid, ob es bei dir funktioniert.
 
-### Escalation
+### Eskalation
 
-Thanks for the details. I am escalating this to our technical team and will update you as soon as we have progress.
+Danke fuer die Details. Ich eskaliere das an unser Technik-Team und gebe dir Bescheid, sobald wir ein Update haben.
 
-## AI Usage Rules
+## KI-Nutzungsregeln
 
-- AI can draft first-level replies.
-- Human agent validates before final instruction for critical topics.
-- Do not provide legal, medical, or financial advice.
-- Never expose secrets, API keys, or internal credentials.
+- KI darf Antworten auf First-Level vorbereiten.
+- Bei kritischen Themen erfolgt die finale Freigabe immer durch einen Menschen.
+- Keine Rechts-, Medizin- oder Finanzberatung geben.
+- Niemals Geheimnisse, API-Keys oder interne Zugangsdaten ausgeben.
 
-## Escalation Triggers
+## Eskalationsausloeser
 
-Escalate immediately if one of these applies:
-- payment failure or legal complaint
-- data/privacy concern
-- security incident suspicion
-- production outage
-- repeated failure after two support attempts
+Sofort eskalieren, wenn einer dieser Punkte zutrifft:
 
-## Internal Handover Note Format
+- Zahlungsfehler oder rechtliche Beschwerde
+- Datenschutz- oder Privacy-Thema
+- Verdacht auf Sicherheitsvorfall
+- Produktionsausfall
+- wiederholtes Scheitern nach zwei Support-Versuchen
+
+## Format fuer interne Uebergabe
 
 - Conversation ID:
-- Customer issue summary:
-- Steps already attempted:
-- Current impact:
-- Requested action:
+- Problemzusammenfassung:
+- Bisherige Schritte:
+- Aktueller Impact:
+- Gewuenschte Aktion:
 
-## Quality Checklist
+## Qualitaetscheck vor dem Senden
 
-Before sending a reply:
-- Is the answer in the user language?
-- Is it short and actionable?
-- Did we avoid assumptions?
-- Did we include next step and owner?
+- Ist die Antwort in der Sprache des Nutzers?
+- Ist sie kurz und direkt umsetzbar?
+- Wurden unbelegte Annahmen vermieden?
+- Ist der naechste Schritt inkl. Verantwortlichkeit klar?
