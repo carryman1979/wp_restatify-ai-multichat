@@ -11,6 +11,14 @@ Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Supp
 3. Restatify Multi Chat Overlay aktivieren.
 4. Zu Einstellungen > Multi Chat Overlay wechseln.
 
+Fuer externe Installationen kann das Plugin auch als Release-ZIP installiert werden.
+
+Release-ZIP erzeugen:
+
+1. pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/create-release-zip.ps1
+
+Das ZIP liegt danach unter /release.
+
 ## 2) Grundkonfiguration
 
 1. Enable overlay aktivieren.

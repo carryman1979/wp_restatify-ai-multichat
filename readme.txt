@@ -33,6 +33,14 @@ This plugin is designed for small support teams that monitor email and need a qu
 6. Add your support email address.
 7. Save changes.
 
+For external installations, you can also install via a release ZIP package.
+
+Create a ZIP package from the plugin workspace with:
+
+1. pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/create-release-zip.ps1
+
+The ZIP is created in /release.
+
 If "Require cookie consent" is enabled and your site uses a custom theme or custom CMP, add matching cookie rules in the plugin setting "Consent cookie rules".
 Format: cookie_name or cookie_name=expected_value.
 Example: restatify_cookie_consent=accepted,cookiesDirective,_cky-consent=accept
