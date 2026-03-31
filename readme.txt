@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ You should update your privacy policy accordingly.
 
 == Changelog ==
 
+= 1.2.1 =
+* Added reproducible release ZIP packaging workflow.
+* Added installation notes for external WordPress environments.
+
 = 1.2.0 =
 * Added native website chat in overlay.
 * Added support inbox in admin settings.
@@ -141,6 +145,9 @@ You should update your privacy policy accordingly.
 * Added multi-channel floating overlay with auto-open delay and dismiss memory.
 
 == Upgrade Notice ==
+
+= 1.2.1 =
+Includes release packaging workflow and improved installation guidance.
 
 = 1.2.0 =
 Includes integrated website chat, support inbox, email notifications, and optional AI auto reply.

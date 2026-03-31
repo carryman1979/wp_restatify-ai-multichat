@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify Multi Chat Overlay
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
