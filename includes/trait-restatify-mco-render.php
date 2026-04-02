@@ -115,7 +115,8 @@ trait Restatify_MCO_Render_Trait {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Multi Chat Overlay', self::TEXT_DOMAIN); ?></h1>
-            <p><?php esc_html_e('Configure chat channels, popup delay, and behavior of the floating chat widget.', self::TEXT_DOMAIN); ?></p>
+            <p><?php esc_html_e('Configure core chat behavior first. Advanced controls are grouped below in collapsible expert sections.', self::TEXT_DOMAIN); ?></p>
+            <?php settings_errors(self::OPTION_KEY); ?>
 
             <div class="notice notice-info" style="padding:12px 14px; margin: 12px 0 16px;">
                 <p><strong><?php esc_html_e('Quick help', self::TEXT_DOMAIN); ?></strong></p>
@@ -221,7 +222,7 @@ trait Restatify_MCO_Render_Trait {
                     <tr>
                         <th scope="row"><?php esc_html_e('Support email address', self::TEXT_DOMAIN); ?></th>
                         <td>
-                            <input class="regular-text" type="email" name="<?php echo esc_attr(self::OPTION_KEY); ?>[support_email]" value="<?php echo esc_attr($options['support_email']); ?>">
+                            <input class="regular-text" type="email" required placeholder="support@example.com" name="<?php echo esc_attr(self::OPTION_KEY); ?>[support_email]" value="<?php echo esc_attr($options['support_email']); ?>">
                             <p class="description"><?php esc_html_e('New visitor messages can be forwarded to this address with a direct link to the open chat in admin.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
@@ -268,7 +269,8 @@ trait Restatify_MCO_Render_Trait {
                     </tr>
                 </table>
 
-                <h2><?php esc_html_e('Optional AI auto reply', self::TEXT_DOMAIN); ?></h2>
+                <details style="margin:12px 0 16px;">
+                    <summary><strong><?php esc_html_e('Expert settings: Optional AI auto reply', self::TEXT_DOMAIN); ?></strong></summary>
                 <table class="form-table" role="presentation">
                     <tr>
                         <th scope="row"><?php esc_html_e('Enable AI auto reply', self::TEXT_DOMAIN); ?></th>
@@ -291,7 +293,7 @@ trait Restatify_MCO_Render_Trait {
                     <tr>
                         <th scope="row"><?php esc_html_e('API key', self::TEXT_DOMAIN); ?></th>
                         <td>
-                            <input class="regular-text" type="password" autocomplete="off" name="<?php echo esc_attr(self::OPTION_KEY); ?>[ai_api_key]" value="<?php echo esc_attr($options['ai_api_key']); ?>">
+                            <input class="regular-text" type="password" autocomplete="off" name="<?php echo esc_attr(self::OPTION_KEY); ?>[ai_api_key]" value="<?php echo esc_attr($options['ai_api_key']); ?>" placeholder="sk-...">
                             <p class="description"><?php esc_html_e('Stored in plugin options. Use a restricted key only.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
@@ -315,6 +317,7 @@ trait Restatify_MCO_Render_Trait {
                         </td>
                     </tr>
                 </table>
+                </details>
 
                 <?php
                 $debug_lines = $this->get_recent_ai_debug_lines(40);
@@ -325,7 +328,8 @@ trait Restatify_MCO_Render_Trait {
                     <textarea class="large-text code" rows="10" readonly><?php echo esc_textarea(implode("\n", $debug_lines)); ?></textarea>
                 <?php endif; ?>
 
-                <h2><?php esc_html_e('Chat channels', self::TEXT_DOMAIN); ?></h2>
+                <details style="margin:12px 0 16px;">
+                    <summary><strong><?php esc_html_e('Expert settings: Chat channels', self::TEXT_DOMAIN); ?></strong></summary>
                 <p><?php esc_html_e('Only channels with a URL are shown in the overlay.', self::TEXT_DOMAIN); ?></p>
                 <table class="form-table" role="presentation">
                     <?php foreach (self::CHANNELS as $key => $meta) : ?>
@@ -343,6 +347,7 @@ trait Restatify_MCO_Render_Trait {
                         </tr>
                     <?php endforeach; ?>
                 </table>
+                </details>
 
                 <?php submit_button(); ?>
             </form>

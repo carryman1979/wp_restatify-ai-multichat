@@ -10,6 +10,11 @@ trait Restatify_MCO_AI_Trait {
             return '';
         }
 
+        $booking_reply = $this->maybe_generate_booking_reply($latest_message);
+        if ($booking_reply !== '') {
+            return $booking_reply;
+        }
+
         $debug_enabled = !empty($options['ai_debug_enabled']);
 
         $endpoint = $this->sanitize_ai_endpoint((string) ($options['ai_api_endpoint'] ?? self::DEFAULT_AI_ENDPOINT));
@@ -94,6 +99,20 @@ trait Restatify_MCO_AI_Trait {
         }
 
         return substr($content, 0, 1000);
+    }
+
+    private function maybe_generate_booking_reply(string $latest_message): string {
+        if (!function_exists('restatify_booking_ai_handle_message')) {
+            return '';
+        }
+
+        $intent_pattern = '/termin|appointment|slot|verfuegbar|verfugbarkeit|frei|buchen|book/i';
+        if (!preg_match($intent_pattern, $latest_message)) {
+            return '';
+        }
+
+        $reply = restatify_booking_ai_handle_message($latest_message);
+        return is_string($reply) ? trim($reply) : '';
     }
 
     private function detect_ai_provider(string $endpoint): string {

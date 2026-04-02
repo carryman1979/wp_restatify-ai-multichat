@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,13 @@ You should update your privacy policy accordingly.
 
 == Changelog ==
 
+= 1.3.0 =
+* Improved admin settings UX with clearer core guidance and collapsible expert sections.
+* Added required support email field behavior for built-in chat workflows.
+* Added validation fallback: built-in chat now auto-falls back to admin email when support email is empty.
+* Added validation fallback: AI auto reply is disabled automatically when API key is missing.
+* Removed legacy dead-code handling for deprecated chat reset hour option.
+
 = 1.2.1 =
 * Added reproducible release ZIP packaging workflow.
 * Added installation notes for external WordPress environments.
@@ -145,6 +152,9 @@ You should update your privacy policy accordingly.
 * Added multi-channel floating overlay with auto-open delay and dismiss memory.
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Includes admin UX improvements and stricter validation defaults for support email and AI settings.
 
 = 1.2.1 =
 Includes release packaging workflow and improved installation guidance.

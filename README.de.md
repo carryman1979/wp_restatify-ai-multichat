@@ -1,6 +1,6 @@
 # Restatify Multi Chat Overlay - Anleitung (DE)
 
-Stand: Version 1.2.1, getestet bis WordPress 6.9.
+Stand: Version 1.3.0, getestet bis WordPress 6.9.
 
 Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Support-Ablauf.
 
@@ -27,6 +27,11 @@ Das ZIP liegt danach unter /release.
 4. Mindestens einen Kanal-Link eintragen (WhatsApp, Telegram, usw.) oder den integrierten Chat aktivieren.
 5. Falls eure Website ein eigenes Cookie-Consent-System oder ein anderes Theme nutzt, im Feld Consent cookie rules die passenden Cookie-Regeln hinterlegen.
 
+Hinweis zur neuen Einstellungsstruktur:
+
+- Wichtige Basiswerte stehen direkt sichtbar oben.
+- Optionale Bereiche sind als Expert-Settings einklappbar organisiert.
+
 Das Overlay wird angezeigt, wenn es aktiviert ist und entweder:
 
 - mindestens ein externer Kanal gesetzt ist, oder
@@ -52,6 +57,8 @@ Der Besucher kann danach direkt im Overlay schreiben.
 1. Support email address eintragen.
 2. Send email on new message aktivieren.
 3. Speichern.
+
+Wenn der integrierte Chat aktiv ist und keine Support-Mail gesetzt wird, setzt das Plugin die Admin-E-Mail als sicheren Fallback.
 
 Bei jeder neuen Besucher-Nachricht wird eine Mail versendet mit:
 

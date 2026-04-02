@@ -78,7 +78,7 @@ trait Restatify_MCO_Options_Trait {
             'chat_placeholder' => sanitize_text_field($input['chat_placeholder'] ?? $defaults['chat_placeholder']),
             'chat_send_label' => sanitize_text_field($input['chat_send_label'] ?? $defaults['chat_send_label']),
             'chat_poll_seconds' => max(3, min(60, absint($input['chat_poll_seconds'] ?? $defaults['chat_poll_seconds']))),
-            'chat_reset_minutes' => max(0, min(525600, absint($input['chat_reset_minutes'] ?? (isset($input['chat_reset_hours']) ? ((int) $input['chat_reset_hours'] * 60) : $defaults['chat_reset_minutes'])))),
+            'chat_reset_minutes' => max(0, min(525600, absint($input['chat_reset_minutes'] ?? $defaults['chat_reset_minutes']))),
             'ai_enabled' => !empty($input['ai_enabled']),
             'ai_debug_enabled' => !empty($input['ai_debug_enabled']),
             'ai_api_key' => sanitize_text_field($input['ai_api_key'] ?? $defaults['ai_api_key']),
@@ -89,7 +89,27 @@ trait Restatify_MCO_Options_Trait {
         ];
 
         if (empty($output['support_email'])) {
-            $output['support_email'] = '';
+            if (!empty($output['own_chat_enabled'])) {
+                $output['support_email'] = sanitize_email((string) get_option('admin_email', ''));
+                add_settings_error(
+                    self::OPTION_KEY,
+                    'restatify_mco_support_email_required',
+                    __('Support email was empty and has been reset to the site admin email.', self::TEXT_DOMAIN),
+                    'warning'
+                );
+            } else {
+                $output['support_email'] = '';
+            }
+        }
+
+        if (!empty($output['ai_enabled']) && trim((string) $output['ai_api_key']) === '') {
+            $output['ai_enabled'] = false;
+            add_settings_error(
+                self::OPTION_KEY,
+                'restatify_mco_ai_key_required',
+                __('AI auto reply was disabled because no API key was provided.', self::TEXT_DOMAIN),
+                'warning'
+            );
         }
 
         $input_channels = isset($input['channels']) && is_array($input['channels']) ? $input['channels'] : [];
@@ -156,11 +176,6 @@ trait Restatify_MCO_Options_Trait {
         $saved = get_option(self::OPTION_KEY, []);
         if (!is_array($saved)) {
             $saved = [];
-        }
-
-        // Backward compatibility: convert legacy hour-based setting to minutes.
-        if (!isset($saved['chat_reset_minutes']) && isset($saved['chat_reset_hours'])) {
-            $saved['chat_reset_minutes'] = max(0, ((int) $saved['chat_reset_hours']) * 60);
         }
 
         return wp_parse_args($saved, $this->get_default_options());
