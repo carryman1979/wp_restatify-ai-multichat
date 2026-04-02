@@ -2,6 +2,10 @@
   var CHAT_STORAGE_ID_KEY = 'restatify_mco_chat_id';
   var CHAT_STORAGE_TOKEN_KEY = 'restatify_mco_chat_token';
   var CHAT_STORAGE_LAST_ACTIVE_KEY = 'restatify_mco_chat_last_active';
+  var BOOKING_OPEN_TOKEN = '[[RESTATIFY_BOOKING_OPEN]]';
+  var BOOKING_CONFIRMED_TOKEN = '[[RESTATIFY_BOOKING_CONFIRMED]]';
+  var BOOKING_CANCELLED_TOKEN = '[[RESTATIFY_BOOKING_CANCELLED]]';
+  var handledBookingTriggers = {};
 
   function initMultiChatOverlay() {
     var root = document.querySelector('[data-restatify-mco]');
@@ -583,10 +587,27 @@
         return;
       }
 
+      var openBooking = sender !== 'visitor' && text.indexOf(BOOKING_OPEN_TOKEN) !== -1;
+      text = text
+        .replace(BOOKING_OPEN_TOKEN, '')
+        .replace(BOOKING_CONFIRMED_TOKEN, '')
+        .replace(BOOKING_CANCELLED_TOKEN, '')
+        .trim();
+
       var bubble = document.createElement('p');
       bubble.className = 'restatify-mco__native-bubble is-' + sender;
       bubble.textContent = text;
       container.appendChild(bubble);
+
+      if (openBooking) {
+        var triggerKey = String(item && item.time_gmt ? item.time_gmt : '') + '|' + sender + '|' + text;
+        if (handledBookingTriggers[triggerKey]) {
+          return;
+        }
+
+        handledBookingTriggers[triggerKey] = true;
+        document.dispatchEvent(new CustomEvent('restatify:booking-open'));
+      }
     });
 
     container.scrollTop = container.scrollHeight;

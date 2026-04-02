@@ -4,6 +4,18 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!defined('RESTATIFY_BOOKING_OPEN_TOKEN')) {
+    define('RESTATIFY_BOOKING_OPEN_TOKEN', '[[RESTATIFY_BOOKING_OPEN]]');
+}
+
+if (!defined('RESTATIFY_BOOKING_CONFIRMED_TOKEN')) {
+    define('RESTATIFY_BOOKING_CONFIRMED_TOKEN', '[[RESTATIFY_BOOKING_CONFIRMED]]');
+}
+
+if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
+    define('RESTATIFY_BOOKING_CANCELLED_TOKEN', '[[RESTATIFY_BOOKING_CANCELLED]]');
+}
+
 trait Restatify_MCO_Chat_Trait {
     public function ajax_send_message(): void {
         $this->verify_chat_nonce();
@@ -79,6 +91,56 @@ trait Restatify_MCO_Chat_Trait {
                 'updated_at_gmt' => (string) ($store[$conversation_id]['updated_at_gmt'] ?? ''),
                 'messages' => $store[$conversation_id]['messages'],
             ],
+        ]);
+    }
+
+    public function ajax_booking_event(): void {
+        $this->verify_chat_nonce();
+
+        $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
+        $conversation_token = sanitize_text_field(wp_unslash($_POST['conversation_token'] ?? ''));
+        $event_type = sanitize_key(wp_unslash($_POST['event_type'] ?? ''));
+        $start_iso = sanitize_text_field(wp_unslash($_POST['start_iso'] ?? ''));
+        $end_iso = sanitize_text_field(wp_unslash($_POST['end_iso'] ?? ''));
+        $reference = sanitize_text_field(wp_unslash($_POST['reference'] ?? ''));
+
+        if ($conversation_id === '' || $conversation_token === '') {
+            wp_send_json_error(['message' => __('Conversation not found.', self::TEXT_DOMAIN)], 404);
+        }
+
+        $store = $this->get_chat_store();
+        if (empty($store[$conversation_id]) || !hash_equals((string) $store[$conversation_id]['token'], $conversation_token)) {
+            wp_send_json_error(['message' => __('Conversation not found.', self::TEXT_DOMAIN)], 404);
+        }
+
+        if (!in_array($event_type, ['confirmed', 'cancelled'], true)) {
+            wp_send_json_error(['message' => __('Invalid booking event.', self::TEXT_DOMAIN)], 400);
+        }
+
+        if ($event_type === 'confirmed') {
+            $message = RESTATIFY_BOOKING_CONFIRMED_TOKEN . ' ' . sprintf(
+                __('Booking confirmed by visitor: %1$s to %2$s (Reference: %3$s).', self::TEXT_DOMAIN),
+                $start_iso !== '' ? $start_iso : '-',
+                $end_iso !== '' ? $end_iso : '-',
+                $reference !== '' ? $reference : '-'
+            );
+        } else {
+            $message = RESTATIFY_BOOKING_CANCELLED_TOKEN . ' ' . (
+                $start_iso !== ''
+                    ? sprintf(__('Visitor cancelled booking flow (selected slot was %s).', self::TEXT_DOMAIN), $start_iso)
+                    : __('Visitor cancelled booking flow.', self::TEXT_DOMAIN)
+            );
+        }
+
+        $store[$conversation_id]['messages'][] = $this->format_chat_message('system', $message);
+        $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
+        $store[$conversation_id]['messages'] = array_slice($store[$conversation_id]['messages'], -self::CHAT_MAX_MESSAGES);
+
+        $this->save_chat_store($store);
+
+        wp_send_json_success([
+            'conversation_id' => $conversation_id,
+            'updated_at_gmt' => (string) ($store[$conversation_id]['updated_at_gmt'] ?? ''),
         ]);
     }
 
@@ -321,7 +383,7 @@ trait Restatify_MCO_Chat_Trait {
     }
 
     private function format_chat_message(string $sender, string $message): array {
-        $allowed_senders = ['visitor', 'support', 'ai'];
+        $allowed_senders = ['visitor', 'support', 'ai', 'system'];
         if (!in_array($sender, $allowed_senders, true)) {
             $sender = 'visitor';
         }

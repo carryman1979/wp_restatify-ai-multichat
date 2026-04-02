@@ -29,6 +29,7 @@ trait Restatify_MCO_Render_Trait {
             'strings' => [
                 'deleteConfirm' => __('Delete this conversation permanently?', self::TEXT_DOMAIN),
                 'genericError' => __('Action failed. Please refresh and try again.', self::TEXT_DOMAIN),
+                'openBookingAtClient' => __('I opened the booking tool for you. Please choose a slot and confirm your reservation.', self::TEXT_DOMAIN),
             ],
         ]);
     }
@@ -525,6 +526,14 @@ trait Restatify_MCO_Render_Trait {
         echo '<h2>' . esc_html__('Support inbox', self::TEXT_DOMAIN) . '</h2>';
         echo '<p>' . esc_html__('Open conversations from website visitors. Click a conversation to inspect and reply.', self::TEXT_DOMAIN) . '</p>';
 
+        echo '<div style="display:flex; gap:8px; align-items:center; margin:10px 0 14px;">';
+        echo '<strong style="margin-right:4px;">' . esc_html__('Filter:', self::TEXT_DOMAIN) . '</strong>';
+        echo '<button type="button" class="button button-primary" data-mco-conversation-filter="all">' . esc_html__('All', self::TEXT_DOMAIN) . '</button>';
+        echo '<button type="button" class="button" data-mco-conversation-filter="confirmed">' . esc_html__('Booking confirmed', self::TEXT_DOMAIN) . '</button>';
+        echo '<button type="button" class="button" data-mco-conversation-filter="cancelled">' . esc_html__('Booking cancelled', self::TEXT_DOMAIN) . '</button>';
+        echo '<button type="button" class="button" data-mco-conversation-filter="system">' . esc_html__('System events', self::TEXT_DOMAIN) . '</button>';
+        echo '</div>';
+
         if (count($store) === 0) {
             echo '<p>' . esc_html__('No conversations yet.', self::TEXT_DOMAIN) . '</p>';
             return;
@@ -543,10 +552,44 @@ trait Restatify_MCO_Render_Trait {
             $messages = (array) ($conversation['messages'] ?? []);
             $last = end($messages);
             $preview = is_array($last) ? (string) ($last['message'] ?? '') : '';
+            $preview = str_replace([
+                RESTATIFY_BOOKING_OPEN_TOKEN,
+                RESTATIFY_BOOKING_CONFIRMED_TOKEN,
+                RESTATIFY_BOOKING_CANCELLED_TOKEN,
+            ], '', $preview);
             if (function_exists('mb_substr')) {
                 $preview = mb_substr($preview, 0, 100);
             } else {
                 $preview = substr($preview, 0, 100);
+            }
+
+            $preview = trim($preview);
+
+            $conversation_state = 'none';
+            $conversation_badge = '';
+
+            for ($idx = count($messages) - 1; $idx >= 0; $idx--) {
+                $message_row = is_array($messages[$idx]) ? $messages[$idx] : [];
+                $raw = (string) ($message_row['message'] ?? '');
+                $sender = (string) ($message_row['sender'] ?? 'visitor');
+
+                if ($raw !== '' && str_contains($raw, RESTATIFY_BOOKING_CONFIRMED_TOKEN)) {
+                    $conversation_state = 'confirmed';
+                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#e7f6ea; color:#116329; font-size:11px; font-weight:600;">' . esc_html__('Booking confirmed', self::TEXT_DOMAIN) . '</span>';
+                    break;
+                }
+
+                if ($raw !== '' && str_contains($raw, RESTATIFY_BOOKING_CANCELLED_TOKEN)) {
+                    $conversation_state = 'cancelled';
+                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#fdecec; color:#8a1f1f; font-size:11px; font-weight:600;">' . esc_html__('Booking cancelled', self::TEXT_DOMAIN) . '</span>';
+                    break;
+                }
+
+                if ($sender === 'system') {
+                    $conversation_state = 'system';
+                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#eef2f6; color:#344054; font-size:11px; font-weight:600;">' . esc_html__('System event', self::TEXT_DOMAIN) . '</span>';
+                    break;
+                }
             }
 
             $is_selected = $selected_id !== '' && hash_equals($selected_id, (string) $id);
@@ -560,11 +603,11 @@ trait Restatify_MCO_Render_Trait {
                 admin_url('admin.php')
             );
 
-            echo '<tr data-mco-conversation-row="' . esc_attr((string) $id) . '"' . ($is_selected ? ' style="background:#eef6ff"' : '') . '>';
+            echo '<tr data-mco-conversation-row="' . esc_attr((string) $id) . '" data-mco-conversation-state="' . esc_attr($conversation_state) . '"' . ($is_selected ? ' style="background:#eef6ff"' : '') . '>';
             echo '<td><strong>' . esc_html((string) $id) . '</strong></td>';
             echo '<td>' . esc_html((string) ($conversation['updated_at_gmt'] ?? '')) . '</td>';
             echo '<td>' . esc_html($mode_label) . '</td>';
-            echo '<td>' . esc_html($preview) . '</td>';
+            echo '<td>' . $conversation_badge . ' ' . esc_html($preview) . '</td>';
             echo '<td>';
             echo '<a class="button" href="' . esc_url($open_link) . '">' . esc_html__('Open', self::TEXT_DOMAIN) . '</a> ';
             echo '<button type="button" class="button button-link-delete" data-mco-support-delete data-conversation-id="' . esc_attr((string) $id) . '">' . esc_html__('Delete', self::TEXT_DOMAIN) . '</button>';
@@ -577,6 +620,7 @@ trait Restatify_MCO_Render_Trait {
         if ($selected_id !== '' && !empty($store[$selected_id])) {
             $selected = $store[$selected_id];
             $selected_ai_mode = $this->normalize_ai_mode((string) ($selected['ai_mode'] ?? 'visitor'));
+            $booking_overlay_available = function_exists('restatify_booking_ai_handle_message') || shortcode_exists('restatify_booking_popup');
             echo '<div id="restatify-mco-conversation-detail" data-mco-conversation-detail="' . esc_attr($selected_id) . '">';
             echo '<h3 style="margin-top:20px;">' . esc_html__('Conversation detail', self::TEXT_DOMAIN) . '</h3>';
             echo '<p><label for="restatify-mco-ai-mode"><strong>' . esc_html__('AI behavior for this chat', self::TEXT_DOMAIN) . '</strong></label></p>';
@@ -595,16 +639,43 @@ trait Restatify_MCO_Render_Trait {
                 }
 
                 $sender = (string) ($msg['sender'] ?? 'visitor');
-                $label = $sender === 'support' ? __('Support', self::TEXT_DOMAIN) : ($sender === 'ai' ? __('AI', self::TEXT_DOMAIN) : __('Visitor', self::TEXT_DOMAIN));
+                $label = $sender === 'support'
+                    ? __('Support', self::TEXT_DOMAIN)
+                    : ($sender === 'ai'
+                        ? __('AI', self::TEXT_DOMAIN)
+                        : ($sender === 'system' ? __('System', self::TEXT_DOMAIN) : __('Visitor', self::TEXT_DOMAIN)));
+                $raw_message = (string) ($msg['message'] ?? '');
+                $is_booking_confirmed = str_contains($raw_message, RESTATIFY_BOOKING_CONFIRMED_TOKEN);
+                $is_booking_cancelled = str_contains($raw_message, RESTATIFY_BOOKING_CANCELLED_TOKEN);
+                $message_text = str_replace([
+                    RESTATIFY_BOOKING_OPEN_TOKEN,
+                    RESTATIFY_BOOKING_CONFIRMED_TOKEN,
+                    RESTATIFY_BOOKING_CANCELLED_TOKEN,
+                ], '', $raw_message);
+                $message_text = trim($message_text);
+
+                $badge_html = '';
+                if ($is_booking_confirmed) {
+                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#e7f6ea; color:#116329; font-size:11px; font-weight:600;">' . esc_html__('Booking confirmed', self::TEXT_DOMAIN) . '</span>';
+                } elseif ($is_booking_cancelled) {
+                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#fdecec; color:#8a1f1f; font-size:11px; font-weight:600;">' . esc_html__('Booking cancelled', self::TEXT_DOMAIN) . '</span>';
+                } elseif ($sender === 'system') {
+                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#eef2f6; color:#344054; font-size:11px; font-weight:600;">' . esc_html__('System event', self::TEXT_DOMAIN) . '</span>';
+                }
+
                 echo '<p style="margin:0 0 10px;">';
                 echo '<strong>' . esc_html($label) . ':</strong> ';
-                echo esc_html((string) ($msg['message'] ?? ''));
+                echo $badge_html;
+                echo esc_html(trim($message_text));
                 echo '<br><small>' . esc_html((string) ($msg['time_gmt'] ?? '')) . '</small>';
                 echo '</p>';
             }
             echo '</div>';
 
             echo '<div style="margin-top:14px;">';
+            if ($booking_overlay_available) {
+                echo '<p><button type="button" class="button" data-mco-support-open-booking data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Open Booking Overlay at Client', self::TEXT_DOMAIN) . '</button></p>';
+            }
             echo '<textarea id="restatify-mco-support-reply" class="large-text" rows="3" placeholder="' . esc_attr__('Type support reply...', self::TEXT_DOMAIN) . '"></textarea>';
             echo '<p><button type="button" class="button button-primary" data-mco-support-send data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Send support reply', self::TEXT_DOMAIN) . '</button></p>';
             echo '<p><button type="button" class="button button-link-delete" data-mco-support-delete data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Delete this conversation', self::TEXT_DOMAIN) . '</button></p>';

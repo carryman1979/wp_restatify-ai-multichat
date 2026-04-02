@@ -1,6 +1,6 @@
 # Restatify Multi Chat Overlay - Anleitung (DE)
 
-Stand: Version 1.3.0, getestet bis WordPress 6.9.
+Stand: Version 1.4.0, getestet bis WordPress 6.9.
 
 Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Support-Ablauf.
 
@@ -75,6 +75,12 @@ Bei jeder neuen Besucher-Nachricht wird eine Mail versendet mit:
 4. Support reply schreiben und senden.
 
 Die Antwort wird im Frontend-Chat des Besuchers sichtbar.
+
+Optional mit Booking Assistant:
+
+- Wenn `WP Restatify Booking Assistant` aktiv ist, erscheint in der Konversation der Button `Open Booking Overlay at Client`.
+- Support kann damit den Buchungsdialog beim Besucher oeffnen.
+- Bestaetigung/Abbruch der Buchung werden als System-Ereignis im Verlauf quittiert.
 
 ## 6) Optionale KI-Antwort
 

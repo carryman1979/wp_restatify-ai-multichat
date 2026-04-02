@@ -1,4 +1,43 @@
 (function () {
+  function initConversationFilters() {
+    var filters = Array.prototype.slice.call(document.querySelectorAll('[data-mco-conversation-filter]'));
+    if (!filters.length) {
+      return;
+    }
+
+    var rows = Array.prototype.slice.call(document.querySelectorAll('[data-mco-conversation-row]'));
+    if (!rows.length) {
+      return;
+    }
+
+    function setActiveButton(activeButton) {
+      filters.forEach(function (button) {
+        var isActive = button === activeButton;
+        button.classList.toggle('button-primary', isActive);
+        if (!isActive) {
+          button.classList.remove('button-primary');
+          button.classList.add('button');
+        }
+      });
+    }
+
+    function applyFilter(value) {
+      rows.forEach(function (row) {
+        var state = String(row.getAttribute('data-mco-conversation-state') || 'none');
+        var visible = value === 'all' || state === value;
+        row.style.display = visible ? '' : 'none';
+      });
+    }
+
+    filters.forEach(function (button) {
+      button.addEventListener('click', function () {
+        var value = String(button.getAttribute('data-mco-conversation-filter') || 'all');
+        setActiveButton(button);
+        applyFilter(value);
+      });
+    });
+  }
+
   function getConfig() {
     if (!window.restatifyMcoSupportInbox || typeof window.restatifyMcoSupportInbox !== 'object') {
       return null;
@@ -70,7 +109,8 @@
     var sendBtn = event.target.closest('[data-mco-support-send]');
     var deleteBtn = event.target.closest('[data-mco-support-delete]');
     var modeBtn = event.target.closest('[data-mco-support-ai-save]');
-    if (!sendBtn && !deleteBtn && !modeBtn) {
+    var openBookingBtn = event.target.closest('[data-mco-support-open-booking]');
+    if (!sendBtn && !deleteBtn && !modeBtn && !openBookingBtn) {
       return;
     }
 
@@ -114,6 +154,12 @@
       payload.ai_mode = modeSelect.value || 'visitor';
     }
 
+    if (openBookingBtn) {
+      payload.action = 'restatify_mco_support_reply';
+      payload.conversation_id = openBookingBtn.getAttribute('data-conversation-id') || '';
+      payload.message = '[[RESTATIFY_BOOKING_OPEN]] ' + (config.strings.openBookingAtClient || 'I opened the booking tool for you. Please choose a slot and confirm your reservation.');
+    }
+
     submitAction(config, payload)
       .then(function (result) {
         if (!result || !result.success) {
@@ -140,4 +186,5 @@
   }
 
   document.addEventListener('click', onClick);
+  document.addEventListener('DOMContentLoaded', initConversationFilters);
 })();

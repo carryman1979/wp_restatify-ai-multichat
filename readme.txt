@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,8 @@ Restatify Multi Chat Overlay adds a floating chat button to the frontend and all
 * Include a direct admin link in support emails to open the exact conversation.
 * Reply from the WordPress admin support inbox.
 * Optionally generate AI-based first-level responses.
+* Optionally trigger the Booking Assistant overlay from support inbox.
+* Show booking lifecycle events (confirmed/cancelled) in support conversations.
 
 This plugin is designed for small support teams that monitor email and need a quick handoff from mailbox to active chat.
 
@@ -95,6 +97,13 @@ Translated fields include:
 * Send button label
 * AI system prompt
 
+= Does this plugin require Booking Assistant? =
+
+No. Booking Assistant integration is optional.
+
+If Booking Assistant is installed, support can trigger booking overlay opening on the client and receive booking status events in the chat timeline.
+If Booking Assistant is not installed, chat and support inbox continue to work normally.
+
 = Why is the overlay not showing although it is enabled? =
 
 Most commonly one of these conditions is not met:
@@ -130,6 +139,13 @@ You should update your privacy policy accordingly.
 
 == Changelog ==
 
+= 1.4.0 =
+* Added support inbox action "Open Booking Overlay at Client" when Booking Assistant is available.
+* Added booking event messages for visitor-confirmed and visitor-cancelled booking flows.
+* Added support inbox visual badges and quick filters for booking/system events.
+* Added one-time booking trigger handling on frontend to avoid repeated auto-open loops.
+* Added compatibility guard so booking action is hidden when Booking Assistant is not active.
+
 = 1.3.0 =
 * Improved admin settings UX with clearer core guidance and collapsible expert sections.
 * Added required support email field behavior for built-in chat workflows.
@@ -152,6 +168,10 @@ You should update your privacy policy accordingly.
 * Added multi-channel floating overlay with auto-open delay and dismiss memory.
 
 == Upgrade Notice ==
+
+= 1.4.0 =
+Includes optional Booking Assistant handover actions in support inbox and booking event visibility improvements.
+No action required if Booking Assistant is not installed.
 
 = 1.3.0 =
 Includes admin UX improvements and stricter validation defaults for support email and AI settings.

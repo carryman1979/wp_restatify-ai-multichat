@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify Multi Chat Overlay
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 1.3.0
+ * Version: 1.4.0
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -116,6 +116,8 @@ final class Restatify_Multi_Chat_Overlay {
         add_action('wp_ajax_nopriv_restatify_mco_send_message', [$this, 'ajax_send_message']);
         add_action('wp_ajax_restatify_mco_fetch_chat', [$this, 'ajax_fetch_chat']);
         add_action('wp_ajax_nopriv_restatify_mco_fetch_chat', [$this, 'ajax_fetch_chat']);
+        add_action('wp_ajax_restatify_mco_booking_event', [$this, 'ajax_booking_event']);
+        add_action('wp_ajax_nopriv_restatify_mco_booking_event', [$this, 'ajax_booking_event']);
         add_action('wp_ajax_restatify_mco_support_reply', [$this, 'ajax_support_reply']);
         add_action('wp_ajax_restatify_mco_delete_conversation', [$this, 'ajax_delete_conversation']);
         add_action('wp_ajax_restatify_mco_set_ai_mode', [$this, 'ajax_set_ai_mode']);
