@@ -94,7 +94,7 @@ trait Restatify_MCO_Options_Trait {
                 add_settings_error(
                     self::OPTION_KEY,
                     'restatify_mco_support_email_required',
-                    __('Support email was empty and has been reset to the site admin email.', self::TEXT_DOMAIN),
+                    __('Die Support-E-Mail war leer und wurde auf die Admin-E-Mail der Website zurueckgesetzt.', self::TEXT_DOMAIN),
                     'warning'
                 );
             } else {
@@ -107,7 +107,7 @@ trait Restatify_MCO_Options_Trait {
             add_settings_error(
                 self::OPTION_KEY,
                 'restatify_mco_ai_key_required',
-                __('AI auto reply was disabled because no API key was provided.', self::TEXT_DOMAIN),
+                __('Die KI-Autoantwort wurde deaktiviert, weil kein API-Schluessel hinterlegt ist.', self::TEXT_DOMAIN),
                 'warning'
             );
         }
@@ -187,18 +187,18 @@ trait Restatify_MCO_Options_Trait {
             'require_cookie_consent' => true,
             'consent_cookie_names' => 'cookie_consent,cmplz_marketing,borlabs-cookie,CookieConsent',
             'team_name' => __('Restatify Service-Team', self::TEXT_DOMAIN),
-            'message' => __('Hi there. How can we help you?', self::TEXT_DOMAIN),
-            'cta_label' => __('Start chat with:', self::TEXT_DOMAIN),
+            'message' => __('Hallo. Wie koennen wir dir helfen?', self::TEXT_DOMAIN),
+            'cta_label' => __('Chat starten mit:', self::TEXT_DOMAIN),
             'channels_more_label' => __('Weiter', self::TEXT_DOMAIN),
             'channels_less_label' => __('Weniger', self::TEXT_DOMAIN),
-            'toggle_aria_label' => __('Open chat panel', self::TEXT_DOMAIN),
+            'toggle_aria_label' => __('Chatfenster oeffnen', self::TEXT_DOMAIN),
             'delay_seconds' => 6,
             'own_chat_enabled' => false,
             'support_email' => get_option('admin_email', ''),
             'support_notify_on_message' => true,
-            'chat_title' => __('Write to us directly', self::TEXT_DOMAIN),
-            'chat_placeholder' => __('Type your message here...', self::TEXT_DOMAIN),
-            'chat_send_label' => __('Send', self::TEXT_DOMAIN),
+            'chat_title' => __('Schreibe uns direkt', self::TEXT_DOMAIN),
+            'chat_placeholder' => __('Nachricht hier eingeben...', self::TEXT_DOMAIN),
+            'chat_send_label' => __('Senden', self::TEXT_DOMAIN),
             'chat_poll_seconds' => 8,
             'chat_reset_minutes' => 15,
             'ai_enabled' => false,
@@ -206,7 +206,7 @@ trait Restatify_MCO_Options_Trait {
             'ai_api_key' => '',
             'ai_api_endpoint' => self::DEFAULT_AI_ENDPOINT,
             'ai_model' => 'gpt-4o-mini',
-            'ai_system_prompt' => __('You are a helpful support assistant for this website. Reply concise and friendly in the same language as the user.', self::TEXT_DOMAIN),
+            'ai_system_prompt' => __('Du bist ein hilfreicher Support-Assistent fuer diese Website. Antworte kurz und freundlich in derselben Sprache wie der Nutzer.', self::TEXT_DOMAIN),
             'channels' => [],
         ];
 

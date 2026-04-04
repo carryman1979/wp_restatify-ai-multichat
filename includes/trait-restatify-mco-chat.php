@@ -22,17 +22,17 @@ trait Restatify_MCO_Chat_Trait {
 
         $options = $this->get_options();
         if (empty($options['own_chat_enabled'])) {
-            wp_send_json_error(['message' => __('Chat is currently disabled.', self::TEXT_DOMAIN)], 403);
+            wp_send_json_error(['message' => __('Der Chat ist derzeit deaktiviert.', self::TEXT_DOMAIN)], 403);
         }
 
         $honeypot = sanitize_text_field(wp_unslash($_POST['website'] ?? ''));
         if ($honeypot !== '') {
-            wp_send_json_error(['message' => __('Message could not be sent. Please try again.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.', self::TEXT_DOMAIN)], 400);
         }
 
         $message = $this->sanitize_chat_message_content((string) wp_unslash($_POST['message'] ?? ''));
         if ($message === '') {
-            wp_send_json_error(['message' => __('Message cannot be empty.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Nachricht darf nicht leer sein.', self::TEXT_DOMAIN)], 400);
         }
 
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
@@ -76,12 +76,12 @@ trait Restatify_MCO_Chat_Trait {
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
         $conversation_token = sanitize_text_field(wp_unslash($_POST['conversation_token'] ?? ''));
         if ($conversation_id === '' || $conversation_token === '') {
-            wp_send_json_error(['message' => __('Conversation not found.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', self::TEXT_DOMAIN)], 404);
         }
 
         $store = $this->get_chat_store();
         if (empty($store[$conversation_id]) || !hash_equals((string) $store[$conversation_id]['token'], $conversation_token)) {
-            wp_send_json_error(['message' => __('Conversation not found.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', self::TEXT_DOMAIN)], 404);
         }
 
         wp_send_json_success([
@@ -105,21 +105,21 @@ trait Restatify_MCO_Chat_Trait {
         $reference = sanitize_text_field(wp_unslash($_POST['reference'] ?? ''));
 
         if ($conversation_id === '' || $conversation_token === '') {
-            wp_send_json_error(['message' => __('Conversation not found.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', self::TEXT_DOMAIN)], 404);
         }
 
         $store = $this->get_chat_store();
         if (empty($store[$conversation_id]) || !hash_equals((string) $store[$conversation_id]['token'], $conversation_token)) {
-            wp_send_json_error(['message' => __('Conversation not found.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', self::TEXT_DOMAIN)], 404);
         }
 
         if (!in_array($event_type, ['confirmed', 'cancelled'], true)) {
-            wp_send_json_error(['message' => __('Invalid booking event.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Ungueltiges Buchungsereignis.', self::TEXT_DOMAIN)], 400);
         }
 
         if ($event_type === 'confirmed') {
             $message = RESTATIFY_BOOKING_CONFIRMED_TOKEN . ' ' . sprintf(
-                __('Booking confirmed by visitor: %1$s to %2$s (Reference: %3$s).', self::TEXT_DOMAIN),
+                __('Buchung vom Besucher bestaetigt: %1$s bis %2$s (Referenz: %3$s).', self::TEXT_DOMAIN),
                 $start_iso !== '' ? $start_iso : '-',
                 $end_iso !== '' ? $end_iso : '-',
                 $reference !== '' ? $reference : '-'
@@ -127,8 +127,8 @@ trait Restatify_MCO_Chat_Trait {
         } else {
             $message = RESTATIFY_BOOKING_CANCELLED_TOKEN . ' ' . (
                 $start_iso !== ''
-                    ? sprintf(__('Visitor cancelled booking flow (selected slot was %s).', self::TEXT_DOMAIN), $start_iso)
-                    : __('Visitor cancelled booking flow.', self::TEXT_DOMAIN)
+                    ? sprintf(__('Besucher hat den Buchungsablauf abgebrochen (ausgewaehlter Termin war %s).', self::TEXT_DOMAIN), $start_iso)
+                    : __('Besucher hat den Buchungsablauf abgebrochen.', self::TEXT_DOMAIN)
             );
         }
 
@@ -151,7 +151,7 @@ trait Restatify_MCO_Chat_Trait {
         }
 
         if (!current_user_can($required_cap)) {
-            wp_send_json_error(['message' => __('Insufficient permissions.', self::TEXT_DOMAIN)], 403);
+            wp_send_json_error(['message' => __('Unzureichende Berechtigungen.', self::TEXT_DOMAIN)], 403);
         }
 
         check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
@@ -160,12 +160,12 @@ trait Restatify_MCO_Chat_Trait {
         $message = $this->sanitize_chat_message_content((string) wp_unslash($_POST['message'] ?? ''));
 
         if ($conversation_id === '' || $message === '') {
-            wp_send_json_error(['message' => __('Conversation and message are required.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Unterhaltung und Nachricht sind erforderlich.', self::TEXT_DOMAIN)], 400);
         }
 
         $store = $this->get_chat_store();
         if (empty($store[$conversation_id])) {
-            wp_send_json_error(['message' => __('Conversation does not exist.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung existiert nicht.', self::TEXT_DOMAIN)], 404);
         }
 
         $store[$conversation_id]['messages'][] = $this->format_chat_message('support', $message);
@@ -194,14 +194,14 @@ trait Restatify_MCO_Chat_Trait {
 
     public function ajax_delete_conversation(): void {
         if (!$this->can_manage_support_inbox()) {
-            wp_send_json_error(['message' => __('Insufficient permissions.', self::TEXT_DOMAIN)], 403);
+            wp_send_json_error(['message' => __('Unzureichende Berechtigungen.', self::TEXT_DOMAIN)], 403);
         }
 
         check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
 
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
         if ($conversation_id === '') {
-            wp_send_json_error(['message' => __('Conversation is required.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Unterhaltung ist erforderlich.', self::TEXT_DOMAIN)], 400);
         }
 
         $store = $this->get_chat_store();

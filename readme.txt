@@ -8,67 +8,67 @@ Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Floating multi-channel chat overlay with integrated website chat, support inbox, email notifications, and optional AI auto replies.
+Schwebendes Multi-Channel-Chat-Overlay mit integriertem Website-Chat, Support-Posteingang, E-Mail-Benachrichtigungen und optionalen KI-Autoantworten.
 
 == Description ==
 
-Restatify Multi Chat Overlay adds a floating chat button to the frontend and allows you to:
+Restatify Multi Chat Overlay fuegt im Frontend einen schwebenden Chat-Button hinzu und ermoeglicht:
 
-* Show popular messaging channels (WhatsApp, Telegram, Messenger, Discord, Signal, Viber, Threema, WeChat).
-* Enable a native website chat directly inside the overlay.
-* Send each new visitor message to a configurable support email address.
-* Include a direct admin link in support emails to open the exact conversation.
-* Reply from the WordPress admin support inbox.
-* Optionally generate AI-based first-level responses.
-* Optionally trigger the Booking Assistant overlay from support inbox.
-* Show booking lifecycle events (confirmed/cancelled) in support conversations.
+* Beliebte Messaging-Kanaele anzeigen (WhatsApp, Telegram, Messenger, Discord, Signal, Viber, Threema, WeChat).
+* Einen nativen Website-Chat direkt im Overlay aktivieren.
+* Jede neue Besuchernachricht an eine konfigurierbare Support-E-Mail senden.
+* Einen direkten Admin-Link in Support-E-Mails einbetten, um die passende Unterhaltung zu oeffnen.
+* Aus dem WordPress-Admin-Support-Posteingang antworten.
+* Optional KI-basierte First-Level-Antworten erzeugen.
+* Optional das Booking Assistant Overlay aus dem Support-Posteingang ausloesen.
+* Buchungs-Lifecycle-Ereignisse (bestaetigt/abgebrochen) in Support-Unterhaltungen anzeigen.
 
-This plugin is designed for small support teams that monitor email and need a quick handoff from mailbox to active chat.
+Dieses Plugin ist fuer kleine Support-Teams gedacht, die E-Mails ueberwachen und einen schnellen Uebergang vom Postfach in aktive Chats brauchen.
 
 == Installation ==
 
-1. Upload the plugin folder to /wp-content/plugins/.
-2. Activate Restatify Multi Chat Overlay in Plugins.
-3. Go to Settings -> Multi Chat Overlay.
-4. Enable the overlay.
-5. Configure at least one channel URL or enable the built-in website chat.
-6. Add your support email address.
-7. Save changes.
+1. Plugin-Ordner nach /wp-content/plugins/ hochladen.
+2. Restatify Multi Chat Overlay unter Plugins aktivieren.
+3. Zu Einstellungen -> Multi Chat Overlay gehen.
+4. Overlay aktivieren.
+5. Mindestens eine Kanal-URL konfigurieren oder den integrierten Website-Chat aktivieren.
+6. Support-E-Mail-Adresse hinterlegen.
+7. Aenderungen speichern.
 
-For external installations, you can also install via a release ZIP package.
+Fuer externe Installationen kann auch ein Release-ZIP verwendet werden.
 
-Create a ZIP package from the plugin workspace with:
+ZIP-Paket im Plugin-Workspace erstellen mit:
 
 1. pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/create-release-zip.ps1
 
-The ZIP is created in /release.
+Das ZIP wird unter /release erstellt.
 
-If "Require cookie consent" is enabled and your site uses a custom theme or custom CMP, add matching cookie rules in the plugin setting "Consent cookie rules".
+Wenn "Require cookie consent" aktiviert ist und deine Seite ein eigenes Theme oder eigenes CMP nutzt, hinterlege passende Cookie-Regeln in der Plugin-Einstellung "Consent cookie rules".
 Format: cookie_name or cookie_name=expected_value.
 Example: restatify_cookie_consent=accepted,cookiesDirective,_cky-consent=accept
 
 == Frequently Asked Questions ==
 
-= How do I enable the built-in website chat? =
+= Wie aktiviere ich den integrierten Website-Chat? =
 
-Go to Settings -> Multi Chat Overlay and enable "Enable built-in website chat".
+Gehe zu Einstellungen -> Multi Chat Overlay und aktiviere "Enable built-in website chat".
 
-= Where do incoming chat messages appear? =
+= Wo erscheinen eingehende Chat-Nachrichten? =
 
-In the dedicated admin menu item Support Chat.
-You can open a conversation and send support replies.
+Im eigenen Admin-Menuepunkt Support Chat.
+Dort kannst du Unterhaltungen oeffnen und Support-Antworten senden.
 
-= Does the plugin send email notifications? =
+= Versendet das Plugin E-Mail-Benachrichtigungen? =
 
-Yes. If "Send email on new message" is enabled and a valid support email is configured, the plugin sends a notification for each new visitor message.
+Ja. Wenn "Send email on new message" aktiviert ist und eine gueltige Support-E-Mail konfiguriert wurde, versendet das Plugin fuer jede neue Besuchernachricht eine Benachrichtigung.
 
-= Is AI required? =
+= Ist KI erforderlich? =
 
-No. AI auto reply is optional and disabled by default.
+Nein. KI-Autoantwort ist optional und standardmaessig deaktiviert.
 
-= Which AI provider is supported? =
+= Welche KI-Anbieter werden unterstuetzt? =
 
-The plugin supports these providers via endpoint auto-detection:
+Das Plugin unterstuetzt diese Anbieter per Endpunkt-Autoerkennung:
 
 * OpenAI (ChatGPT)
 * Google Gemini
@@ -76,17 +76,17 @@ The plugin supports these providers via endpoint auto-detection:
 * DeepSeek
 * Llama (including Ollama-style endpoints)
 
-The API endpoint is configurable in plugin settings.
-Provider is detected from the configured endpoint URL and request/response payloads are adapted automatically.
+Der API-Endpunkt ist in den Plugin-Einstellungen konfigurierbar.
+Der Anbieter wird ueber die konfigurierte Endpunkt-URL erkannt und Request-/Response-Payloads werden automatisch angepasst.
 
-= Does the plugin support Polylang? =
+= Unterstuetzt das Plugin Polylang? =
 
-Yes.
+Ja.
 
-When Polylang is active, the plugin registers configurable chat texts in the translation group "Restatify Multi Chat Overlay".
-You can translate these texts in Languages -> Translations.
+Wenn Polylang aktiv ist, registriert das Plugin konfigurierbare Chat-Texte in der Uebersetzungsgruppe "Restatify Multi Chat Overlay".
+Diese Texte koennen unter Languages -> Translations uebersetzt werden.
 
-Translated fields include:
+Uebersetzbare Felder:
 
 * Team title
 * Intro message
@@ -97,25 +97,25 @@ Translated fields include:
 * Send button label
 * AI system prompt
 
-= Does this plugin require Booking Assistant? =
+= Benoetigt dieses Plugin den Booking Assistant? =
 
-No. Booking Assistant integration is optional.
+Nein. Die Booking-Assistant-Integration ist optional.
 
-If Booking Assistant is installed, support can trigger booking overlay opening on the client and receive booking status events in the chat timeline.
-If Booking Assistant is not installed, chat and support inbox continue to work normally.
+Wenn Booking Assistant installiert ist, kann der Support das Oeffnen des Booking-Overlays beim Besucher triggern und Buchungsstatus-Ereignisse in der Chat-Timeline sehen.
+Wenn Booking Assistant nicht installiert ist, funktionieren Chat und Support-Posteingang weiterhin normal.
 
-= Why is the overlay not showing although it is enabled? =
+= Warum wird das Overlay nicht angezeigt, obwohl es aktiviert ist? =
 
-Most commonly one of these conditions is not met:
+Hauefig ist eine der folgenden Bedingungen nicht erfuellt:
 
-* The overlay is enabled, but no channel URL is configured and built-in website chat is disabled.
-* "Require cookie consent" is enabled, but the configured cookie rules do not match the site's actual consent cookie.
+* Das Overlay ist aktiviert, aber es ist keine Kanal-URL hinterlegt und der integrierte Website-Chat ist deaktiviert.
+* "Require cookie consent" ist aktiviert, aber die konfigurierten Cookie-Regeln passen nicht zu den tatsaechlichen Consent-Cookies der Seite.
 
-If your site uses a custom theme or consent solution, update "Consent cookie rules" accordingly.
+Wenn deine Seite ein eigenes Theme oder Consent-Setup verwendet, aktualisiere "Consent cookie rules" entsprechend.
 
-= Is there a German setup guide and a support playbook? =
+= Gibt es eine deutsche Setup-Anleitung und ein Support-Playbook? =
 
-Yes. See the files in the plugin folder:
+Ja. Siehe folgende Dateien im Plugin-Ordner:
 
 * README.de.md
 * SUPPORT-PLAYBOOK.md
@@ -123,62 +123,62 @@ Yes. See the files in the plugin folder:
 
 == Privacy ==
 
-When website chat is enabled, visitor messages are stored in WordPress options to keep conversation history.
-If support email notifications are enabled, message content is sent by email to the configured support address.
-If AI auto reply is enabled, message content is sent to the configured AI API endpoint.
+Wenn Website-Chat aktiviert ist, werden Besuchernachrichten in WordPress-Optionen gespeichert, um den Unterhaltungsverlauf zu behalten.
+Wenn Support-E-Mail-Benachrichtigungen aktiviert sind, wird der Nachrichteninhalt per E-Mail an die konfigurierte Support-Adresse gesendet.
+Wenn KI-Autoantwort aktiviert ist, wird der Nachrichteninhalt an den konfigurierten KI-API-Endpunkt gesendet.
 
-You should update your privacy policy accordingly.
+Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Screenshots ==
 
-1. Floating chat button and channel panel on frontend.
-2. Native website chat inside the overlay.
-3. Support inbox in dedicated WordPress admin menu Support Chat.
-4. Email notification with direct conversation link.
-5. AI configuration settings.
+1. Schwebender Chat-Button und Kanal-Panel im Frontend.
+2. Nativer Website-Chat im Overlay.
+3. Support-Posteingang im eigenen WordPress-Admin-Menue Support Chat.
+4. E-Mail-Benachrichtigung mit direktem Unterhaltungs-Link.
+5. KI-Konfigurationseinstellungen.
 
 == Changelog ==
 
 = 1.4.0 =
-* Added support inbox action "Open Booking Overlay at Client" when Booking Assistant is available.
-* Added booking event messages for visitor-confirmed and visitor-cancelled booking flows.
-* Added support inbox visual badges and quick filters for booking/system events.
-* Added one-time booking trigger handling on frontend to avoid repeated auto-open loops.
-* Added compatibility guard so booking action is hidden when Booking Assistant is not active.
+* Support-Posteingangs-Aktion "Open Booking Overlay at Client" hinzugefuegt, wenn Booking Assistant verfuegbar ist.
+* Buchungsereignis-Nachrichten fuer Besucher-bestaetigte und Besucher-abgebrochene Buchungsablaeufe hinzugefuegt.
+* Visuelle Badges und Schnellfilter fuer Buchungs-/Systemereignisse im Support-Posteingang hinzugefuegt.
+* Einmalige Behandlung des Booking-Triggers im Frontend hinzugefuegt, um wiederholte Auto-Open-Schleifen zu vermeiden.
+* Kompatibilitaets-Guard hinzugefuegt, damit die Booking-Aktion ausgeblendet wird, wenn Booking Assistant nicht aktiv ist.
 
 = 1.3.0 =
-* Improved admin settings UX with clearer core guidance and collapsible expert sections.
-* Added required support email field behavior for built-in chat workflows.
-* Added validation fallback: built-in chat now auto-falls back to admin email when support email is empty.
-* Added validation fallback: AI auto reply is disabled automatically when API key is missing.
-* Removed legacy dead-code handling for deprecated chat reset hour option.
+* Admin-Settings-UX mit klarerer Grundfuehrung und aufklappbaren Expertensektionen verbessert.
+* Verbindliches Verhalten fuer Support-E-Mail-Feld in integrierten Chat-Workflows hinzugefuegt.
+* Validierungs-Fallback hinzugefuegt: integrierter Chat faellt bei leerer Support-E-Mail automatisch auf Admin-E-Mail zurueck.
+* Validierungs-Fallback hinzugefuegt: KI-Autoantwort wird bei fehlendem API-Key automatisch deaktiviert.
+* Legacy-Dead-Code fuer deprecated Chat-Reset-Hour-Option entfernt.
 
 = 1.2.1 =
-* Added reproducible release ZIP packaging workflow.
-* Added installation notes for external WordPress environments.
+* Reproduzierbaren Release-ZIP-Packaging-Workflow hinzugefuegt.
+* Installationshinweise fuer externe WordPress-Umgebungen hinzugefuegt.
 
 = 1.2.0 =
-* Added native website chat in overlay.
-* Added support inbox in admin settings.
-* Added support email notifications with direct conversation link.
-* Added optional AI auto reply configuration.
-* Improved overlay rendering logic for chat-only mode.
+* Nativen Website-Chat im Overlay hinzugefuegt.
+* Support-Posteingang in den Admin-Einstellungen hinzugefuegt.
+* Support-E-Mail-Benachrichtigungen mit direktem Unterhaltungs-Link hinzugefuegt.
+* Optionale KI-Autoantwort-Konfiguration hinzugefuegt.
+* Overlay-Rendering-Logik fuer Chat-Only-Modus verbessert.
 
 = 1.1.0 =
-* Added multi-channel floating overlay with auto-open delay and dismiss memory.
+* Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
 
 = 1.4.0 =
-Includes optional Booking Assistant handover actions in support inbox and booking event visibility improvements.
-No action required if Booking Assistant is not installed.
+Enthaelt optionale Booking-Assistant-Handover-Aktionen im Support-Posteingang und Verbesserungen der Sichtbarkeit von Buchungsereignissen.
+Keine Aktion erforderlich, wenn Booking Assistant nicht installiert ist.
 
 = 1.3.0 =
-Includes admin UX improvements and stricter validation defaults for support email and AI settings.
+Enthaelt Verbesserungen der Admin-UX und strengere Validierungs-Defaults fuer Support-E-Mail- und KI-Einstellungen.
 
 = 1.2.1 =
-Includes release packaging workflow and improved installation guidance.
+Enthaelt Packaging-Workflow fuer Releases und verbesserte Installationsanleitung.
 
 = 1.2.0 =
-Includes integrated website chat, support inbox, email notifications, and optional AI auto reply.
-Review settings after upgrade.
+Enthaelt integrierten Website-Chat, Support-Posteingang, E-Mail-Benachrichtigungen und optionale KI-Autoantwort.
+Bitte Einstellungen nach dem Upgrade pruefen.

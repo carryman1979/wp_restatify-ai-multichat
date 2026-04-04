@@ -27,9 +27,9 @@ trait Restatify_MCO_Render_Trait {
             'nonce' => wp_create_nonce('restatify_mco_chat_nonce'),
             'supportPageUrl' => add_query_arg(['page' => 'restatify-mco-support-inbox'], admin_url('admin.php')),
             'strings' => [
-                'deleteConfirm' => __('Delete this conversation permanently?', self::TEXT_DOMAIN),
-                'genericError' => __('Action failed. Please refresh and try again.', self::TEXT_DOMAIN),
-                'openBookingAtClient' => __('I opened the booking tool for you. Please choose a slot and confirm your reservation.', self::TEXT_DOMAIN),
+                'deleteConfirm' => __('Diese Unterhaltung dauerhaft loeschen?', self::TEXT_DOMAIN),
+                'genericError' => __('Aktion fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.', self::TEXT_DOMAIN),
+                'openBookingAtClient' => __('Ich habe das Buchungstool fuer dich geoeffnet. Bitte waehle einen Termin und bestaetige deine Reservierung.', self::TEXT_DOMAIN),
             ],
         ]);
     }
@@ -59,7 +59,7 @@ trait Restatify_MCO_Render_Trait {
 
     public function render_support_inbox_page(): void {
         if (!current_user_can($this->get_support_inbox_capability())) {
-            wp_die(esc_html__('Insufficient permissions.', self::TEXT_DOMAIN));
+            wp_die(esc_html__('Unzureichende Berechtigungen.', self::TEXT_DOMAIN));
         }
 
         $options = $this->get_options(false);
@@ -67,7 +67,7 @@ trait Restatify_MCO_Render_Trait {
         echo '<h1>' . esc_html__('Support Chat', self::TEXT_DOMAIN) . '</h1>';
 
         if (empty($options['own_chat_enabled'])) {
-            echo '<p>' . esc_html__('Built-in website chat is currently disabled. Enable it in Multi Chat Overlay settings to receive conversations here.', self::TEXT_DOMAIN) . '</p>';
+            echo '<p>' . esc_html__('Der integrierte Website-Chat ist derzeit deaktiviert. Aktiviere ihn in den Multi-Chat-Overlay-Einstellungen, um hier Unterhaltungen zu empfangen.', self::TEXT_DOMAIN) . '</p>';
             echo '</div>';
             return;
         }
@@ -96,15 +96,15 @@ trait Restatify_MCO_Render_Trait {
         );
 
         if (count($lines) === 0) {
-            echo '<p>' . esc_html__('No AI debug lines yet.', self::TEXT_DOMAIN) . '</p>';
-            echo '<p class="description">' . esc_html__('Enable "AI debug logging" in plugin settings and send a test message to populate this widget.', self::TEXT_DOMAIN) . '</p>';
-            echo '<p><a class="button" href="' . esc_url($settings_link) . '">' . esc_html__('Open plugin settings', self::TEXT_DOMAIN) . '</a></p>';
+            echo '<p>' . esc_html__('Noch keine KI-Debug-Zeilen vorhanden.', self::TEXT_DOMAIN) . '</p>';
+            echo '<p class="description">' . esc_html__('Aktiviere "KI-Debug-Protokollierung" in den Plugin-Einstellungen und sende eine Testnachricht, um dieses Widget zu befuellen.', self::TEXT_DOMAIN) . '</p>';
+            echo '<p><a class="button" href="' . esc_url($settings_link) . '">' . esc_html__('Plugin-Einstellungen oeffnen', self::TEXT_DOMAIN) . '</a></p>';
             return;
         }
 
-        echo '<p class="description">' . esc_html__('Recent plugin-side AI diagnostics (latest 20 entries).', self::TEXT_DOMAIN) . '</p>';
+        echo '<p class="description">' . esc_html__('Aktuelle pluginseitige KI-Diagnose (letzte 20 Eintraege).', self::TEXT_DOMAIN) . '</p>';
         echo '<textarea class="large-text code" rows="10" readonly>' . esc_textarea(implode("\n", $lines)) . '</textarea>';
-        echo '<p><a class="button" href="' . esc_url($settings_link) . '">' . esc_html__('Open plugin settings', self::TEXT_DOMAIN) . '</a></p>';
+        echo '<p><a class="button" href="' . esc_url($settings_link) . '">' . esc_html__('Plugin-Einstellungen oeffnen', self::TEXT_DOMAIN) . '</a></p>';
     }
 
     public function render_admin_page(): void {
@@ -116,18 +116,18 @@ trait Restatify_MCO_Render_Trait {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Multi Chat Overlay', self::TEXT_DOMAIN); ?></h1>
-            <p><?php esc_html_e('Configure core chat behavior first. Advanced controls are grouped below in collapsible expert sections.', self::TEXT_DOMAIN); ?></p>
+            <p><?php esc_html_e('Konfiguriere zuerst das grundlegende Chat-Verhalten. Erweiterte Optionen sind unten in aufklappbaren Expertenbereichen gruppiert.', self::TEXT_DOMAIN); ?></p>
             <?php settings_errors(self::OPTION_KEY); ?>
 
             <div class="notice notice-info" style="padding:12px 14px; margin: 12px 0 16px;">
-                <p><strong><?php esc_html_e('Quick help', self::TEXT_DOMAIN); ?></strong></p>
+                <p><strong><?php esc_html_e('Schnellhilfe', self::TEXT_DOMAIN); ?></strong></p>
                 <ol style="margin: 0 0 0 20px;">
-                    <li><?php esc_html_e('Enable the overlay in the first section.', self::TEXT_DOMAIN); ?></li>
-                    <li><?php esc_html_e('Add at least one channel URL or enable built-in website chat.', self::TEXT_DOMAIN); ?></li>
-                    <li><?php esc_html_e('Set the support email if you want email notifications for new messages.', self::TEXT_DOMAIN); ?></li>
-                    <li><?php esc_html_e('Open the support inbox via the link in this page or through notification emails.', self::TEXT_DOMAIN); ?></li>
-                    <li><?php esc_html_e('Optionally enable AI auto reply and provide API key + model.', self::TEXT_DOMAIN); ?></li>
-                    <li><?php esc_html_e('For multilingual sites with Polylang, translate chat texts under Languages > Translations in group "Restatify Multi Chat Overlay".', self::TEXT_DOMAIN); ?></li>
+                    <li><?php esc_html_e('Aktiviere das Overlay im ersten Abschnitt.', self::TEXT_DOMAIN); ?></li>
+                    <li><?php esc_html_e('Hinterlege mindestens eine Kanal-URL oder aktiviere den integrierten Website-Chat.', self::TEXT_DOMAIN); ?></li>
+                    <li><?php esc_html_e('Setze die Support-E-Mail, wenn du E-Mail-Benachrichtigungen fuer neue Nachrichten erhalten moechtest.', self::TEXT_DOMAIN); ?></li>
+                    <li><?php esc_html_e('Oeffne den Support-Posteingang ueber den Link auf dieser Seite oder ueber Benachrichtigungs-E-Mails.', self::TEXT_DOMAIN); ?></li>
+                    <li><?php esc_html_e('Optional kannst du die KI-Autoantwort aktivieren und API-Schluessel plus Modell hinterlegen.', self::TEXT_DOMAIN); ?></li>
+                    <li><?php esc_html_e('Bei mehrsprachigen Seiten mit Polylang: Uebersetze Chat-Texte unter Sprachen > Uebersetzungen in der Gruppe "Restatify Multi Chat Overlay".', self::TEXT_DOMAIN); ?></li>
                 </ol>
             </div>
 
@@ -136,158 +136,158 @@ trait Restatify_MCO_Render_Trait {
 
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><?php esc_html_e('Enable overlay', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Overlay aktivieren', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[enabled]" value="1" <?php checked(!empty($options['enabled'])); ?>>
-                                <?php esc_html_e('Show floating multi chat overlay on frontend', self::TEXT_DOMAIN); ?>
+                                <?php esc_html_e('Schwebendes Multi-Chat-Overlay im Frontend anzeigen', self::TEXT_DOMAIN); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Require cookie consent', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Cookie-Einwilligung voraussetzen', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[require_cookie_consent]" value="1" <?php checked(!empty($options['require_cookie_consent'])); ?>>
-                                <?php esc_html_e('Only show chat when visitor consent is detected', self::TEXT_DOMAIN); ?>
+                                <?php esc_html_e('Chat nur anzeigen, wenn Besucher-Einwilligung erkannt wurde', self::TEXT_DOMAIN); ?>
                             </label>
-                            <p class="description"><?php esc_html_e('Use cookie names below and/or your CMP signals (Cookiebot, OneTrust) to detect consent.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Nutze die Cookie-Namen unten und/oder CMP-Signale (Cookiebot, OneTrust), um Einwilligungen zu erkennen.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Consent cookie rules', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Regeln fuer Einwilligungs-Cookies', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text code" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[consent_cookie_names]" value="<?php echo esc_attr($options['consent_cookie_names']); ?>">
-                            <p class="description"><?php esc_html_e('Comma-separated rules. Use cookie_name or cookie_name=expected_value, for example: cookie_notice_accepted=true,_cky-consent=accept.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Kommagetrennte Regeln. Verwende cookie_name oder cookie_name=erwarteter_wert, z.B. cookie_notice_accepted=true,_cky-consent=accept.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Team title', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Team-Titel', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[team_name]" value="<?php echo esc_attr($options['team_name']); ?>">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Intro message', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Einleitungsnachricht', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[message]" value="<?php echo esc_attr($options['message']); ?>">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Channel heading', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Ueberschrift fuer Kanaele', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[cta_label]" value="<?php echo esc_attr($options['cta_label']); ?>">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('More channels label', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Beschriftung fuer weitere Kanaele', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[channels_more_label]" value="<?php echo esc_attr($options['channels_more_label']); ?>">
-                            <p class="description"><?php esc_html_e('Button text used to show additional channel icons.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Buttontext zum Anzeigen zusaetzlicher Kanal-Icons.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Fewer channels label', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Beschriftung fuer weniger Kanaele', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[channels_less_label]" value="<?php echo esc_attr($options['channels_less_label']); ?>">
-                            <p class="description"><?php esc_html_e('Button text used to collapse additional channel icons.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Buttontext zum Einklappen zusaetzlicher Kanal-Icons.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Button accessibility label', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Barrierefreiheits-Label fuer den Button', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[toggle_aria_label]" value="<?php echo esc_attr($options['toggle_aria_label']); ?>">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Auto-open delay (seconds)', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Verzoegerung fuer automatisches Oeffnen (Sekunden)', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="small-text" type="number" min="0" max="120" step="1" name="<?php echo esc_attr(self::OPTION_KEY); ?>[delay_seconds]" value="<?php echo esc_attr((string) $options['delay_seconds']); ?>">
-                            <p class="description"><?php esc_html_e('After this delay, the panel opens automatically once. If user closes it, auto-open is suppressed for 24 hours.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Nach dieser Verzoegerung oeffnet sich das Panel einmal automatisch. Wenn der Nutzer es schliesst, wird Auto-Open fuer 24 Stunden unterdrueckt.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                 </table>
 
-                <h2><?php esc_html_e('Website chat + support inbox', self::TEXT_DOMAIN); ?></h2>
-                <p><?php esc_html_e('Support inbox is available in the separate admin menu item "Support Chat".', self::TEXT_DOMAIN); ?></p>
+                <h2><?php esc_html_e('Website-Chat + Support-Posteingang', self::TEXT_DOMAIN); ?></h2>
+                <p><?php esc_html_e('Der Support-Posteingang ist im separaten Admin-Menuepunkt "Support Chat" verfuegbar.', self::TEXT_DOMAIN); ?></p>
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><?php esc_html_e('Enable built-in website chat', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Integrierten Website-Chat aktivieren', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[own_chat_enabled]" value="1" <?php checked(!empty($options['own_chat_enabled'])); ?>>
-                                <?php esc_html_e('Show a native chat form directly inside the overlay', self::TEXT_DOMAIN); ?>
+                                <?php esc_html_e('Ein natives Chatformular direkt im Overlay anzeigen', self::TEXT_DOMAIN); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Support email address', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Support-E-Mail-Adresse', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="email" required placeholder="support@example.com" name="<?php echo esc_attr(self::OPTION_KEY); ?>[support_email]" value="<?php echo esc_attr($options['support_email']); ?>">
-                            <p class="description"><?php esc_html_e('New visitor messages can be forwarded to this address with a direct link to the open chat in admin.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Neue Besuchernachrichten koennen an diese Adresse weitergeleitet werden - inklusive Direktlink zum offenen Chat im Admin.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Send email on new message', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('E-Mail bei neuer Nachricht senden', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[support_notify_on_message]" value="1" <?php checked(!empty($options['support_notify_on_message'])); ?>>
-                                <?php esc_html_e('Send a support notification email for each new visitor message', self::TEXT_DOMAIN); ?>
+                                <?php esc_html_e('Fuer jede neue Besuchernachricht eine Support-Benachrichtigungs-E-Mail senden', self::TEXT_DOMAIN); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Chat title', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Chat-Titel', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_title]" value="<?php echo esc_attr($options['chat_title']); ?>">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Chat input placeholder', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Platzhalter fuer Chat-Eingabe', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_placeholder]" value="<?php echo esc_attr($options['chat_placeholder']); ?>">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Send button label', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Beschriftung Senden-Button', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_send_label]" value="<?php echo esc_attr($options['chat_send_label']); ?>">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Refresh interval (seconds)', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Aktualisierungsintervall (Sekunden)', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="small-text" type="number" min="3" max="60" step="1" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_poll_seconds]" value="<?php echo esc_attr((string) $options['chat_poll_seconds']); ?>">
-                            <p class="description"><?php esc_html_e('How often the chat checks for new support replies.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Wie oft der Chat nach neuen Support-Antworten sucht.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Reset chat after (minutes)', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Chat zuruecksetzen nach (Minuten)', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="small-text" type="number" min="0" max="525600" step="1" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_reset_minutes]" value="<?php echo esc_attr((string) $options['chat_reset_minutes']); ?>">
-                            <p class="description"><?php esc_html_e('If set to 0, chat history never auto-resets. Otherwise visitor chat is reset after this idle time (recommended for support: 15).', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Bei 0 wird der Chatverlauf nie automatisch zurueckgesetzt. Andernfalls wird der Besucherchat nach dieser Inaktivitaetszeit zurueckgesetzt (empfohlen fuer Support: 15).', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                 </table>
 
                 <details style="margin:12px 0 16px;">
-                    <summary><strong><?php esc_html_e('Expert settings: Optional AI auto reply', self::TEXT_DOMAIN); ?></strong></summary>
+                    <summary><strong><?php esc_html_e('Experteneinstellungen: Optionale KI-Autoantwort', self::TEXT_DOMAIN); ?></strong></summary>
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><?php esc_html_e('Enable AI auto reply', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('KI-Autoantwort aktivieren', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[ai_enabled]" value="1" <?php checked(!empty($options['ai_enabled'])); ?>>
-                                <?php esc_html_e('Generate an automatic first-level response for incoming visitor messages', self::TEXT_DOMAIN); ?>
+                                <?php esc_html_e('Automatische Erstantwort fuer eingehende Besuchernachrichten erzeugen', self::TEXT_DOMAIN); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Enable AI debug logging', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('KI-Debug-Protokollierung aktivieren', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[ai_debug_enabled]" value="1" <?php checked(!empty($options['ai_debug_enabled'])); ?>>
-                                <?php esc_html_e('Write provider request/response diagnostics to PHP error log (without exposing full API key).', self::TEXT_DOMAIN); ?>
+                                <?php esc_html_e('Diagnose fuer Provider-Request/Response ins PHP-Error-Log schreiben (ohne vollstaendigen API-Schluessel).', self::TEXT_DOMAIN); ?>
                             </label>
                         </td>
                     </tr>
@@ -295,24 +295,24 @@ trait Restatify_MCO_Render_Trait {
                         <th scope="row"><?php esc_html_e('API key', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="password" autocomplete="off" name="<?php echo esc_attr(self::OPTION_KEY); ?>[ai_api_key]" value="<?php echo esc_attr($options['ai_api_key']); ?>" placeholder="sk-...">
-                            <p class="description"><?php esc_html_e('Stored in plugin options. Use a restricted key only.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('Wird in den Plugin-Optionen gespeichert. Bitte nur einen eingeschraenkten Schluessel verwenden.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('API endpoint', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('API-Endpunkt', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text code" type="url" name="<?php echo esc_attr(self::OPTION_KEY); ?>[ai_api_endpoint]" value="<?php echo esc_attr($options['ai_api_endpoint']); ?>" placeholder="<?php echo esc_attr(self::DEFAULT_AI_ENDPOINT); ?>">
-                            <p class="description"><?php esc_html_e('HTTPS endpoint for AI requests. Provider is auto-detected from URL (OpenAI, Gemini, Mistral, DeepSeek, Llama/Ollama). If empty or invalid, the default OpenAI endpoint is used.', self::TEXT_DOMAIN); ?></p>
+                            <p class="description"><?php esc_html_e('HTTPS-Endpunkt fuer KI-Anfragen. Der Anbieter wird aus der URL automatisch erkannt (OpenAI, Gemini, Mistral, DeepSeek, Llama/Ollama). Wenn leer oder ungueltig, wird der OpenAI-Standardendpunkt verwendet.', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Model', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('Modell', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[ai_model]" value="<?php echo esc_attr($options['ai_model']); ?>">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('System prompt', self::TEXT_DOMAIN); ?></th>
+                        <th scope="row"><?php esc_html_e('System-Prompt', self::TEXT_DOMAIN); ?></th>
                         <td>
                             <textarea class="large-text" rows="4" name="<?php echo esc_attr(self::OPTION_KEY); ?>[ai_system_prompt]"><?php echo esc_textarea($options['ai_system_prompt']); ?></textarea>
                         </td>
@@ -324,14 +324,14 @@ trait Restatify_MCO_Render_Trait {
                 $debug_lines = $this->get_recent_ai_debug_lines(40);
                 if (count($debug_lines) > 0) :
                     ?>
-                    <h3><?php esc_html_e('Recent AI debug lines', self::TEXT_DOMAIN); ?></h3>
-                    <p class="description"><?php esc_html_e('Newest entries from plugin-side AI diagnostics. For full runtime logs, also check your PHP error log.', self::TEXT_DOMAIN); ?></p>
+                    <h3><?php esc_html_e('Aktuelle KI-Debug-Zeilen', self::TEXT_DOMAIN); ?></h3>
+                    <p class="description"><?php esc_html_e('Neueste Eintraege aus der pluginseitigen KI-Diagnose. Fuer vollstaendige Laufzeit-Logs bitte auch das PHP-Error-Log pruefen.', self::TEXT_DOMAIN); ?></p>
                     <textarea class="large-text code" rows="10" readonly><?php echo esc_textarea(implode("\n", $debug_lines)); ?></textarea>
                 <?php endif; ?>
 
                 <details style="margin:12px 0 16px;">
-                    <summary><strong><?php esc_html_e('Expert settings: Chat channels', self::TEXT_DOMAIN); ?></strong></summary>
-                <p><?php esc_html_e('Only channels with a URL are shown in the overlay.', self::TEXT_DOMAIN); ?></p>
+                    <summary><strong><?php esc_html_e('Experteneinstellungen: Chat-Kanaele', self::TEXT_DOMAIN); ?></strong></summary>
+                <p><?php esc_html_e('Nur Kanaele mit URL werden im Overlay angezeigt.', self::TEXT_DOMAIN); ?></p>
                 <table class="form-table" role="presentation">
                     <?php foreach (self::CHANNELS as $key => $meta) : ?>
                         <tr>
@@ -390,9 +390,9 @@ trait Restatify_MCO_Render_Trait {
             'pollSeconds' => max(3, (int) $options['chat_poll_seconds']),
             'chatResetMinutes' => max(0, (int) $options['chat_reset_minutes']),
             'strings' => [
-                'sending' => __('Sending...', self::TEXT_DOMAIN),
-                'sendFailed' => __('Message could not be sent. Please try again.', self::TEXT_DOMAIN),
-                'emptyMessage' => __('Please enter a message first.', self::TEXT_DOMAIN),
+                'sending' => __('Senden...', self::TEXT_DOMAIN),
+                'sendFailed' => __('Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.', self::TEXT_DOMAIN),
+                'emptyMessage' => __('Bitte gib zuerst eine Nachricht ein.', self::TEXT_DOMAIN),
             ],
         ]);
     }
@@ -433,12 +433,12 @@ trait Restatify_MCO_Render_Trait {
                             class="restatify-mco__focus"
                             data-mco-focus
                             aria-pressed="false"
-                            aria-label="<?php esc_attr_e('Expand chat panel', self::TEXT_DOMAIN); ?>"
-                            title="<?php esc_attr_e('Expand', self::TEXT_DOMAIN); ?>"
+                            aria-label="<?php esc_attr_e('Chatfenster vergroessern', self::TEXT_DOMAIN); ?>"
+                            title="<?php esc_attr_e('Vergroessern', self::TEXT_DOMAIN); ?>"
                         >
                             +
                         </button>
-                        <button type="button" class="restatify-mco__close" data-mco-close aria-label="<?php esc_attr_e('Close chat panel', self::TEXT_DOMAIN); ?>" title="<?php esc_attr_e('Close', self::TEXT_DOMAIN); ?>">&times;</button>
+                        <button type="button" class="restatify-mco__close" data-mco-close aria-label="<?php esc_attr_e('Chatfenster schliessen', self::TEXT_DOMAIN); ?>" title="<?php esc_attr_e('Schliessen', self::TEXT_DOMAIN); ?>">&times;</button>
                     </div>
                 </header>
 
@@ -497,7 +497,7 @@ trait Restatify_MCO_Render_Trait {
                             <div class="restatify-mco__native-messages" data-chat-messages aria-live="polite"></div>
                             <form class="restatify-mco__native-form" data-chat-form>
                                 <label style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
-                                    <?php esc_html_e('Leave this field empty', self::TEXT_DOMAIN); ?>
+                                    <?php esc_html_e('Dieses Feld leer lassen', self::TEXT_DOMAIN); ?>
                                     <input type="text" name="website" value="" tabindex="-1" autocomplete="off" data-chat-honeypot>
                                 </label>
                                 <textarea
@@ -523,29 +523,29 @@ trait Restatify_MCO_Render_Trait {
         $selected_id = sanitize_text_field(wp_unslash($_GET['conversation'] ?? ''));
         $ai_mode_options = $this->get_ai_mode_options();
 
-        echo '<h2>' . esc_html__('Support inbox', self::TEXT_DOMAIN) . '</h2>';
-        echo '<p>' . esc_html__('Open conversations from website visitors. Click a conversation to inspect and reply.', self::TEXT_DOMAIN) . '</p>';
+        echo '<h2>' . esc_html__('Support-Posteingang', self::TEXT_DOMAIN) . '</h2>';
+        echo '<p>' . esc_html__('Offene Unterhaltungen von Website-Besuchern. Klicke auf eine Unterhaltung, um sie zu pruefen und zu antworten.', self::TEXT_DOMAIN) . '</p>';
 
         echo '<div style="display:flex; gap:8px; align-items:center; margin:10px 0 14px;">';
         echo '<strong style="margin-right:4px;">' . esc_html__('Filter:', self::TEXT_DOMAIN) . '</strong>';
-        echo '<button type="button" class="button button-primary" data-mco-conversation-filter="all">' . esc_html__('All', self::TEXT_DOMAIN) . '</button>';
-        echo '<button type="button" class="button" data-mco-conversation-filter="confirmed">' . esc_html__('Booking confirmed', self::TEXT_DOMAIN) . '</button>';
-        echo '<button type="button" class="button" data-mco-conversation-filter="cancelled">' . esc_html__('Booking cancelled', self::TEXT_DOMAIN) . '</button>';
-        echo '<button type="button" class="button" data-mco-conversation-filter="system">' . esc_html__('System events', self::TEXT_DOMAIN) . '</button>';
+        echo '<button type="button" class="button button-primary" data-mco-conversation-filter="all">' . esc_html__('Alle', self::TEXT_DOMAIN) . '</button>';
+        echo '<button type="button" class="button" data-mco-conversation-filter="confirmed">' . esc_html__('Buchung bestaetigt', self::TEXT_DOMAIN) . '</button>';
+        echo '<button type="button" class="button" data-mco-conversation-filter="cancelled">' . esc_html__('Buchung abgebrochen', self::TEXT_DOMAIN) . '</button>';
+        echo '<button type="button" class="button" data-mco-conversation-filter="system">' . esc_html__('Systemereignisse', self::TEXT_DOMAIN) . '</button>';
         echo '</div>';
 
         if (count($store) === 0) {
-            echo '<p>' . esc_html__('No conversations yet.', self::TEXT_DOMAIN) . '</p>';
+            echo '<p>' . esc_html__('Noch keine Unterhaltungen vorhanden.', self::TEXT_DOMAIN) . '</p>';
             return;
         }
 
         echo '<table class="widefat striped">';
         echo '<thead><tr>';
-        echo '<th>' . esc_html__('Conversation', self::TEXT_DOMAIN) . '</th>';
-        echo '<th>' . esc_html__('Updated (UTC)', self::TEXT_DOMAIN) . '</th>';
-        echo '<th>' . esc_html__('AI mode', self::TEXT_DOMAIN) . '</th>';
-        echo '<th>' . esc_html__('Preview', self::TEXT_DOMAIN) . '</th>';
-        echo '<th>' . esc_html__('Action', self::TEXT_DOMAIN) . '</th>';
+        echo '<th>' . esc_html__('Unterhaltung', self::TEXT_DOMAIN) . '</th>';
+        echo '<th>' . esc_html__('Aktualisiert (UTC)', self::TEXT_DOMAIN) . '</th>';
+        echo '<th>' . esc_html__('KI-Modus', self::TEXT_DOMAIN) . '</th>';
+        echo '<th>' . esc_html__('Vorschau', self::TEXT_DOMAIN) . '</th>';
+        echo '<th>' . esc_html__('Aktion', self::TEXT_DOMAIN) . '</th>';
         echo '</tr></thead><tbody>';
 
         foreach ($store as $id => $conversation) {
@@ -575,19 +575,19 @@ trait Restatify_MCO_Render_Trait {
 
                 if ($raw !== '' && str_contains($raw, RESTATIFY_BOOKING_CONFIRMED_TOKEN)) {
                     $conversation_state = 'confirmed';
-                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#e7f6ea; color:#116329; font-size:11px; font-weight:600;">' . esc_html__('Booking confirmed', self::TEXT_DOMAIN) . '</span>';
+                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#e7f6ea; color:#116329; font-size:11px; font-weight:600;">' . esc_html__('Buchung bestaetigt', self::TEXT_DOMAIN) . '</span>';
                     break;
                 }
 
                 if ($raw !== '' && str_contains($raw, RESTATIFY_BOOKING_CANCELLED_TOKEN)) {
                     $conversation_state = 'cancelled';
-                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#fdecec; color:#8a1f1f; font-size:11px; font-weight:600;">' . esc_html__('Booking cancelled', self::TEXT_DOMAIN) . '</span>';
+                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#fdecec; color:#8a1f1f; font-size:11px; font-weight:600;">' . esc_html__('Buchung abgebrochen', self::TEXT_DOMAIN) . '</span>';
                     break;
                 }
 
                 if ($sender === 'system') {
                     $conversation_state = 'system';
-                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#eef2f6; color:#344054; font-size:11px; font-weight:600;">' . esc_html__('System event', self::TEXT_DOMAIN) . '</span>';
+                    $conversation_badge = '<span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#eef2f6; color:#344054; font-size:11px; font-weight:600;">' . esc_html__('Systemereignis', self::TEXT_DOMAIN) . '</span>';
                     break;
                 }
             }
@@ -609,8 +609,8 @@ trait Restatify_MCO_Render_Trait {
             echo '<td>' . esc_html($mode_label) . '</td>';
             echo '<td>' . $conversation_badge . ' ' . esc_html($preview) . '</td>';
             echo '<td>';
-            echo '<a class="button" href="' . esc_url($open_link) . '">' . esc_html__('Open', self::TEXT_DOMAIN) . '</a> ';
-            echo '<button type="button" class="button button-link-delete" data-mco-support-delete data-conversation-id="' . esc_attr((string) $id) . '">' . esc_html__('Delete', self::TEXT_DOMAIN) . '</button>';
+            echo '<a class="button" href="' . esc_url($open_link) . '">' . esc_html__('Oeffnen', self::TEXT_DOMAIN) . '</a> ';
+            echo '<button type="button" class="button button-link-delete" data-mco-support-delete data-conversation-id="' . esc_attr((string) $id) . '">' . esc_html__('Loeschen', self::TEXT_DOMAIN) . '</button>';
             echo '</td>';
             echo '</tr>';
         }
@@ -622,15 +622,15 @@ trait Restatify_MCO_Render_Trait {
             $selected_ai_mode = $this->normalize_ai_mode((string) ($selected['ai_mode'] ?? 'visitor'));
             $booking_overlay_available = function_exists('restatify_booking_ai_handle_message') || shortcode_exists('restatify_booking_popup');
             echo '<div id="restatify-mco-conversation-detail" data-mco-conversation-detail="' . esc_attr($selected_id) . '">';
-            echo '<h3 style="margin-top:20px;">' . esc_html__('Conversation detail', self::TEXT_DOMAIN) . '</h3>';
-            echo '<p><label for="restatify-mco-ai-mode"><strong>' . esc_html__('AI behavior for this chat', self::TEXT_DOMAIN) . '</strong></label></p>';
+            echo '<h3 style="margin-top:20px;">' . esc_html__('Unterhaltungsdetails', self::TEXT_DOMAIN) . '</h3>';
+            echo '<p><label for="restatify-mco-ai-mode"><strong>' . esc_html__('KI-Verhalten fuer diesen Chat', self::TEXT_DOMAIN) . '</strong></label></p>';
             echo '<p>';
             echo '<select id="restatify-mco-ai-mode" data-mco-ai-mode style="min-width: 280px;">';
             foreach ($ai_mode_options as $mode_key => $mode_label) {
                 echo '<option value="' . esc_attr((string) $mode_key) . '"' . selected($selected_ai_mode, (string) $mode_key, false) . '>' . esc_html((string) $mode_label) . '</option>';
             }
             echo '</select> ';
-            echo '<button type="button" class="button" data-mco-support-ai-save data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Save AI mode', self::TEXT_DOMAIN) . '</button>';
+            echo '<button type="button" class="button" data-mco-support-ai-save data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('KI-Modus speichern', self::TEXT_DOMAIN) . '</button>';
             echo '</p>';
             echo '<div style="max-height:360px; overflow:auto; border:1px solid #ccd0d4; border-radius:6px; padding:12px; background:#fff;">';
             foreach ((array) ($selected['messages'] ?? []) as $msg) {
@@ -643,7 +643,7 @@ trait Restatify_MCO_Render_Trait {
                     ? __('Support', self::TEXT_DOMAIN)
                     : ($sender === 'ai'
                         ? __('AI', self::TEXT_DOMAIN)
-                        : ($sender === 'system' ? __('System', self::TEXT_DOMAIN) : __('Visitor', self::TEXT_DOMAIN)));
+                        : ($sender === 'system' ? __('System', self::TEXT_DOMAIN) : __('Besucher', self::TEXT_DOMAIN)));
                 $raw_message = (string) ($msg['message'] ?? '');
                 $is_booking_confirmed = str_contains($raw_message, RESTATIFY_BOOKING_CONFIRMED_TOKEN);
                 $is_booking_cancelled = str_contains($raw_message, RESTATIFY_BOOKING_CANCELLED_TOKEN);
@@ -656,11 +656,11 @@ trait Restatify_MCO_Render_Trait {
 
                 $badge_html = '';
                 if ($is_booking_confirmed) {
-                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#e7f6ea; color:#116329; font-size:11px; font-weight:600;">' . esc_html__('Booking confirmed', self::TEXT_DOMAIN) . '</span>';
+                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#e7f6ea; color:#116329; font-size:11px; font-weight:600;">' . esc_html__('Buchung bestaetigt', self::TEXT_DOMAIN) . '</span>';
                 } elseif ($is_booking_cancelled) {
-                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#fdecec; color:#8a1f1f; font-size:11px; font-weight:600;">' . esc_html__('Booking cancelled', self::TEXT_DOMAIN) . '</span>';
+                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#fdecec; color:#8a1f1f; font-size:11px; font-weight:600;">' . esc_html__('Buchung abgebrochen', self::TEXT_DOMAIN) . '</span>';
                 } elseif ($sender === 'system') {
-                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#eef2f6; color:#344054; font-size:11px; font-weight:600;">' . esc_html__('System event', self::TEXT_DOMAIN) . '</span>';
+                    $badge_html = '<span style="display:inline-block; margin-right:8px; padding:2px 8px; border-radius:999px; background:#eef2f6; color:#344054; font-size:11px; font-weight:600;">' . esc_html__('Systemereignis', self::TEXT_DOMAIN) . '</span>';
                 }
 
                 echo '<p style="margin:0 0 10px;">';
@@ -674,11 +674,11 @@ trait Restatify_MCO_Render_Trait {
 
             echo '<div style="margin-top:14px;">';
             if ($booking_overlay_available) {
-                echo '<p><button type="button" class="button" data-mco-support-open-booking data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Open Booking Overlay at Client', self::TEXT_DOMAIN) . '</button></p>';
+                echo '<p><button type="button" class="button" data-mco-support-open-booking data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Buchungs-Overlay beim Besucher oeffnen', self::TEXT_DOMAIN) . '</button></p>';
             }
-            echo '<textarea id="restatify-mco-support-reply" class="large-text" rows="3" placeholder="' . esc_attr__('Type support reply...', self::TEXT_DOMAIN) . '"></textarea>';
-            echo '<p><button type="button" class="button button-primary" data-mco-support-send data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Send support reply', self::TEXT_DOMAIN) . '</button></p>';
-            echo '<p><button type="button" class="button button-link-delete" data-mco-support-delete data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Delete this conversation', self::TEXT_DOMAIN) . '</button></p>';
+            echo '<textarea id="restatify-mco-support-reply" class="large-text" rows="3" placeholder="' . esc_attr__('Support-Antwort eingeben...', self::TEXT_DOMAIN) . '"></textarea>';
+            echo '<p><button type="button" class="button button-primary" data-mco-support-send data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Support-Antwort senden', self::TEXT_DOMAIN) . '</button></p>';
+            echo '<p><button type="button" class="button button-link-delete" data-mco-support-delete data-conversation-id="' . esc_attr($selected_id) . '">' . esc_html__('Diese Unterhaltung loeschen', self::TEXT_DOMAIN) . '</button></p>';
             echo '</div>';
             echo '</div>';
         }
