@@ -114,12 +114,12 @@ trait Restatify_MCO_Chat_Trait {
         }
 
         if (!in_array($event_type, ['confirmed', 'cancelled'], true)) {
-            wp_send_json_error(['message' => __('Ungueltiges Buchungsereignis.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Ungültiges Buchungsereignis.', self::TEXT_DOMAIN)], 400);
         }
 
         if ($event_type === 'confirmed') {
             $message = RESTATIFY_BOOKING_CONFIRMED_TOKEN . ' ' . sprintf(
-                __('Buchung vom Besucher bestaetigt: %1$s bis %2$s (Referenz: %3$s).', self::TEXT_DOMAIN),
+                __('Buchung vom Besucher bestätigt: %1$s bis %2$s (Referenz: %3$s).', self::TEXT_DOMAIN),
                 $start_iso !== '' ? $start_iso : '-',
                 $end_iso !== '' ? $end_iso : '-',
                 $reference !== '' ? $reference : '-'
@@ -127,7 +127,7 @@ trait Restatify_MCO_Chat_Trait {
         } else {
             $message = RESTATIFY_BOOKING_CANCELLED_TOKEN . ' ' . (
                 $start_iso !== ''
-                    ? sprintf(__('Besucher hat den Buchungsablauf abgebrochen (ausgewaehlter Termin war %s).', self::TEXT_DOMAIN), $start_iso)
+                    ? sprintf(__('Besucher hat den Buchungsablauf abgebrochen (ausgewählter Termin war %s).', self::TEXT_DOMAIN), $start_iso)
                     : __('Besucher hat den Buchungsablauf abgebrochen.', self::TEXT_DOMAIN)
             );
         }
@@ -448,3 +448,5 @@ trait Restatify_MCO_Chat_Trait {
         );
     }
 }
+
+

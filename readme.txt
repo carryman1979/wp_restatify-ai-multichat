@@ -182,3 +182,4 @@ Enthaelt Packaging-Workflow fuer Releases und verbesserte Installationsanleitung
 = 1.2.0 =
 Enthaelt integrierten Website-Chat, Support-Posteingang, E-Mail-Benachrichtigungen und optionale KI-Autoantwort.
 Bitte Einstellungen nach dem Upgrade pruefen.
+

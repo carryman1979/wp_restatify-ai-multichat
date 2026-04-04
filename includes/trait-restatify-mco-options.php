@@ -187,11 +187,11 @@ trait Restatify_MCO_Options_Trait {
             'require_cookie_consent' => true,
             'consent_cookie_names' => 'cookie_consent,cmplz_marketing,borlabs-cookie,CookieConsent',
             'team_name' => __('Restatify Service-Team', self::TEXT_DOMAIN),
-            'message' => __('Hallo. Wie koennen wir dir helfen?', self::TEXT_DOMAIN),
+            'message' => __('Hallo. Wie können wir dir helfen?', self::TEXT_DOMAIN),
             'cta_label' => __('Chat starten mit:', self::TEXT_DOMAIN),
             'channels_more_label' => __('Weiter', self::TEXT_DOMAIN),
             'channels_less_label' => __('Weniger', self::TEXT_DOMAIN),
-            'toggle_aria_label' => __('Chatfenster oeffnen', self::TEXT_DOMAIN),
+            'toggle_aria_label' => __('Chatfenster öffnen', self::TEXT_DOMAIN),
             'delay_seconds' => 6,
             'own_chat_enabled' => false,
             'support_email' => get_option('admin_email', ''),
@@ -206,7 +206,7 @@ trait Restatify_MCO_Options_Trait {
             'ai_api_key' => '',
             'ai_api_endpoint' => self::DEFAULT_AI_ENDPOINT,
             'ai_model' => 'gpt-4o-mini',
-            'ai_system_prompt' => __('Du bist ein hilfreicher Support-Assistent fuer diese Website. Antworte kurz und freundlich in derselben Sprache wie der Nutzer.', self::TEXT_DOMAIN),
+            'ai_system_prompt' => __('Du bist ein hilfreicher Support-Assistent für diese Website. Antworte kurz und freundlich in derselben Sprache wie der Nutzer.', self::TEXT_DOMAIN),
             'channels' => [],
         ];
 
@@ -331,3 +331,5 @@ trait Restatify_MCO_Options_Trait {
         return implode(',', $clean);
     }
 }
+
+
