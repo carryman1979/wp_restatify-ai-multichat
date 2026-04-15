@@ -18,6 +18,7 @@ if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
 
 trait Restatify_MCO_Chat_Trait {
     public function ajax_send_message(): void {
+        $this->enforce_public_rate_limit('send');
         $this->verify_chat_nonce();
 
         $options = $this->get_options();
@@ -71,6 +72,7 @@ trait Restatify_MCO_Chat_Trait {
     }
 
     public function ajax_fetch_chat(): void {
+        $this->enforce_public_rate_limit('fetch');
         $this->verify_chat_nonce();
 
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
@@ -95,6 +97,7 @@ trait Restatify_MCO_Chat_Trait {
     }
 
     public function ajax_booking_event(): void {
+        $this->enforce_public_rate_limit('booking_event');
         $this->verify_chat_nonce();
 
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
@@ -250,6 +253,75 @@ trait Restatify_MCO_Chat_Trait {
         if (!wp_verify_nonce($nonce, 'restatify_mco_chat_nonce')) {
             wp_send_json_error(['message' => __('Invalid request token.', self::TEXT_DOMAIN)], 403);
         }
+    }
+
+    private function enforce_public_rate_limit(string $action): void {
+        $options = $this->get_options(false);
+        if (empty($options['chat_rate_limit_enabled'])) {
+            return;
+        }
+
+        $window = max(10, min(3600, absint($options['chat_rate_limit_window_seconds'] ?? 60)));
+        $max_send = max(1, min(120, absint($options['chat_rate_limit_max_send'] ?? 25)));
+        $max_fetch = max(1, min(360, absint($options['chat_rate_limit_max_fetch'] ?? 120)));
+        $max_booking_event = max(1, min(120, absint($options['chat_rate_limit_max_booking_event'] ?? 30)));
+
+        $max_requests = $max_fetch;
+        if ($action === 'send') {
+            $max_requests = $max_send;
+        } elseif ($action === 'booking_event') {
+            $max_requests = $max_booking_event;
+        }
+
+        $ip = $this->get_client_ip();
+        $ua = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field((string) wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
+        $fingerprint = md5($ip . '|' . $ua . '|' . $action);
+        $key = 'restatify_mco_rl_' . $fingerprint;
+
+        $bucket = get_transient($key);
+        if (!is_array($bucket)) {
+            $bucket = [
+                'count' => 0,
+                'start' => time(),
+            ];
+        }
+
+        $now = time();
+        $start = (int) ($bucket['start'] ?? $now);
+        if (($now - $start) >= $window) {
+            $bucket = [
+                'count' => 0,
+                'start' => $now,
+            ];
+        }
+
+        $bucket['count'] = (int) ($bucket['count'] ?? 0) + 1;
+
+        if ($bucket['count'] > $max_requests) {
+            set_transient($key, $bucket, $window);
+            wp_send_json_error(['message' => __('Too many requests. Please wait a moment and try again.', self::TEXT_DOMAIN)], 429);
+        }
+
+        set_transient($key, $bucket, $window);
+    }
+
+    private function get_client_ip(): string {
+        $forwarded = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? (string) wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']) : '';
+        if ($forwarded !== '') {
+            $parts = array_map('trim', explode(',', $forwarded));
+            foreach ($parts as $part) {
+                if (filter_var($part, FILTER_VALIDATE_IP)) {
+                    return $part;
+                }
+            }
+        }
+
+        $remote = isset($_SERVER['REMOTE_ADDR']) ? (string) wp_unslash($_SERVER['REMOTE_ADDR']) : '';
+        if ($remote !== '' && filter_var($remote, FILTER_VALIDATE_IP)) {
+            return $remote;
+        }
+
+        return 'unknown';
     }
 
     private function get_chat_store(): array {

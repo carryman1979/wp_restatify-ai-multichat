@@ -268,6 +268,40 @@ trait Restatify_MCO_Render_Trait {
                             <p class="description"><?php esc_html_e('Bei 0 wird der Chatverlauf nie automatisch zurueckgesetzt. Andernfalls wird der Besucherchat nach dieser Inaktivitaetszeit zurueckgesetzt (empfohlen für Support: 15).', self::TEXT_DOMAIN); ?></p>
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Enable public rate limiting', self::TEXT_DOMAIN); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_rate_limit_enabled]" value="1" <?php checked(!empty($options['chat_rate_limit_enabled'])); ?>>
+                                <?php esc_html_e('Limit anonymous chat requests per visitor fingerprint (IP + user agent).', self::TEXT_DOMAIN); ?>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Rate limit window (seconds)', self::TEXT_DOMAIN); ?></th>
+                        <td>
+                            <input class="small-text" type="number" min="10" max="3600" step="10" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_rate_limit_window_seconds]" value="<?php echo esc_attr((string) $options['chat_rate_limit_window_seconds']); ?>">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Max send-message requests per window', self::TEXT_DOMAIN); ?></th>
+                        <td>
+                            <input class="small-text" type="number" min="1" max="120" step="1" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_rate_limit_max_send]" value="<?php echo esc_attr((string) $options['chat_rate_limit_max_send']); ?>">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Max fetch-chat requests per window', self::TEXT_DOMAIN); ?></th>
+                        <td>
+                            <input class="small-text" type="number" min="1" max="360" step="1" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_rate_limit_max_fetch]" value="<?php echo esc_attr((string) $options['chat_rate_limit_max_fetch']); ?>">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Max booking-event requests per window', self::TEXT_DOMAIN); ?></th>
+                        <td>
+                            <input class="small-text" type="number" min="1" max="120" step="1" name="<?php echo esc_attr(self::OPTION_KEY); ?>[chat_rate_limit_max_booking_event]" value="<?php echo esc_attr((string) $options['chat_rate_limit_max_booking_event']); ?>">
+                            <p class="description"><?php esc_html_e('Exceeding limits returns HTTP 429. Adjust fetch limit to match your polling interval and traffic.', self::TEXT_DOMAIN); ?></p>
+                        </td>
+                    </tr>
                 </table>
 
                 <details style="margin:12px 0 16px;">
