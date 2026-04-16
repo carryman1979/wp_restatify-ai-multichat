@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 trait Restatify_MCO_Options_Trait {
     public function load_textdomain(): void {
         load_plugin_textdomain(
-            self::TEXT_DOMAIN,
+            Restatify_Multi_Chat_Overlay::TEXT_DOMAIN,
             false,
             dirname(plugin_basename(RESTATIFY_MCO_PLUGIN_FILE)) . '/languages'
         );
@@ -16,7 +16,7 @@ trait Restatify_MCO_Options_Trait {
     public function register_settings(): void {
         register_setting(
             'restatify_multi_chat_overlay',
-            self::OPTION_KEY,
+            Restatify_Multi_Chat_Overlay::OPTION_KEY,
             [
                 'type' => 'array',
                 'sanitize_callback' => [$this, 'sanitize_options'],
@@ -27,8 +27,8 @@ trait Restatify_MCO_Options_Trait {
 
     public function register_admin_page(): void {
         add_options_page(
-            __('Multi Chat Overlay', self::TEXT_DOMAIN),
-            __('Multi Chat Overlay', self::TEXT_DOMAIN),
+            __('Multi Chat Overlay', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            __('Multi Chat Overlay', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
             'manage_options',
             'restatify-multi-chat-overlay',
             [$this, 'render_admin_page']
@@ -41,7 +41,7 @@ trait Restatify_MCO_Options_Trait {
         }
 
         $options = $this->get_raw_options();
-        foreach (self::TRANSLATABLE_OPTION_KEYS as $key) {
+        foreach (Restatify_Multi_Chat_Overlay::TRANSLATABLE_OPTION_KEYS as $key) {
             $value = trim((string) ($options[$key] ?? ''));
             if ($value === '') {
                 continue;
@@ -50,7 +50,7 @@ trait Restatify_MCO_Options_Trait {
             pll_register_string(
                 'restatify_mco_' . $key,
                 $value,
-                self::POLYLANG_GROUP,
+                Restatify_Multi_Chat_Overlay::POLYLANG_GROUP,
                 true
             );
         }
@@ -97,9 +97,9 @@ trait Restatify_MCO_Options_Trait {
             if (!empty($output['own_chat_enabled'])) {
                 $output['support_email'] = sanitize_email((string) get_option('admin_email', ''));
                 add_settings_error(
-                    self::OPTION_KEY,
+                    Restatify_Multi_Chat_Overlay::OPTION_KEY,
                     'restatify_mco_support_email_required',
-                    __('Die Support-E-Mail war leer und wurde auf die Admin-E-Mail der Website zurueckgesetzt.', self::TEXT_DOMAIN),
+                    __('Die Support-E-Mail war leer und wurde auf die Admin-E-Mail der Website zurueckgesetzt.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
                     'warning'
                 );
             } else {
@@ -110,16 +110,16 @@ trait Restatify_MCO_Options_Trait {
         if (!empty($output['ai_enabled']) && trim((string) $output['ai_api_key']) === '') {
             $output['ai_enabled'] = false;
             add_settings_error(
-                self::OPTION_KEY,
+                Restatify_Multi_Chat_Overlay::OPTION_KEY,
                 'restatify_mco_ai_key_required',
-                __('Die KI-Autoantwort wurde deaktiviert, weil kein API-Schluessel hinterlegt ist.', self::TEXT_DOMAIN),
+                __('Die KI-Autoantwort wurde deaktiviert, weil kein API-Schluessel hinterlegt ist.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
                 'warning'
             );
         }
 
         $input_channels = isset($input['channels']) && is_array($input['channels']) ? $input['channels'] : [];
 
-        foreach (self::CHANNELS as $key => $meta) {
+        foreach (Restatify_Multi_Chat_Overlay::CHANNELS as $key => $meta) {
             $url = isset($input_channels[$key]) ? trim((string) $input_channels[$key]) : '';
             $output['channels'][$key] = $url !== '' ? $this->sanitize_channel_url($url) : '';
         }
@@ -129,7 +129,7 @@ trait Restatify_MCO_Options_Trait {
 
     private function get_active_channels(array $options): array {
         $active = [];
-        foreach (self::CHANNELS as $key => $meta) {
+        foreach (Restatify_Multi_Chat_Overlay::CHANNELS as $key => $meta) {
             $url = trim((string) ($options['channels'][$key] ?? ''));
             if ($url === '') {
                 continue;
@@ -162,7 +162,7 @@ trait Restatify_MCO_Options_Trait {
         }
 
         // Keep saved base values language-neutral and only translate at runtime.
-        foreach (self::TRANSLATABLE_OPTION_KEYS as $key) {
+        foreach (Restatify_Multi_Chat_Overlay::TRANSLATABLE_OPTION_KEYS as $key) {
             $value = trim((string) ($options[$key] ?? ''));
             if ($value === '') {
                 continue;
@@ -178,7 +178,7 @@ trait Restatify_MCO_Options_Trait {
     }
 
     private function get_raw_options(): array {
-        $saved = get_option(self::OPTION_KEY, []);
+        $saved = get_option(Restatify_Multi_Chat_Overlay::OPTION_KEY, []);
         if (!is_array($saved)) {
             $saved = [];
         }
@@ -191,19 +191,19 @@ trait Restatify_MCO_Options_Trait {
             'enabled' => false,
             'require_cookie_consent' => true,
             'consent_cookie_names' => 'cookie_consent,cmplz_marketing,borlabs-cookie,CookieConsent',
-            'team_name' => __('Restatify Service-Team', self::TEXT_DOMAIN),
-            'message' => __('Hallo. Wie können wir dir helfen?', self::TEXT_DOMAIN),
-            'cta_label' => __('Chat starten mit:', self::TEXT_DOMAIN),
-            'channels_more_label' => __('Weiter', self::TEXT_DOMAIN),
-            'channels_less_label' => __('Weniger', self::TEXT_DOMAIN),
-            'toggle_aria_label' => __('Chatfenster öffnen', self::TEXT_DOMAIN),
+            'team_name' => __('Restatify Service-Team', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'message' => __('Hallo. Wie können wir dir helfen?', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'cta_label' => __('Chat starten mit:', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'channels_more_label' => __('Weiter', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'channels_less_label' => __('Weniger', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'toggle_aria_label' => __('Chatfenster öffnen', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
             'delay_seconds' => 6,
             'own_chat_enabled' => false,
             'support_email' => get_option('admin_email', ''),
             'support_notify_on_message' => true,
-            'chat_title' => __('Schreibe uns direkt', self::TEXT_DOMAIN),
-            'chat_placeholder' => __('Nachricht hier eingeben...', self::TEXT_DOMAIN),
-            'chat_send_label' => __('Senden', self::TEXT_DOMAIN),
+            'chat_title' => __('Schreibe uns direkt', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'chat_placeholder' => __('Nachricht hier eingeben...', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'chat_send_label' => __('Senden', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
             'chat_poll_seconds' => 8,
             'chat_reset_minutes' => 15,
             'chat_rate_limit_enabled' => true,
@@ -214,13 +214,13 @@ trait Restatify_MCO_Options_Trait {
             'ai_enabled' => false,
             'ai_debug_enabled' => false,
             'ai_api_key' => '',
-            'ai_api_endpoint' => self::DEFAULT_AI_ENDPOINT,
+            'ai_api_endpoint' => Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT,
             'ai_model' => 'gpt-4o-mini',
-            'ai_system_prompt' => __('Du bist ein hilfreicher Support-Assistent für diese Website. Antworte kurz und freundlich in derselben Sprache wie der Nutzer.', self::TEXT_DOMAIN),
+            'ai_system_prompt' => __('Du bist ein hilfreicher Support-Assistent für diese Website. Antworte kurz und freundlich in derselben Sprache wie der Nutzer.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
             'channels' => [],
         ];
 
-        foreach (self::CHANNELS as $key => $meta) {
+        foreach (Restatify_Multi_Chat_Overlay::CHANNELS as $key => $meta) {
             $defaults['channels'][$key] = '';
         }
 
@@ -234,17 +234,17 @@ trait Restatify_MCO_Options_Trait {
     private function sanitize_ai_endpoint(string $endpoint): string {
         $endpoint = trim($endpoint);
         if ($endpoint === '') {
-            return self::DEFAULT_AI_ENDPOINT;
+            return Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT;
         }
 
         $sanitized = esc_url_raw($endpoint, ['https']);
         if ($sanitized === '') {
-            return self::DEFAULT_AI_ENDPOINT;
+            return Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT;
         }
 
         $parts = wp_parse_url($sanitized);
         if (!is_array($parts) || empty($parts['scheme']) || strtolower((string) $parts['scheme']) !== 'https' || empty($parts['host'])) {
-            return self::DEFAULT_AI_ENDPOINT;
+            return Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT;
         }
 
         return $sanitized;
@@ -341,5 +341,6 @@ trait Restatify_MCO_Options_Trait {
         return implode(',', $clean);
     }
 }
+
 
 

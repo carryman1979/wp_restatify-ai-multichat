@@ -34,17 +34,17 @@ final class Restatify_Multi_Chat_Overlay {
     use Restatify_MCO_AI_Trait;
     use Restatify_MCO_Render_Trait;
 
-    private const OPTION_KEY = 'restatify_multi_chat_overlay_options';
-    private const CHAT_STORE_KEY = 'restatify_multi_chat_overlay_conversations';
-    private const AI_DEBUG_LOG_KEY = 'restatify_multi_chat_overlay_ai_debug_log';
-    private const CHAT_MAX_CONVERSATIONS = 200;
-    private const CHAT_MAX_MESSAGES = 80;
-    private const AI_DEBUG_MAX_ENTRIES = 120;
-    private const DEFAULT_AI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
-    private const SUPPORT_CAPABILITY = 'restatify_mco_support_chat';
-    private const TEXT_DOMAIN = 'restatify-multi-chat-overlay';
-    private const POLYLANG_GROUP = 'Restatify Multi Chat Overlay';
-    private const TRANSLATABLE_OPTION_KEYS = [
+    public const OPTION_KEY = 'restatify_multi_chat_overlay_options';
+    public const CHAT_STORE_KEY = 'restatify_multi_chat_overlay_conversations';
+    public const AI_DEBUG_LOG_KEY = 'restatify_multi_chat_overlay_ai_debug_log';
+    public const CHAT_MAX_CONVERSATIONS = 200;
+    public const CHAT_MAX_MESSAGES = 80;
+    public const AI_DEBUG_MAX_ENTRIES = 120;
+    public const DEFAULT_AI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+    public const SUPPORT_CAPABILITY = 'restatify_mco_support_chat';
+    public const TEXT_DOMAIN = 'restatify-multi-chat-overlay';
+    public const POLYLANG_GROUP = 'Restatify Multi Chat Overlay';
+    public const TRANSLATABLE_OPTION_KEYS = [
         'team_name',
         'message',
         'cta_label',
@@ -57,7 +57,7 @@ final class Restatify_Multi_Chat_Overlay {
         'ai_system_prompt',
     ];
 
-    private const CHANNELS = [
+    public const CHANNELS = [
         'whatsapp' => [
             'label' => 'WhatsApp',
             'icon' => 'socicon-whatsapp',

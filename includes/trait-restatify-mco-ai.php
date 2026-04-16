@@ -17,7 +17,7 @@ trait Restatify_MCO_AI_Trait {
 
         $debug_enabled = !empty($options['ai_debug_enabled']);
 
-        $endpoint = $this->sanitize_ai_endpoint((string) ($options['ai_api_endpoint'] ?? self::DEFAULT_AI_ENDPOINT));
+        $endpoint = $this->sanitize_ai_endpoint((string) ($options['ai_api_endpoint'] ?? Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT));
         $provider = $this->detect_ai_provider($endpoint);
         $api_key = trim((string) ($options['ai_api_key'] ?? ''));
 
@@ -338,7 +338,7 @@ trait Restatify_MCO_AI_Trait {
     }
 
     private function store_ai_debug_line(string $line): void {
-        $entries = get_option(self::AI_DEBUG_LOG_KEY, []);
+        $entries = get_option(Restatify_Multi_Chat_Overlay::AI_DEBUG_LOG_KEY, []);
         if (!is_array($entries)) {
             $entries = [];
         }
@@ -348,12 +348,12 @@ trait Restatify_MCO_AI_Trait {
             'line' => $line,
         ];
 
-        $entries = array_slice($entries, -self::AI_DEBUG_MAX_ENTRIES);
-        update_option(self::AI_DEBUG_LOG_KEY, $entries, false);
+        $entries = array_slice($entries, -Restatify_Multi_Chat_Overlay::AI_DEBUG_MAX_ENTRIES);
+        update_option(Restatify_Multi_Chat_Overlay::AI_DEBUG_LOG_KEY, $entries, false);
     }
 
     private function get_recent_ai_debug_lines(int $limit = 40): array {
-        $entries = get_option(self::AI_DEBUG_LOG_KEY, []);
+        $entries = get_option(Restatify_Multi_Chat_Overlay::AI_DEBUG_LOG_KEY, []);
         if (!is_array($entries) || count($entries) === 0) {
             return [];
         }
@@ -385,3 +385,4 @@ trait Restatify_MCO_AI_Trait {
         return substr($value, 0, 1200) . '...';
     }
 }
+

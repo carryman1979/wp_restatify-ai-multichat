@@ -23,17 +23,17 @@ trait Restatify_MCO_Chat_Trait {
 
         $options = $this->get_options();
         if (empty($options['own_chat_enabled'])) {
-            wp_send_json_error(['message' => __('Der Chat ist derzeit deaktiviert.', self::TEXT_DOMAIN)], 403);
+            wp_send_json_error(['message' => __('Der Chat ist derzeit deaktiviert.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 403);
         }
 
         $honeypot = sanitize_text_field(wp_unslash($_POST['website'] ?? ''));
         if ($honeypot !== '') {
-            wp_send_json_error(['message' => __('Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 400);
         }
 
         $message = $this->sanitize_chat_message_content((string) wp_unslash($_POST['message'] ?? ''));
         if ($message === '') {
-            wp_send_json_error(['message' => __('Nachricht darf nicht leer sein.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Nachricht darf nicht leer sein.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 400);
         }
 
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
@@ -57,7 +57,7 @@ trait Restatify_MCO_Chat_Trait {
             }
         }
 
-        $conversation['messages'] = array_slice($conversation['messages'], -self::CHAT_MAX_MESSAGES);
+        $conversation['messages'] = array_slice($conversation['messages'], -Restatify_Multi_Chat_Overlay::CHAT_MAX_MESSAGES);
         $store[$conversation['id']] = $conversation;
         $this->save_chat_store($store);
 
@@ -78,12 +78,12 @@ trait Restatify_MCO_Chat_Trait {
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
         $conversation_token = sanitize_text_field(wp_unslash($_POST['conversation_token'] ?? ''));
         if ($conversation_id === '' || $conversation_token === '') {
-            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 404);
         }
 
         $store = $this->get_chat_store();
         if (empty($store[$conversation_id]) || !hash_equals((string) $store[$conversation_id]['token'], $conversation_token)) {
-            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 404);
         }
 
         wp_send_json_success([
@@ -108,21 +108,21 @@ trait Restatify_MCO_Chat_Trait {
         $reference = sanitize_text_field(wp_unslash($_POST['reference'] ?? ''));
 
         if ($conversation_id === '' || $conversation_token === '') {
-            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 404);
         }
 
         $store = $this->get_chat_store();
         if (empty($store[$conversation_id]) || !hash_equals((string) $store[$conversation_id]['token'], $conversation_token)) {
-            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung nicht gefunden.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 404);
         }
 
         if (!in_array($event_type, ['confirmed', 'cancelled'], true)) {
-            wp_send_json_error(['message' => __('Ungültiges Buchungsereignis.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Ungültiges Buchungsereignis.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 400);
         }
 
         if ($event_type === 'confirmed') {
             $message = RESTATIFY_BOOKING_CONFIRMED_TOKEN . ' ' . sprintf(
-                __('Buchung vom Besucher bestätigt: %1$s bis %2$s (Referenz: %3$s).', self::TEXT_DOMAIN),
+                __('Buchung vom Besucher bestätigt: %1$s bis %2$s (Referenz: %3$s).', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
                 $start_iso !== '' ? $start_iso : '-',
                 $end_iso !== '' ? $end_iso : '-',
                 $reference !== '' ? $reference : '-'
@@ -130,14 +130,14 @@ trait Restatify_MCO_Chat_Trait {
         } else {
             $message = RESTATIFY_BOOKING_CANCELLED_TOKEN . ' ' . (
                 $start_iso !== ''
-                    ? sprintf(__('Besucher hat den Buchungsablauf abgebrochen (ausgewählter Termin war %s).', self::TEXT_DOMAIN), $start_iso)
-                    : __('Besucher hat den Buchungsablauf abgebrochen.', self::TEXT_DOMAIN)
+                    ? sprintf(__('Besucher hat den Buchungsablauf abgebrochen (ausgewählter Termin war %s).', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN), $start_iso)
+                    : __('Besucher hat den Buchungsablauf abgebrochen.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)
             );
         }
 
         $store[$conversation_id]['messages'][] = $this->format_chat_message('system', $message);
         $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
-        $store[$conversation_id]['messages'] = array_slice($store[$conversation_id]['messages'], -self::CHAT_MAX_MESSAGES);
+        $store[$conversation_id]['messages'] = array_slice($store[$conversation_id]['messages'], -Restatify_Multi_Chat_Overlay::CHAT_MAX_MESSAGES);
 
         $this->save_chat_store($store);
 
@@ -148,13 +148,13 @@ trait Restatify_MCO_Chat_Trait {
     }
 
     public function ajax_support_reply(): void {
-        $required_cap = apply_filters('restatify_mco_support_inbox_capability', self::SUPPORT_CAPABILITY);
+        $required_cap = apply_filters('restatify_mco_support_inbox_capability', Restatify_Multi_Chat_Overlay::SUPPORT_CAPABILITY);
         if (!is_string($required_cap) || $required_cap === '') {
-            $required_cap = self::SUPPORT_CAPABILITY;
+            $required_cap = Restatify_Multi_Chat_Overlay::SUPPORT_CAPABILITY;
         }
 
         if (!current_user_can($required_cap)) {
-            wp_send_json_error(['message' => __('Unzureichende Berechtigungen.', self::TEXT_DOMAIN)], 403);
+            wp_send_json_error(['message' => __('Unzureichende Berechtigungen.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 403);
         }
 
         check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
@@ -163,12 +163,12 @@ trait Restatify_MCO_Chat_Trait {
         $message = $this->sanitize_chat_message_content((string) wp_unslash($_POST['message'] ?? ''));
 
         if ($conversation_id === '' || $message === '') {
-            wp_send_json_error(['message' => __('Unterhaltung und Nachricht sind erforderlich.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Unterhaltung und Nachricht sind erforderlich.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 400);
         }
 
         $store = $this->get_chat_store();
         if (empty($store[$conversation_id])) {
-            wp_send_json_error(['message' => __('Unterhaltung existiert nicht.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Unterhaltung existiert nicht.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 404);
         }
 
         $store[$conversation_id]['messages'][] = $this->format_chat_message('support', $message);
@@ -184,7 +184,7 @@ trait Restatify_MCO_Chat_Trait {
             }
         }
 
-        $store[$conversation_id]['messages'] = array_slice($store[$conversation_id]['messages'], -self::CHAT_MAX_MESSAGES);
+        $store[$conversation_id]['messages'] = array_slice($store[$conversation_id]['messages'], -Restatify_Multi_Chat_Overlay::CHAT_MAX_MESSAGES);
 
         $this->save_chat_store($store);
 
@@ -197,14 +197,14 @@ trait Restatify_MCO_Chat_Trait {
 
     public function ajax_delete_conversation(): void {
         if (!$this->can_manage_support_inbox()) {
-            wp_send_json_error(['message' => __('Unzureichende Berechtigungen.', self::TEXT_DOMAIN)], 403);
+            wp_send_json_error(['message' => __('Unzureichende Berechtigungen.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 403);
         }
 
         check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
 
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
         if ($conversation_id === '') {
-            wp_send_json_error(['message' => __('Unterhaltung ist erforderlich.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Unterhaltung ist erforderlich.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 400);
         }
 
         $store = $this->get_chat_store();
@@ -226,7 +226,7 @@ trait Restatify_MCO_Chat_Trait {
 
     public function ajax_set_ai_mode(): void {
         if (!$this->can_manage_support_inbox()) {
-            wp_send_json_error(['message' => __('Insufficient permissions.', self::TEXT_DOMAIN)], 403);
+            wp_send_json_error(['message' => __('Insufficient permissions.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 403);
         }
 
         check_ajax_referer('restatify_mco_chat_nonce', 'nonce');
@@ -234,12 +234,12 @@ trait Restatify_MCO_Chat_Trait {
         $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
         $ai_mode = sanitize_key(wp_unslash($_POST['ai_mode'] ?? 'visitor'));
         if ($conversation_id === '') {
-            wp_send_json_error(['message' => __('Conversation is required.', self::TEXT_DOMAIN)], 400);
+            wp_send_json_error(['message' => __('Conversation is required.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 400);
         }
 
         $store = $this->get_chat_store();
         if (empty($store[$conversation_id])) {
-            wp_send_json_error(['message' => __('Conversation does not exist.', self::TEXT_DOMAIN)], 404);
+            wp_send_json_error(['message' => __('Conversation does not exist.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 404);
         }
 
         $store[$conversation_id]['ai_mode'] = $this->normalize_ai_mode($ai_mode);
@@ -251,7 +251,7 @@ trait Restatify_MCO_Chat_Trait {
     private function verify_chat_nonce(): void {
         $nonce = sanitize_text_field(wp_unslash($_POST['nonce'] ?? ''));
         if (!wp_verify_nonce($nonce, 'restatify_mco_chat_nonce')) {
-            wp_send_json_error(['message' => __('Invalid request token.', self::TEXT_DOMAIN)], 403);
+            wp_send_json_error(['message' => __('Invalid request token.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 403);
         }
     }
 
@@ -299,7 +299,7 @@ trait Restatify_MCO_Chat_Trait {
 
         if ($bucket['count'] > $max_requests) {
             set_transient($key, $bucket, $window);
-            wp_send_json_error(['message' => __('Too many requests. Please wait a moment and try again.', self::TEXT_DOMAIN)], 429);
+            wp_send_json_error(['message' => __('Too many requests. Please wait a moment and try again.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN)], 429);
         }
 
         set_transient($key, $bucket, $window);
@@ -325,7 +325,7 @@ trait Restatify_MCO_Chat_Trait {
     }
 
     private function get_chat_store(): array {
-        $store = get_option(self::CHAT_STORE_KEY, []);
+        $store = get_option(Restatify_Multi_Chat_Overlay::CHAT_STORE_KEY, []);
         $store = is_array($store) ? $store : [];
 
         $options = $this->get_options(false);
@@ -343,7 +343,7 @@ trait Restatify_MCO_Chat_Trait {
         }
 
         if (count($normalized) !== count($store)) {
-            update_option(self::CHAT_STORE_KEY, $normalized, false);
+            update_option(Restatify_Multi_Chat_Overlay::CHAT_STORE_KEY, $normalized, false);
         }
 
         return $normalized;
@@ -354,8 +354,8 @@ trait Restatify_MCO_Chat_Trait {
             return strcmp((string) ($b['updated_at_gmt'] ?? ''), (string) ($a['updated_at_gmt'] ?? ''));
         });
 
-        $store = array_slice($store, 0, self::CHAT_MAX_CONVERSATIONS, true);
-        update_option(self::CHAT_STORE_KEY, $store, false);
+        $store = array_slice($store, 0, Restatify_Multi_Chat_Overlay::CHAT_MAX_CONVERSATIONS, true);
+        update_option(Restatify_Multi_Chat_Overlay::CHAT_STORE_KEY, $store, false);
     }
 
     private function prune_expired_conversations(array $store, int $max_age_minutes): array {
@@ -419,9 +419,9 @@ trait Restatify_MCO_Chat_Trait {
     }
 
     private function can_manage_support_inbox(): bool {
-        $required_cap = apply_filters('restatify_mco_support_inbox_capability', self::SUPPORT_CAPABILITY);
+        $required_cap = apply_filters('restatify_mco_support_inbox_capability', Restatify_Multi_Chat_Overlay::SUPPORT_CAPABILITY);
         if (!is_string($required_cap) || $required_cap === '') {
-            $required_cap = self::SUPPORT_CAPABILITY;
+            $required_cap = Restatify_Multi_Chat_Overlay::SUPPORT_CAPABILITY;
         }
 
         return current_user_can($required_cap);
@@ -447,10 +447,10 @@ trait Restatify_MCO_Chat_Trait {
 
     private function get_ai_mode_options(): array {
         return [
-            'off' => __('AI off (temporary)', self::TEXT_DOMAIN),
-            'visitor' => __('AI replies to visitor only', self::TEXT_DOMAIN),
-            'support' => __('AI replies to support only', self::TEXT_DOMAIN),
-            'both' => __('AI replies to both sides', self::TEXT_DOMAIN),
+            'off' => __('AI off (temporary)', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'visitor' => __('AI replies to visitor only', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'support' => __('AI replies to support only', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'both' => __('AI replies to both sides', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
         ];
     }
 
@@ -495,21 +495,21 @@ trait Restatify_MCO_Chat_Trait {
         );
 
         $subject = sprintf(
-            __('[%s] New website chat message', self::TEXT_DOMAIN),
+            __('[%s] New website chat message', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
             wp_specialchars_decode(get_bloginfo('name'), ENT_QUOTES)
         );
 
         $source_url = (string) ($conversation['source_url'] ?? home_url('/'));
         $body = [];
-        $body[] = __('A new visitor message has been received.', self::TEXT_DOMAIN);
+        $body[] = __('A new visitor message has been received.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN);
         $body[] = '';
-        $body[] = sprintf(__('Conversation ID: %s', self::TEXT_DOMAIN), (string) $conversation['id']);
-        $body[] = sprintf(__('Source URL: %s', self::TEXT_DOMAIN), $source_url);
+        $body[] = sprintf(__('Conversation ID: %s', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN), (string) $conversation['id']);
+        $body[] = sprintf(__('Source URL: %s', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN), $source_url);
         $body[] = '';
-        $body[] = __('Latest message:', self::TEXT_DOMAIN);
+        $body[] = __('Latest message:', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN);
         $body[] = $latest_message;
         $body[] = '';
-        $body[] = __('Open chat in admin:', self::TEXT_DOMAIN);
+        $body[] = __('Open chat in admin:', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN);
         $body[] = $inbox_link;
 
         wp_mail(
@@ -520,5 +520,6 @@ trait Restatify_MCO_Chat_Trait {
         );
     }
 }
+
 
 
