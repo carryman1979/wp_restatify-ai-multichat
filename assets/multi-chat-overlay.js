@@ -2,10 +2,42 @@
   var CHAT_STORAGE_ID_KEY = 'restatify_mco_chat_id';
   var CHAT_STORAGE_TOKEN_KEY = 'restatify_mco_chat_token';
   var CHAT_STORAGE_LAST_ACTIVE_KEY = 'restatify_mco_chat_last_active';
+  var BOOKING_TRIGGER_STORAGE_KEY = 'restatify_mco_handled_booking_triggers';
   var BOOKING_OPEN_TOKEN = '[[RESTATIFY_BOOKING_OPEN]]';
   var BOOKING_CONFIRMED_TOKEN = '[[RESTATIFY_BOOKING_CONFIRMED]]';
   var BOOKING_CANCELLED_TOKEN = '[[RESTATIFY_BOOKING_CANCELLED]]';
   var handledBookingTriggers = {};
+
+  function loadHandledBookingTriggers() {
+    try {
+      var raw = window.sessionStorage.getItem(BOOKING_TRIGGER_STORAGE_KEY);
+      if (!raw) {
+        return {};
+      }
+
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function storeHandledBookingTriggers() {
+    try {
+      var keys = Object.keys(handledBookingTriggers);
+      if (keys.length > 60) {
+        keys.slice(0, keys.length - 60).forEach(function (key) {
+          delete handledBookingTriggers[key];
+        });
+      }
+
+      window.sessionStorage.setItem(BOOKING_TRIGGER_STORAGE_KEY, JSON.stringify(handledBookingTriggers));
+    } catch (error) {
+      return;
+    }
+  }
+
+  handledBookingTriggers = loadHandledBookingTriggers();
 
   function initMultiChatOverlay() {
     var root = document.querySelector('[data-restatify-mco]');
@@ -606,6 +638,7 @@
         }
 
         handledBookingTriggers[triggerKey] = true;
+        storeHandledBookingTriggers();
         document.dispatchEvent(new CustomEvent('restatify:booking-open'));
       }
     });
