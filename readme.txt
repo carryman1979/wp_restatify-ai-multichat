@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -139,6 +139,10 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 1.4.2 =
+* Persisted handled booking-open triggers in the browser session to prevent stale support messages from reopening the booking popup after reloads.
+* Follow-up maintenance from the analyzer cleanup to keep chat-triggered booking handover stable in real browser sessions.
+
 = 1.4.1 =
 * Added configurable public rate limiting for anonymous chat endpoints (send, fetch, booking-event).
 * Added settings UI for rate-limit window and per-action request limits.
@@ -172,6 +176,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 1.4.2 =
+Prevents repeated booking popup auto-opens from already processed support messages in the same browser session.
 
 = 1.4.1 =
 Adds configurable abuse protection for public chat AJAX endpoints.

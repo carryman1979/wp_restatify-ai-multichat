@@ -5,11 +5,12 @@ Title: Restatify Multi Chat Overlay 1.4.2
 - Wartungsrelease zur Verbesserung der Entwickler- und IDE-Kompatibilität im Plugin-Code
 - Gemeinsame Plugin-Konstanten werden in den Trait-Dateien jetzt explizit über die Hauptklasse referenziert
 - Intelephense-/Analyzer-Fehlalarme zu angeblich undefinierten Klassenkonstanten in den Traits wurden dadurch beseitigt
+- Booking-Open-Trigger werden nun pro Browser-Session gemerkt, damit alte Support-Nachrichten das Buchungs-Popup nach Reloads nicht erneut oeffnen
 
 ## Kompatibilität
 
 - Plugin-Version: `1.4.2`
-- Keine funktionalen Änderungen am Frontend oder am Support-Posteingang vorgesehen
+- Keine Breaking Changes im Frontend oder Admin-Workflow; lediglich wiederholte Reopens durch alte Trigger werden unterdrueckt
 
 ## Validierung
 
@@ -18,4 +19,4 @@ Title: Restatify Multi Chat Overlay 1.4.2
 
 ## Release-Hinweis
 
-- Diese Version ist ein internes Wartungsupdate ohne bewusst eingeführte Verhaltensänderung für Endnutzer
+- Dieses Wartungsupdate behebt zusaetzlich ein kleines Frontend-Stabilitaetsproblem bei Booking-Handover-Flows aus dem Support-Chat
