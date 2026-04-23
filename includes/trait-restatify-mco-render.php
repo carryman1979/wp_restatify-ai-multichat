@@ -144,6 +144,17 @@ trait Restatify_MCO_Render_Trait {
                             </label>
                         </td>
                     </tr>
+                    <?php if ($this->is_lightstart_available()) : ?>
+                        <tr>
+                            <th scope="row"><?php esc_html_e('Bei LightStart-Wartung ausblenden', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="<?php echo esc_attr(Restatify_Multi_Chat_Overlay::OPTION_KEY); ?>[disable_during_maintenance]" value="1" <?php checked(!empty($options['disable_during_maintenance'])); ?>>
+                                    <?php esc_html_e('Overlay nicht anzeigen, solange der Wartungsmodus (LightStart) aktiv ist.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN); ?>
+                                </label>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                     <tr>
                         <th scope="row"><?php esc_html_e('Cookie-Einwilligung voraussetzen', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN); ?></th>
                         <td>

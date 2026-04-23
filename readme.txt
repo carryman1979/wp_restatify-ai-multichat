@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.4.2
+Stable tag: 1.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,6 +46,14 @@ Das ZIP wird unter /release erstellt.
 Wenn "Require cookie consent" aktiviert ist und deine Seite ein eigenes Theme oder eigenes CMP nutzt, hinterlege passende Cookie-Regeln in der Plugin-Einstellung "Consent cookie rules".
 Format: cookie_name or cookie_name=expected_value.
 Example: restatify_cookie_consent=accepted,cookiesDirective,_cky-consent=accept
+
+LightStart-Wartungsmodus:
+
+* Die Einstellung "Bei LightStart-Wartung ausblenden" ist in den Plugin-Einstellungen verfuegbar.
+* Standardwert ist aktiviert.
+* Die Einstellung wird nur angezeigt, wenn LightStart (`wp-maintenance-mode`) installiert und aktiv ist.
+* Ist LightStart nicht installiert/aktiv, wird die Einstellung nicht angezeigt und das Overlay bleibt sichtbar.
+* Ist LightStart aktiv und der Wartungsmodus eingeschaltet, wird das Overlay bei aktivierter Option ausgeblendet.
 
 == Frequently Asked Questions ==
 
@@ -139,6 +147,12 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 1.4.3 =
+* Added LightStart maintenance integration with a configurable setting to hide the overlay while maintenance mode is active.
+* Added admin setting "Bei LightStart-Wartung ausblenden" (default enabled), visible only when LightStart is installed and active.
+* Added runtime checks for LightStart availability and active maintenance status before rendering overlay output.
+* Updated documentation for maintenance-mode behavior in German and WordPress readme docs.
+
 = 1.4.2 =
 * Persisted handled booking-open triggers in the browser session to prevent stale support messages from reopening the booking popup after reloads.
 * Follow-up maintenance from the analyzer cleanup to keep chat-triggered booking handover stable in real browser sessions.
@@ -176,6 +190,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 1.4.3 =
+Adds LightStart-aware maintenance suppression for the chat overlay with a configurable admin toggle.
 
 = 1.4.2 =
 Prevents repeated booking popup auto-opens from already processed support messages in the same browser session.

@@ -62,6 +62,7 @@ trait Restatify_MCO_Options_Trait {
 
         $output = [
             'enabled' => !empty($input['enabled']),
+            'disable_during_maintenance' => !empty($input['disable_during_maintenance']),
             'require_cookie_consent' => !empty($input['require_cookie_consent']),
             'consent_cookie_names' => $this->sanitize_cookie_match_list((string) ($input['consent_cookie_names'] ?? $defaults['consent_cookie_names'])),
             'team_name' => sanitize_text_field($input['team_name'] ?? $defaults['team_name']),
@@ -151,7 +152,42 @@ trait Restatify_MCO_Options_Trait {
             return false;
         }
 
+        if (!empty($options['disable_during_maintenance']) && $this->is_lightstart_available() && $this->is_lightstart_maintenance_active()) {
+            return false;
+        }
+
         return count($this->get_active_channels($options)) > 0 || !empty($options['own_chat_enabled']);
+    }
+
+    /**
+     * Return true only when LightStart exists and maintenance status is active.
+     */
+    private function is_lightstart_maintenance_active(): bool {
+        if (!$this->is_lightstart_available()) {
+            return false;
+        }
+
+        $maintenance_options = get_option('wpmm_settings', []);
+        if (!is_array($maintenance_options)) {
+            return false;
+        }
+
+        return !empty($maintenance_options['general']['status']);
+    }
+
+    /**
+     * Detect whether LightStart is installed and active (single-site or network).
+     */
+    private function is_lightstart_available(): bool {
+        if (!file_exists(WP_PLUGIN_DIR . '/wp-maintenance-mode/wp-maintenance-mode.php')) {
+            return false;
+        }
+
+        $active_plugins = (array) get_option('active_plugins', []);
+        $network_plugins = is_multisite() ? (array) get_site_option('active_sitewide_plugins', []) : [];
+
+        return in_array('wp-maintenance-mode/wp-maintenance-mode.php', $active_plugins, true)
+            || isset($network_plugins['wp-maintenance-mode/wp-maintenance-mode.php']);
     }
 
     private function get_options(bool $apply_translations = true): array {
@@ -189,6 +225,7 @@ trait Restatify_MCO_Options_Trait {
     private function get_default_options(): array {
         $defaults = [
             'enabled' => false,
+            'disable_during_maintenance' => true,
             'require_cookie_consent' => true,
             'consent_cookie_names' => 'cookie_consent,cmplz_marketing,borlabs-cookie,CookieConsent',
             'team_name' => __('Restatify Service-Team', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),

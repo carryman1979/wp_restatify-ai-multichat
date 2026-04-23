@@ -1,6 +1,6 @@
 # Restatify Multi Chat Overlay - Anleitung (DE)
 
-Stand: Version 1.4.2, getestet bis WordPress 6.9.
+Stand: Version 1.4.3, getestet bis WordPress 6.9.
 
 Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Support-Ablauf.
 
@@ -36,6 +36,14 @@ Das Overlay wird angezeigt, wenn es aktiviert ist und entweder:
 
 - mindestens ein externer Kanal gesetzt ist, oder
 - der integrierte Website-Chat aktiv ist.
+
+### LightStart-Wartungsmodus
+
+- In den Plugin-Einstellungen gibt es die Option `Bei LightStart-Wartung ausblenden`.
+- Standardwert ist `AN`.
+- Die Option wird nur angezeigt, wenn LightStart (`wp-maintenance-mode`) installiert und aktiviert ist.
+- Ist LightStart nicht installiert oder nicht aktiv, erscheint die Option nicht und das Overlay bleibt sichtbar.
+- Ist LightStart aktiv und Wartungsmodus eingeschaltet, wird das Overlay bei aktivierter Option automatisch nicht gerendert.
 
 Hinweis zu Cookie-Consent:
 
