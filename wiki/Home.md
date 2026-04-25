@@ -217,10 +217,6 @@ To-do für Betreiber:
 6. Commit, Tag und Push ausführen.
 7. GitHub Release Notes pflegen.
 
-Aktuelle release-spezifische Zusammenfassung:
-
-- [Release 1.4.2](Release-1.4.2)
-
 ---
 
 ## Verlinkte Projektdokumente
