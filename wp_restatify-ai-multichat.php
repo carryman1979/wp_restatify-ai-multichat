@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify Multi Chat Overlay
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 1.4.3
+ * Version: 2.0.0
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -36,9 +36,11 @@ if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
 }
 
 require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-runtime.php';
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-options-runtime.php';
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-chat-runtime.php';
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-admin-runtime.php';
 
-final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Runtime {
+final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_Runtime {
 
     public const SETTINGS_GROUP = 'restatify_ai_multichat';
     public const OPTION_KEY = 'restatify_ai_multichat_options';
