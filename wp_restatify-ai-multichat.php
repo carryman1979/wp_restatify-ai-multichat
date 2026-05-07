@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.1
+ * Version: 2.0.2
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -11,16 +11,28 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!defined('RESTATIFY_AI_MULTICHAT_PLUGIN_FILE')) {
+    define('RESTATIFY_AI_MULTICHAT_PLUGIN_FILE', __FILE__);
+}
+
+if (!defined('RESTATIFY_AI_MULTICHAT_PLUGIN_DIR')) {
+    define('RESTATIFY_AI_MULTICHAT_PLUGIN_DIR', plugin_dir_path(__FILE__));
+}
+
+if (!defined('RESTATIFY_AI_MULTICHAT_PLUGIN_URL')) {
+    define('RESTATIFY_AI_MULTICHAT_PLUGIN_URL', plugin_dir_url(__FILE__));
+}
+
 if (!defined('RESTATIFY_MCO_PLUGIN_FILE')) {
-    define('RESTATIFY_MCO_PLUGIN_FILE', __FILE__);
+    define('RESTATIFY_MCO_PLUGIN_FILE', RESTATIFY_AI_MULTICHAT_PLUGIN_FILE);
 }
 
 if (!defined('RESTATIFY_MCO_PLUGIN_DIR')) {
-    define('RESTATIFY_MCO_PLUGIN_DIR', plugin_dir_path(__FILE__));
+    define('RESTATIFY_MCO_PLUGIN_DIR', RESTATIFY_AI_MULTICHAT_PLUGIN_DIR);
 }
 
 if (!defined('RESTATIFY_MCO_PLUGIN_URL')) {
-    define('RESTATIFY_MCO_PLUGIN_URL', plugin_dir_url(__FILE__));
+    define('RESTATIFY_MCO_PLUGIN_URL', RESTATIFY_AI_MULTICHAT_PLUGIN_URL);
 }
 
 if (!defined('RESTATIFY_BOOKING_OPEN_TOKEN')) {
@@ -35,7 +47,7 @@ if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
     define('RESTATIFY_BOOKING_CANCELLED_TOKEN', '[[RESTATIFY_BOOKING_CANCELLED]]');
 }
 
-$migration_notice_manager_file = RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
+$migration_notice_manager_file = RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
 if (file_exists($migration_notice_manager_file)) {
     require_once $migration_notice_manager_file;
 }
@@ -52,9 +64,9 @@ if (!class_exists('Restatify_Shared_Migration_Notice_Manager', false)) {
     }
 }
 
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-options-runtime.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-chat-runtime.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-admin-runtime.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-options-runtime.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-chat-runtime.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-admin-runtime.php';
 
 final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_Runtime {
 

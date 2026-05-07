@@ -14,7 +14,7 @@ class Restatify_Ai_Multichat_Options_Runtime {
         load_plugin_textdomain(
             Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN,
             false,
-            dirname(plugin_basename(RESTATIFY_MCO_PLUGIN_FILE)) . '/languages'
+            dirname(plugin_basename(RESTATIFY_AI_MULTICHAT_PLUGIN_FILE)) . '/languages'
         );
     }
 
