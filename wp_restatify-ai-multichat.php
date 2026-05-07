@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.3
+ * Version: 2.0.4
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -33,6 +33,40 @@ if (!defined('RESTATIFY_BOOKING_CONFIRMED_TOKEN')) {
 
 if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
     define('RESTATIFY_BOOKING_CANCELLED_TOKEN', '[[RESTATIFY_BOOKING_CANCELLED]]');
+}
+
+$restatify_legacy_plugin_basename = 'wp_restatify-multi-chat-overlay/restatify-multi-chat-overlay.php';
+$restatify_skip_bootstrap_for_request = false;
+
+$active_plugins = get_option('active_plugins', []);
+if (is_array($active_plugins) && in_array($restatify_legacy_plugin_basename, $active_plugins, true)) {
+    $active_plugins = array_values(array_filter(
+        $active_plugins,
+        static function ($plugin) use ($restatify_legacy_plugin_basename) {
+            return $plugin !== $restatify_legacy_plugin_basename;
+        }
+    ));
+
+    update_option('active_plugins', $active_plugins);
+    set_transient('restatify_ai_multichat_admin_notice', [
+        'type' => 'warning',
+        'message' => __('Legacy plugin wurde automatisch deaktiviert, um Klassenkonflikte mit Restatify AI Multichat zu vermeiden.', 'restatify-multi-chat-overlay'),
+    ], 300);
+
+    $restatify_skip_bootstrap_for_request = true;
+}
+
+if (is_multisite()) {
+    $sitewide_plugins = get_site_option('active_sitewide_plugins', []);
+    if (is_array($sitewide_plugins) && isset($sitewide_plugins[$restatify_legacy_plugin_basename])) {
+        unset($sitewide_plugins[$restatify_legacy_plugin_basename]);
+        update_site_option('active_sitewide_plugins', $sitewide_plugins);
+        $restatify_skip_bootstrap_for_request = true;
+    }
+}
+
+if ($restatify_skip_bootstrap_for_request) {
+    return;
 }
 
 $migration_notice_manager_file = RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
