@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.2
+ * Version: 2.0.3
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -21,18 +21,6 @@ if (!defined('RESTATIFY_AI_MULTICHAT_PLUGIN_DIR')) {
 
 if (!defined('RESTATIFY_AI_MULTICHAT_PLUGIN_URL')) {
     define('RESTATIFY_AI_MULTICHAT_PLUGIN_URL', plugin_dir_url(__FILE__));
-}
-
-if (!defined('RESTATIFY_MCO_PLUGIN_FILE')) {
-    define('RESTATIFY_MCO_PLUGIN_FILE', RESTATIFY_AI_MULTICHAT_PLUGIN_FILE);
-}
-
-if (!defined('RESTATIFY_MCO_PLUGIN_DIR')) {
-    define('RESTATIFY_MCO_PLUGIN_DIR', RESTATIFY_AI_MULTICHAT_PLUGIN_DIR);
-}
-
-if (!defined('RESTATIFY_MCO_PLUGIN_URL')) {
-    define('RESTATIFY_MCO_PLUGIN_URL', RESTATIFY_AI_MULTICHAT_PLUGIN_URL);
 }
 
 if (!defined('RESTATIFY_BOOKING_OPEN_TOKEN')) {

@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -152,6 +152,10 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.0.3 =
+* Removed legacy `RESTATIFY_MCO_*` alias constants from AI Multichat bootstrap to prevent cross-plugin constant collisions.
+* Fixes mixed-environment activation/runtime fatals where legacy plugin loaders resolved includes to the wrong plugin directory.
+
 = 2.0.2 =
 * Fixed legacy constant name collisions that could resolve includes/assets to `wp_restatify-multi-chat-overlay` and cause activation fatals.
 * Switched internal path/url resolution to dedicated AI Multichat constants to ensure collision-safe bootstrap/runtime loading.
@@ -203,6 +207,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.0.3 =
+Fixes legacy mixed-plugin collisions by removing bootstrap aliases that could poison old loader include paths.
 
 = 2.0.2 =
 Fixes activation failures caused by legacy plugin constant collisions in mixed/legacy environments.
