@@ -12,6 +12,11 @@ Schwebendes Multi-Channel-Chat-Overlay mit integriertem Website-Chat, Support-Po
 
 == Description ==
 
+Product: Restatify-AI-Multichat  
+Current slug: wp_restatify-multi-chat-overlay  
+Target slug (2.0.0): wp_restatify-ai-multichat  
+Company: https://www.restatify.tech
+
 Restatify Multi Chat Overlay fuegt im Frontend einen schwebenden Chat-Button hinzu und ermoeglicht:
 
 * Beliebte Messaging-Kanaele anzeigen (WhatsApp, Telegram, Messenger, Discord, Signal, Viber, Threema, WeChat).

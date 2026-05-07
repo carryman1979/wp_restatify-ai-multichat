@@ -1,5 +1,9 @@
 # Restatify Multi Chat Overlay - Wiki (DE)
 
+Produktname (ab 2.0.0): Restatify-AI-Multichat  
+WordPress-Slug (ab 2.0.0): wp_restatify-ai-multichat  
+Website: https://www.restatify.tech
+
 Stand: Version 1.4.x, getestet bis WordPress 6.9.
 
 Diese Seite ist als zentrale One-Page-Dokumentation für Einrichtung, Betrieb, Support und Release gedacht.
