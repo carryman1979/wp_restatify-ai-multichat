@@ -34,8 +34,8 @@ class Restatify_Ai_Multichat_Options_Runtime {
 
     public function register_admin_page(): void {
         add_options_page(
-            __('Multi Chat Overlay', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
-            __('Multi Chat Overlay', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            __('AI Multichat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            __('AI Multichat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'manage_options',
             Restatify_Ai_Multichat_Plugin::ADMIN_PAGE_SLUG,
             [$this, 'render_admin_page']

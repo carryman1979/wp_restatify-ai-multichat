@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.4
+ * Version: 2.0.5
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
