@@ -7,14 +7,14 @@ $ErrorActionPreference = 'Stop'
 $pluginRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $pluginRoot
 
-$pluginMainFile = Join-Path $pluginRoot 'restatify-multi-chat-overlay.php'
+$pluginMainFile = Join-Path $pluginRoot 'wp_restatify-ai-multichat.php'
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
     $pluginHeader = Get-Content $pluginMainFile -Raw
     $versionMatch = [regex]::Match($pluginHeader, 'Version:\s*([^\r\n]+)')
 
     if (-not $versionMatch.Success) {
-        throw 'Could not detect plugin version from restatify-multi-chat-overlay.php'
+        throw 'Could not detect plugin version from wp_restatify-ai-multichat.php'
     }
 
     $Version = $versionMatch.Groups[1].Value.Trim()

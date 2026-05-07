@@ -4,7 +4,7 @@ Diese Checkliste vor jedem Produktiv-Deployment durchgehen.
 
 ## 1) Paket und Version
 
-1. Plugin-Header-Version in restatify-multi-chat-overlay.php pruefen.
+1. Plugin-Header-Version in wp_restatify-ai-multichat.php pruefen.
 2. Stable tag in readme.txt mit der Plugin-Version abgleichen.
 3. Sicherstellen, dass kein lokaler Debug-/Testcode enthalten ist.
 4. Sicherstellen, dass nur notwendige Dateien im Release-Paket enthalten sind.
