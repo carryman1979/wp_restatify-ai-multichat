@@ -24,7 +24,7 @@ $releaseDir = Join-Path $pluginRoot 'release'
 New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
 
 $tempRoot = Join-Path $pluginRoot '.release-tmp'
-$stagingDir = Join-Path $tempRoot 'wp_restatify-multi-chat-overlay'
+$stagingDir = Join-Path $tempRoot 'wp_restatify-ai-multichat'
 
 if (Test-Path $tempRoot) {
     Remove-Item $tempRoot -Recurse -Force
@@ -44,12 +44,12 @@ Get-ChildItem -Path $pluginRoot -Force | Where-Object { $excludeNames -notcontai
     Copy-Item $_.FullName -Destination $stagingDir -Recurse -Force
 }
 
-$zipPath = Join-Path $releaseDir ("wp_restatify-multi-chat-overlay-$Version.zip")
+$zipPath = Join-Path $releaseDir ("wp_restatify-ai-multichat-$Version.zip")
 if (Test-Path $zipPath) {
     Remove-Item $zipPath -Force
 }
 
-Compress-Archive -Path (Join-Path $tempRoot 'wp_restatify-multi-chat-overlay') -DestinationPath $zipPath -CompressionLevel Optimal
+Compress-Archive -Path (Join-Path $tempRoot 'wp_restatify-ai-multichat') -DestinationPath $zipPath -CompressionLevel Optimal
 Remove-Item $tempRoot -Recurse -Force
 
 Write-Output "Created release package: $zipPath"

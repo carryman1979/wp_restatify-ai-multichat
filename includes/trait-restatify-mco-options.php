@@ -5,6 +5,8 @@ if (!defined('ABSPATH')) {
 }
 
 trait Restatify_MCO_Options_Trait {
+    private bool $migration_checked = false;
+
     public function load_textdomain(): void {
         load_plugin_textdomain(
             Restatify_Multi_Chat_Overlay::TEXT_DOMAIN,
@@ -14,8 +16,10 @@ trait Restatify_MCO_Options_Trait {
     }
 
     public function register_settings(): void {
+        $this->ensure_legacy_options_migrated();
+
         register_setting(
-            'restatify_multi_chat_overlay',
+            Restatify_Multi_Chat_Overlay::SETTINGS_GROUP,
             Restatify_Multi_Chat_Overlay::OPTION_KEY,
             [
                 'type' => 'array',
@@ -30,7 +34,7 @@ trait Restatify_MCO_Options_Trait {
             __('Multi Chat Overlay', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
             __('Multi Chat Overlay', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
             'manage_options',
-            'restatify-multi-chat-overlay',
+            Restatify_Multi_Chat_Overlay::ADMIN_PAGE_SLUG,
             [$this, 'render_admin_page']
         );
     }
@@ -214,6 +218,8 @@ trait Restatify_MCO_Options_Trait {
     }
 
     private function get_raw_options(): array {
+        $this->ensure_legacy_options_migrated();
+
         $saved = get_option(Restatify_Multi_Chat_Overlay::OPTION_KEY, []);
         if (!is_array($saved)) {
             $saved = [];
@@ -377,6 +383,40 @@ trait Restatify_MCO_Options_Trait {
         $clean = array_values(array_unique($clean));
         return implode(',', $clean);
     }
+
+    private function ensure_legacy_options_migrated(): void {
+        if ($this->migration_checked) {
+            return;
+        }
+        $this->migration_checked = true;
+
+        $current = get_option(Restatify_Multi_Chat_Overlay::OPTION_KEY, null);
+        if (is_array($current) && count($current) > 0) {
+            return;
+        }
+
+        foreach (Restatify_Multi_Chat_Overlay::LEGACY_OPTION_KEYS as $legacy_key) {
+            $legacy = get_option((string) $legacy_key, null);
+            if (!is_array($legacy) || count($legacy) === 0) {
+                continue;
+            }
+
+            update_option(Restatify_Multi_Chat_Overlay::OPTION_KEY, $legacy, false);
+            update_option(
+                Restatify_Multi_Chat_Overlay::MIGRATION_STATE_OPTION,
+                [
+                    'completed' => true,
+                    'show_notice' => true,
+                    'source_option_key' => (string) $legacy_key,
+                    'migrated_at' => time(),
+                    'logs_history_migrated' => false,
+                ],
+                false
+            );
+            return;
+        }
+    }
+
 }
 
 

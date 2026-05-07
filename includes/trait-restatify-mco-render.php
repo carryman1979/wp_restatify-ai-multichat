@@ -91,7 +91,7 @@ trait Restatify_MCO_Render_Trait {
     public function render_ai_debug_dashboard_widget(): void {
         $lines = $this->get_recent_ai_debug_lines(20);
         $settings_link = add_query_arg(
-            ['page' => 'restatify-multi-chat-overlay'],
+            ['page' => Restatify_Multi_Chat_Overlay::ADMIN_PAGE_SLUG],
             admin_url('options-general.php')
         );
 
@@ -132,7 +132,7 @@ trait Restatify_MCO_Render_Trait {
             </div>
 
             <form method="post" action="options.php">
-                <?php settings_fields('restatify_multi_chat_overlay'); ?>
+                <?php settings_fields(Restatify_Multi_Chat_Overlay::SETTINGS_GROUP); ?>
 
                 <table class="form-table" role="presentation">
                     <tr>
