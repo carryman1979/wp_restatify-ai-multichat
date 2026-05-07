@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -152,6 +152,10 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.0.1 =
+* Fixed a plugin activation fatal error when the migration notice helper class file is missing in partial or inconsistent deployments.
+* Added a defensive fallback so activation stays functional even if migration helper loading fails.
+
 = 1.4.3 =
 * Added LightStart maintenance integration with a configurable setting to hide the overlay while maintenance mode is active.
 * Added admin setting "Bei LightStart-Wartung ausblenden" (default enabled), visible only when LightStart is installed and active.
@@ -195,6 +199,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.0.1 =
+Hotfix release that prevents activation fatals caused by missing migration helper includes in inconsistent deployments.
 
 = 1.4.3 =
 Adds LightStart-aware maintenance suppression for the chat overlay with a configurable admin toggle.
