@@ -6,7 +6,7 @@ German version available: RELEASE-CHECKLIST.de.md
 
 ## 1) Package and Version
 
-1. Verify plugin header version in `restatify-multi-chat-overlay.php`.
+1. Verify plugin header version in `wp_restatify-ai-multichat.php`.
 2. Verify `Stable tag` in `readme.txt` matches plugin version.
 3. Confirm no local debug/test code remains.
 4. Ensure only required files are included in release package.

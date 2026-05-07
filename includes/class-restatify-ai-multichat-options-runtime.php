@@ -4,19 +4,26 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-trait Restatify_MCO_Options_Trait {
+/**
+ * Handles configuration, defaults, sanitization and localization setup.
+ */
+class Restatify_Ai_Multichat_Options_Runtime {
+    private bool $migration_checked = false;
+
     public function load_textdomain(): void {
         load_plugin_textdomain(
-            Restatify_Multi_Chat_Overlay::TEXT_DOMAIN,
+            Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN,
             false,
             dirname(plugin_basename(RESTATIFY_MCO_PLUGIN_FILE)) . '/languages'
         );
     }
 
     public function register_settings(): void {
+        $this->ensure_legacy_options_migrated();
+
         register_setting(
-            'restatify_multi_chat_overlay',
-            Restatify_Multi_Chat_Overlay::OPTION_KEY,
+            Restatify_Ai_Multichat_Plugin::SETTINGS_GROUP,
+            Restatify_Ai_Multichat_Plugin::OPTION_KEY,
             [
                 'type' => 'array',
                 'sanitize_callback' => [$this, 'sanitize_options'],
@@ -27,10 +34,10 @@ trait Restatify_MCO_Options_Trait {
 
     public function register_admin_page(): void {
         add_options_page(
-            __('Multi Chat Overlay', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
-            __('Multi Chat Overlay', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            __('Multi Chat Overlay', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            __('Multi Chat Overlay', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'manage_options',
-            'restatify-multi-chat-overlay',
+            Restatify_Ai_Multichat_Plugin::ADMIN_PAGE_SLUG,
             [$this, 'render_admin_page']
         );
     }
@@ -41,7 +48,7 @@ trait Restatify_MCO_Options_Trait {
         }
 
         $options = $this->get_raw_options();
-        foreach (Restatify_Multi_Chat_Overlay::TRANSLATABLE_OPTION_KEYS as $key) {
+        foreach (Restatify_Ai_Multichat_Plugin::TRANSLATABLE_OPTION_KEYS as $key) {
             $value = trim((string) ($options[$key] ?? ''));
             if ($value === '') {
                 continue;
@@ -50,7 +57,7 @@ trait Restatify_MCO_Options_Trait {
             pll_register_string(
                 'restatify_mco_' . $key,
                 $value,
-                Restatify_Multi_Chat_Overlay::POLYLANG_GROUP,
+                Restatify_Ai_Multichat_Plugin::POLYLANG_GROUP,
                 true
             );
         }
@@ -98,9 +105,9 @@ trait Restatify_MCO_Options_Trait {
             if (!empty($output['own_chat_enabled'])) {
                 $output['support_email'] = sanitize_email((string) get_option('admin_email', ''));
                 add_settings_error(
-                    Restatify_Multi_Chat_Overlay::OPTION_KEY,
+                    Restatify_Ai_Multichat_Plugin::OPTION_KEY,
                     'restatify_mco_support_email_required',
-                    __('Die Support-E-Mail war leer und wurde auf die Admin-E-Mail der Website zurueckgesetzt.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+                    __('Die Support-E-Mail war leer und wurde auf die Admin-E-Mail der Website zurueckgesetzt.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
                     'warning'
                 );
             } else {
@@ -111,16 +118,16 @@ trait Restatify_MCO_Options_Trait {
         if (!empty($output['ai_enabled']) && trim((string) $output['ai_api_key']) === '') {
             $output['ai_enabled'] = false;
             add_settings_error(
-                Restatify_Multi_Chat_Overlay::OPTION_KEY,
+                Restatify_Ai_Multichat_Plugin::OPTION_KEY,
                 'restatify_mco_ai_key_required',
-                __('Die KI-Autoantwort wurde deaktiviert, weil kein API-Schluessel hinterlegt ist.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+                __('Die KI-Autoantwort wurde deaktiviert, weil kein API-Schluessel hinterlegt ist.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
                 'warning'
             );
         }
 
         $input_channels = isset($input['channels']) && is_array($input['channels']) ? $input['channels'] : [];
 
-        foreach (Restatify_Multi_Chat_Overlay::CHANNELS as $key => $meta) {
+        foreach (Restatify_Ai_Multichat_Plugin::CHANNELS as $key => $meta) {
             $url = isset($input_channels[$key]) ? trim((string) $input_channels[$key]) : '';
             $output['channels'][$key] = $url !== '' ? $this->sanitize_channel_url($url) : '';
         }
@@ -128,9 +135,9 @@ trait Restatify_MCO_Options_Trait {
         return $output;
     }
 
-    private function get_active_channels(array $options): array {
+    protected function get_active_channels(array $options): array {
         $active = [];
-        foreach (Restatify_Multi_Chat_Overlay::CHANNELS as $key => $meta) {
+        foreach (Restatify_Ai_Multichat_Plugin::CHANNELS as $key => $meta) {
             $url = trim((string) ($options['channels'][$key] ?? ''));
             if ($url === '') {
                 continue;
@@ -147,7 +154,7 @@ trait Restatify_MCO_Options_Trait {
         return $active;
     }
 
-    private function should_render(array $options): bool {
+    protected function should_render(array $options): bool {
         if (empty($options['enabled'])) {
             return false;
         }
@@ -162,7 +169,7 @@ trait Restatify_MCO_Options_Trait {
     /**
      * Return true only when LightStart exists and maintenance status is active.
      */
-    private function is_lightstart_maintenance_active(): bool {
+    protected function is_lightstart_maintenance_active(): bool {
         if (!$this->is_lightstart_available()) {
             return false;
         }
@@ -178,7 +185,7 @@ trait Restatify_MCO_Options_Trait {
     /**
      * Detect whether LightStart is installed and active (single-site or network).
      */
-    private function is_lightstart_available(): bool {
+    protected function is_lightstart_available(): bool {
         if (!file_exists(WP_PLUGIN_DIR . '/wp-maintenance-mode/wp-maintenance-mode.php')) {
             return false;
         }
@@ -190,7 +197,7 @@ trait Restatify_MCO_Options_Trait {
             || isset($network_plugins['wp-maintenance-mode/wp-maintenance-mode.php']);
     }
 
-    private function get_options(bool $apply_translations = true): array {
+    protected function get_options(bool $apply_translations = true): array {
         $options = $this->get_raw_options();
 
         if (!$apply_translations || !function_exists('pll__')) {
@@ -198,7 +205,7 @@ trait Restatify_MCO_Options_Trait {
         }
 
         // Keep saved base values language-neutral and only translate at runtime.
-        foreach (Restatify_Multi_Chat_Overlay::TRANSLATABLE_OPTION_KEYS as $key) {
+        foreach (Restatify_Ai_Multichat_Plugin::TRANSLATABLE_OPTION_KEYS as $key) {
             $value = trim((string) ($options[$key] ?? ''));
             if ($value === '') {
                 continue;
@@ -213,8 +220,10 @@ trait Restatify_MCO_Options_Trait {
         return $options;
     }
 
-    private function get_raw_options(): array {
-        $saved = get_option(Restatify_Multi_Chat_Overlay::OPTION_KEY, []);
+    protected function get_raw_options(): array {
+        $this->ensure_legacy_options_migrated();
+
+        $saved = get_option(Restatify_Ai_Multichat_Plugin::OPTION_KEY, []);
         if (!is_array($saved)) {
             $saved = [];
         }
@@ -222,25 +231,25 @@ trait Restatify_MCO_Options_Trait {
         return wp_parse_args($saved, $this->get_default_options());
     }
 
-    private function get_default_options(): array {
+    protected function get_default_options(): array {
         $defaults = [
             'enabled' => false,
             'disable_during_maintenance' => true,
             'require_cookie_consent' => true,
             'consent_cookie_names' => 'cookie_consent,cmplz_marketing,borlabs-cookie,CookieConsent',
-            'team_name' => __('Restatify Service-Team', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
-            'message' => __('Hallo. Wie können wir dir helfen?', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
-            'cta_label' => __('Chat starten mit:', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
-            'channels_more_label' => __('Weiter', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
-            'channels_less_label' => __('Weniger', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
-            'toggle_aria_label' => __('Chatfenster öffnen', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'team_name' => __('Restatify Service-Team', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'message' => __('Hallo. Wie können wir dir helfen?', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'cta_label' => __('Chat starten mit:', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'channels_more_label' => __('Weiter', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'channels_less_label' => __('Weniger', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'toggle_aria_label' => __('Chatfenster öffnen', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'delay_seconds' => 6,
             'own_chat_enabled' => false,
             'support_email' => get_option('admin_email', ''),
             'support_notify_on_message' => true,
-            'chat_title' => __('Schreibe uns direkt', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
-            'chat_placeholder' => __('Nachricht hier eingeben...', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
-            'chat_send_label' => __('Senden', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'chat_title' => __('Schreibe uns direkt', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'chat_placeholder' => __('Nachricht hier eingeben...', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'chat_send_label' => __('Senden', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'chat_poll_seconds' => 8,
             'chat_reset_minutes' => 15,
             'chat_rate_limit_enabled' => true,
@@ -251,49 +260,49 @@ trait Restatify_MCO_Options_Trait {
             'ai_enabled' => false,
             'ai_debug_enabled' => false,
             'ai_api_key' => '',
-            'ai_api_endpoint' => Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT,
+            'ai_api_endpoint' => Restatify_Ai_Multichat_Plugin::DEFAULT_AI_ENDPOINT,
             'ai_model' => 'gpt-4o-mini',
-            'ai_system_prompt' => __('Du bist ein hilfreicher Support-Assistent für diese Website. Antworte kurz und freundlich in derselben Sprache wie der Nutzer.', Restatify_Multi_Chat_Overlay::TEXT_DOMAIN),
+            'ai_system_prompt' => __('Du bist ein hilfreicher Support-Assistent für diese Website. Antworte kurz und freundlich in derselben Sprache wie der Nutzer.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'channels' => [],
         ];
 
-        foreach (Restatify_Multi_Chat_Overlay::CHANNELS as $key => $meta) {
+        foreach (Restatify_Ai_Multichat_Plugin::CHANNELS as $key => $meta) {
             $defaults['channels'][$key] = '';
         }
 
         return $defaults;
     }
 
-    private function sanitize_channel_url(string $url): string {
+    protected function sanitize_channel_url(string $url): string {
         return esc_url_raw($url, $this->get_allowed_url_protocols());
     }
 
-    private function sanitize_ai_endpoint(string $endpoint): string {
+    protected function sanitize_ai_endpoint(string $endpoint): string {
         $endpoint = trim($endpoint);
         if ($endpoint === '') {
-            return Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT;
+            return Restatify_Ai_Multichat_Plugin::DEFAULT_AI_ENDPOINT;
         }
 
         $sanitized = esc_url_raw($endpoint, ['https']);
         if ($sanitized === '') {
-            return Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT;
+            return Restatify_Ai_Multichat_Plugin::DEFAULT_AI_ENDPOINT;
         }
 
         $parts = wp_parse_url($sanitized);
         if (!is_array($parts) || empty($parts['scheme']) || strtolower((string) $parts['scheme']) !== 'https' || empty($parts['host'])) {
-            return Restatify_Multi_Chat_Overlay::DEFAULT_AI_ENDPOINT;
+            return Restatify_Ai_Multichat_Plugin::DEFAULT_AI_ENDPOINT;
         }
 
         return $sanitized;
     }
 
-    private function get_allowed_url_protocols(): array {
+    protected function get_allowed_url_protocols(): array {
         $protocols = wp_allowed_protocols();
         $extra = ['viber', 'tg', 'discord', 'signal', 'threema'];
         return array_values(array_unique(array_merge($protocols, $extra)));
     }
 
-    private function get_contrast_text_color(string $hex): string {
+    protected function get_contrast_text_color(string $hex): string {
         $hex = ltrim(trim($hex), '#');
         if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
             return '#ffffff';
@@ -307,7 +316,7 @@ trait Restatify_MCO_Options_Trait {
         return $yiq >= 160 ? '#0b1221' : '#ffffff';
     }
 
-    private function get_palette_colors(): array {
+    protected function get_palette_colors(): array {
         $fallback = ['#ff6b00', '#00c2ff', '#a84700', '#0080a8', '#0b1221'];
 
         if (!function_exists('wp_get_global_settings')) {
@@ -343,7 +352,7 @@ trait Restatify_MCO_Options_Trait {
         return count($colors) > 0 ? $colors : $fallback;
     }
 
-    private function sanitize_cookie_match_list(string $value): string {
+    protected function sanitize_cookie_match_list(string $value): string {
         $parts = preg_split('/[,\n\r\t ]+/', $value);
         if (!is_array($parts)) {
             return '';
@@ -377,7 +386,37 @@ trait Restatify_MCO_Options_Trait {
         $clean = array_values(array_unique($clean));
         return implode(',', $clean);
     }
+
+    protected function ensure_legacy_options_migrated(): void {
+        if ($this->migration_checked) {
+            return;
+        }
+        $this->migration_checked = true;
+
+        $current = get_option(Restatify_Ai_Multichat_Plugin::OPTION_KEY, null);
+        if (is_array($current) && count($current) > 0) {
+            return;
+        }
+
+        foreach (Restatify_Ai_Multichat_Plugin::LEGACY_OPTION_KEYS as $legacy_key) {
+            $legacy = get_option((string) $legacy_key, null);
+            if (!is_array($legacy) || count($legacy) === 0) {
+                continue;
+            }
+
+            update_option(Restatify_Ai_Multichat_Plugin::OPTION_KEY, $legacy, false);
+            update_option(
+                Restatify_Ai_Multichat_Plugin::MIGRATION_STATE_OPTION,
+                [
+                    'completed' => true,
+                    'show_notice' => true,
+                    'source_option_key' => (string) $legacy_key,
+                    'migrated_at' => time(),
+                    'logs_history_migrated' => false,
+                ],
+                false
+            );
+            return;
+        }
+    }
 }
-
-
-

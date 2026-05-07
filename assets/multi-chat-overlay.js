@@ -1,8 +1,8 @@
 (function () {
-  var CHAT_STORAGE_ID_KEY = 'restatify_mco_chat_id';
-  var CHAT_STORAGE_TOKEN_KEY = 'restatify_mco_chat_token';
-  var CHAT_STORAGE_LAST_ACTIVE_KEY = 'restatify_mco_chat_last_active';
-  var BOOKING_TRIGGER_STORAGE_KEY = 'restatify_mco_handled_booking_triggers';
+  var CHAT_STORAGE_ID_KEY = 'restatify_ai_multichat_chat_id';
+  var CHAT_STORAGE_TOKEN_KEY = 'restatify_ai_multichat_chat_token';
+  var CHAT_STORAGE_LAST_ACTIVE_KEY = 'restatify_ai_multichat_chat_last_active';
+  var BOOKING_TRIGGER_STORAGE_KEY = 'restatify_ai_multichat_booking_triggers';
   var BOOKING_OPEN_TOKEN = '[[RESTATIFY_BOOKING_OPEN]]';
   var BOOKING_CONFIRMED_TOKEN = '[[RESTATIFY_BOOKING_CONFIRMED]]';
   var BOOKING_CANCELLED_TOKEN = '[[RESTATIFY_BOOKING_CANCELLED]]';

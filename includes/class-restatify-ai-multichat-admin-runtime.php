@@ -1,0 +1,187 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * Handles admin UI, dashboard widgets and frontend rendering hooks.
+ */
+class Restatify_Ai_Multichat_Admin_Runtime extends Restatify_Ai_Multichat_Chat_Runtime {
+public function enqueue_support_inbox_assets(): void {
+        $page = sanitize_key(wp_unslash($_GET['page'] ?? ''));
+        if ($page !== 'restatify-mco-support-inbox') {
+            return;
+        }
+
+        $base_url = RESTATIFY_MCO_PLUGIN_URL . 'assets/';
+        $base_path = RESTATIFY_MCO_PLUGIN_DIR . 'assets/';
+
+        wp_enqueue_script(
+            'restatify-mco-support-inbox-admin',
+            $base_url . 'support-inbox-admin.js',
+            [],
+            file_exists($base_path . 'support-inbox-admin.js') ? (string) filemtime($base_path . 'support-inbox-admin.js') : '1.0.0',
+            true
+        );
+
+        wp_localize_script('restatify-mco-support-inbox-admin', 'restatifyMcoSupportInbox', [
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('restatify_mco_chat_nonce'),
+            'supportPageUrl' => add_query_arg(['page' => 'restatify-mco-support-inbox'], admin_url('admin.php')),
+            'strings' => [
+                'deleteConfirm' => __('Diese Unterhaltung dauerhaft löschen?', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                'genericError' => __('Aktion fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                'openBookingAtClient' => __('Ich habe das Buchungstool für dich geöffnet. Bitte wähle einen Termin und bestätige deine Reservierung.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            ],
+        ]);
+    }
+
+    public function ensure_support_capability(): void {
+        $role = get_role('administrator');
+        if (!$role) {
+            return;
+        }
+
+        if (!$role->has_cap(Restatify_Ai_Multichat_Plugin::SUPPORT_CAPABILITY)) {
+            $role->add_cap(Restatify_Ai_Multichat_Plugin::SUPPORT_CAPABILITY);
+        }
+    }
+
+    public function register_support_inbox_page(): void {
+        add_menu_page(
+            __('Support Chat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            __('Support Chat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            $this->get_support_inbox_capability(),
+            'restatify-mco-support-inbox',
+            [$this, 'render_support_inbox_page'],
+            'dashicons-format-chat',
+            58
+        );
+    }
+
+    public function render_support_inbox_page(): void {
+        if (!current_user_can($this->get_support_inbox_capability())) {
+            wp_die(esc_html__('Unzureichende Berechtigungen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN));
+        }
+
+        $options = $this->get_options(false);
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Support Chat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</h1>';
+
+        if (empty($options['own_chat_enabled'])) {
+            echo '<p>' . esc_html__('Der integrierte Website-Chat ist derzeit deaktiviert. Aktiviere ihn in den Multi-Chat-Overlay-Einstellungen, um hier Unterhaltungen zu empfangen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+            echo '</div>';
+            return;
+        }
+
+        $this->render_support_inbox();
+        echo '</div>';
+    }
+
+    public function register_ai_debug_dashboard_widget(): void {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        wp_add_dashboard_widget(
+            'restatify_mco_ai_debug_widget',
+            __('Restatify AI Debug', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            [$this, 'render_ai_debug_dashboard_widget']
+        );
+    }
+
+    public function render_ai_debug_dashboard_widget(): void {
+        $lines = $this->get_recent_ai_debug_lines(20);
+        $settings_link = add_query_arg(
+            ['page' => Restatify_Ai_Multichat_Plugin::ADMIN_PAGE_SLUG],
+            admin_url('options-general.php')
+        );
+
+        if (count($lines) === 0) {
+            echo '<p>' . esc_html__('Noch keine KI-Debug-Zeilen vorhanden.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+            echo '<p class="description">' . esc_html__('Aktiviere "KI-Debug-Protokollierung" in den Plugin-Einstellungen und sende eine Testnachricht, um dieses Widget zu befüllen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+            echo '<p><a class="button" href="' . esc_url($settings_link) . '">' . esc_html__('Plugin-Einstellungen öffnen', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</a></p>';
+            return;
+        }
+
+        echo '<p class="description">' . esc_html__('Aktuelle pluginseitige KI-Diagnose (letzte 20 Eintraege).', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+        echo '<textarea class="large-text code" rows="10" readonly>' . esc_textarea(implode("\n", $lines)) . '</textarea>';
+        echo '<p><a class="button" href="' . esc_url($settings_link) . '">' . esc_html__('Plugin-Einstellungen öffnen', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</a></p>';
+    }
+
+    public function render_admin_page(): void {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $options = $this->get_options(false);
+        require RESTATIFY_MCO_PLUGIN_DIR . 'templates/admin-page.inc.php';
+    }
+
+    public function enqueue_assets(): void {
+        $options = $this->get_options();
+        if (!$this->should_render($options)) {
+            return;
+        }
+
+        $base_url = RESTATIFY_MCO_PLUGIN_URL . 'assets/';
+        $base_path = RESTATIFY_MCO_PLUGIN_DIR . 'assets/';
+
+        wp_enqueue_style(
+            'restatify-multi-chat-overlay',
+            $base_url . 'multi-chat-overlay.css',
+            [],
+            file_exists($base_path . 'multi-chat-overlay.css') ? (string) filemtime($base_path . 'multi-chat-overlay.css') : '1.0.0'
+        );
+
+        wp_enqueue_script(
+            'restatify-multi-chat-overlay',
+            $base_url . 'multi-chat-overlay.js',
+            [],
+            file_exists($base_path . 'multi-chat-overlay.js') ? (string) filemtime($base_path . 'multi-chat-overlay.js') : '1.0.0',
+            true
+        );
+
+        wp_localize_script('restatify-multi-chat-overlay', 'restatifyMultiChatOverlay', [
+            'dismissHours' => 24,
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('restatify_mco_chat_nonce'),
+            'chatEnabled' => !empty($options['own_chat_enabled']),
+            'requireConsent' => !empty($options['require_cookie_consent']),
+            'consentCookieNames' => array_values(array_filter(array_map('trim', explode(',', (string) ($options['consent_cookie_names'] ?? ''))))),
+            'pollSeconds' => max(3, (int) $options['chat_poll_seconds']),
+            'chatResetMinutes' => max(0, (int) $options['chat_reset_minutes']),
+            'strings' => [
+                'sending' => __('Senden...', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                'sendFailed' => __('Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                'emptyMessage' => __('Bitte gib zuerst eine Nachricht ein.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            ],
+        ]);
+    }
+
+    public function render_overlay(): void {
+        $options = $this->get_options();
+        if (!$this->should_render($options)) {
+            return;
+        }
+
+        $channels = $this->get_active_channels($options);
+        $palette = $this->get_palette_colors();
+        $delay_ms = max(0, (int) $options['delay_seconds']) * 1000;
+        require RESTATIFY_MCO_PLUGIN_DIR . 'templates/overlay.inc.php';
+    }
+
+    private function render_support_inbox(): void {
+        $store = $this->get_chat_store();
+        $selected_id = sanitize_text_field(wp_unslash($_GET['conversation'] ?? ''));
+        $ai_mode_options = $this->get_ai_mode_options();
+        require RESTATIFY_MCO_PLUGIN_DIR . 'templates/support-inbox.inc.php';
+
+    }
+
+    private function get_support_inbox_capability(): string {
+        $capability = apply_filters('restatify_mco_support_inbox_capability', Restatify_Ai_Multichat_Plugin::SUPPORT_CAPABILITY);
+        return is_string($capability) && $capability !== '' ? $capability : Restatify_Ai_Multichat_Plugin::SUPPORT_CAPABILITY;
+    }
+}

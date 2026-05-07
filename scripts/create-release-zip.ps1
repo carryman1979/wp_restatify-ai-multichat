@@ -7,14 +7,14 @@ $ErrorActionPreference = 'Stop'
 $pluginRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $pluginRoot
 
-$pluginMainFile = Join-Path $pluginRoot 'restatify-multi-chat-overlay.php'
+$pluginMainFile = Join-Path $pluginRoot 'wp_restatify-ai-multichat.php'
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
     $pluginHeader = Get-Content $pluginMainFile -Raw
     $versionMatch = [regex]::Match($pluginHeader, 'Version:\s*([^\r\n]+)')
 
     if (-not $versionMatch.Success) {
-        throw 'Could not detect plugin version from restatify-multi-chat-overlay.php'
+        throw 'Could not detect plugin version from wp_restatify-ai-multichat.php'
     }
 
     $Version = $versionMatch.Groups[1].Value.Trim()
@@ -24,7 +24,7 @@ $releaseDir = Join-Path $pluginRoot 'release'
 New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
 
 $tempRoot = Join-Path $pluginRoot '.release-tmp'
-$stagingDir = Join-Path $tempRoot 'wp_restatify-multi-chat-overlay'
+$stagingDir = Join-Path $tempRoot 'wp_restatify-ai-multichat'
 
 if (Test-Path $tempRoot) {
     Remove-Item $tempRoot -Recurse -Force
@@ -44,12 +44,12 @@ Get-ChildItem -Path $pluginRoot -Force | Where-Object { $excludeNames -notcontai
     Copy-Item $_.FullName -Destination $stagingDir -Recurse -Force
 }
 
-$zipPath = Join-Path $releaseDir ("wp_restatify-multi-chat-overlay-$Version.zip")
+$zipPath = Join-Path $releaseDir ("wp_restatify-ai-multichat-$Version.zip")
 if (Test-Path $zipPath) {
     Remove-Item $zipPath -Force
 }
 
-Compress-Archive -Path (Join-Path $tempRoot 'wp_restatify-multi-chat-overlay') -DestinationPath $zipPath -CompressionLevel Optimal
+Compress-Archive -Path (Join-Path $tempRoot 'wp_restatify-ai-multichat') -DestinationPath $zipPath -CompressionLevel Optimal
 Remove-Item $tempRoot -Recurse -Force
 
 Write-Output "Created release package: $zipPath"

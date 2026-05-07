@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify Multi Chat Overlay
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 1.4.3
+ * Version: 2.0.0
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -23,20 +23,35 @@ if (!defined('RESTATIFY_MCO_PLUGIN_URL')) {
     define('RESTATIFY_MCO_PLUGIN_URL', plugin_dir_url(__FILE__));
 }
 
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/trait-restatify-mco-options.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/trait-restatify-mco-chat.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/trait-restatify-mco-ai.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/trait-restatify-mco-render.php';
+if (!defined('RESTATIFY_BOOKING_OPEN_TOKEN')) {
+    define('RESTATIFY_BOOKING_OPEN_TOKEN', '[[RESTATIFY_BOOKING_OPEN]]');
+}
 
-final class Restatify_Multi_Chat_Overlay {
-    use Restatify_MCO_Options_Trait;
-    use Restatify_MCO_Chat_Trait;
-    use Restatify_MCO_AI_Trait;
-    use Restatify_MCO_Render_Trait;
+if (!defined('RESTATIFY_BOOKING_CONFIRMED_TOKEN')) {
+    define('RESTATIFY_BOOKING_CONFIRMED_TOKEN', '[[RESTATIFY_BOOKING_CONFIRMED]]');
+}
 
-    public const OPTION_KEY = 'restatify_multi_chat_overlay_options';
-    public const CHAT_STORE_KEY = 'restatify_multi_chat_overlay_conversations';
-    public const AI_DEBUG_LOG_KEY = 'restatify_multi_chat_overlay_ai_debug_log';
+if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
+    define('RESTATIFY_BOOKING_CANCELLED_TOKEN', '[[RESTATIFY_BOOKING_CANCELLED]]');
+}
+
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-options-runtime.php';
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-chat-runtime.php';
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-admin-runtime.php';
+
+final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_Runtime {
+
+    public const SETTINGS_GROUP = 'restatify_ai_multichat';
+    public const OPTION_KEY = 'restatify_ai_multichat_options';
+    public const LEGACY_OPTION_KEYS = [
+        'restatify_multi_chat_overlay_options',
+    ];
+    public const MIGRATION_STATE_OPTION = 'restatify_ai_multichat_migration_state';
+    public const ADMIN_NOTICE_TRANSIENT = 'restatify_ai_multichat_admin_notice';
+    public const ADMIN_PAGE_SLUG = 'restatify-ai-multichat';
+    public const CHAT_STORE_KEY = 'restatify_ai_multichat_conversations';
+    public const AI_DEBUG_LOG_KEY = 'restatify_ai_multichat_debug_log';
     public const CHAT_MAX_CONVERSATIONS = 200;
     public const CHAT_MAX_MESSAGES = 80;
     public const AI_DEBUG_MAX_ENTRIES = 120;
@@ -112,6 +127,31 @@ final class Restatify_Multi_Chat_Overlay {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('wp_footer', [$this, 'render_overlay'], 120);
 
+        Restatify_Shared_Migration_Notice_Manager::register([
+            'state_option_key' => self::MIGRATION_STATE_OPTION,
+            'state_show_key' => 'show_notice',
+            'page_slug' => self::ADMIN_PAGE_SLUG,
+            'legacy_option_keys' => self::LEGACY_OPTION_KEYS,
+            'notice_transient_key' => self::ADMIN_NOTICE_TRANSIENT,
+            'action_query_arg' => 'restatify_ai_multichat_migration_notice_action',
+            'nonce_query_arg' => 'restatify_ai_multichat_migration_notice_nonce',
+            'nonce_action' => 'restatify_ai_multichat_migration_notice',
+            'title_de' => 'Restatify AI Multi-Chat 2.0: Migration abgeschlossen',
+            'title_en' => 'Restatify AI Multi-Chat 2.0: Migration completed',
+            'body_de' => 'Ihre Einstellungen wurden aus der Legacy-Konfiguration uebernommen. Standard ist: Legacy-Einstellungen vorerst behalten.',
+            'body_en' => 'Your settings were migrated from the legacy configuration. Default is to keep legacy settings for now.',
+            'warning_de' => 'Hinweis: Chatverlauf und Debug-Logs wurden bewusst nicht migriert.',
+            'warning_en' => 'Note: chat history and debug logs were intentionally not migrated.',
+            'keep_label_de' => 'Legacy-Einstellungen behalten (Standard)',
+            'keep_label_en' => 'Keep legacy settings (default)',
+            'remove_label_de' => 'Legacy-Einstellungen entfernen',
+            'remove_label_en' => 'Remove legacy settings',
+            'success_keep_de' => 'Legacy-Einstellungen wurden zur Sicherheit beibehalten. Sie koennen diese spaeter entfernen.',
+            'success_keep_en' => 'Legacy settings were kept for safety. You can remove them later.',
+            'success_remove_de' => 'Legacy-Einstellungen wurden entfernt. Die aktuellen Restatify AI Multi-Chat Einstellungen bleiben aktiv.',
+            'success_remove_en' => 'Legacy settings were removed. Current Restatify AI Multi-Chat settings stay active.',
+        ]);
+
         add_action('wp_ajax_restatify_mco_send_message', [$this, 'ajax_send_message']);
         add_action('wp_ajax_nopriv_restatify_mco_send_message', [$this, 'ajax_send_message']);
         add_action('wp_ajax_restatify_mco_fetch_chat', [$this, 'ajax_fetch_chat']);
@@ -124,4 +164,8 @@ final class Restatify_Multi_Chat_Overlay {
     }
 }
 
-new Restatify_Multi_Chat_Overlay();
+if (!class_exists('Restatify_Multi_Chat_Overlay', false)) {
+    class_alias('Restatify_Ai_Multichat_Plugin', 'Restatify_Multi_Chat_Overlay');
+}
+
+new Restatify_Ai_Multichat_Plugin();
