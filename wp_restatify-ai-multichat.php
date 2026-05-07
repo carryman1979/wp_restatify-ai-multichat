@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Restatify Multi Chat Overlay
+ * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -35,7 +35,23 @@ if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
     define('RESTATIFY_BOOKING_CANCELLED_TOKEN', '[[RESTATIFY_BOOKING_CANCELLED]]');
 }
 
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
+$migration_notice_manager_file = RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
+if (file_exists($migration_notice_manager_file)) {
+    require_once $migration_notice_manager_file;
+}
+
+if (!class_exists('Restatify_Shared_Migration_Notice_Manager', false)) {
+    /**
+     * Fail-safe: keep plugin activation functional even if optional migration helper
+     * file is missing in a partial/corrupted deployment.
+     */
+    final class Restatify_Shared_Migration_Notice_Manager {
+        public static function register(array $config): void {
+            unset($config);
+        }
+    }
+}
+
 require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-options-runtime.php';
 require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-chat-runtime.php';
 require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-admin-runtime.php';

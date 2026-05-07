@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
  * Handles configuration, defaults, sanitization and localization setup.
  */
 class Restatify_Ai_Multichat_Options_Runtime {
-    private bool $migration_checked = false;
+    private $migration_checked = false;
 
     public function load_textdomain(): void {
         load_plugin_textdomain(
