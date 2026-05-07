@@ -23,17 +23,22 @@ if (!defined('RESTATIFY_MCO_PLUGIN_URL')) {
     define('RESTATIFY_MCO_PLUGIN_URL', plugin_dir_url(__FILE__));
 }
 
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/trait-restatify-mco-options.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/trait-restatify-mco-chat.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/trait-restatify-mco-ai.php';
-require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/trait-restatify-mco-render.php';
+if (!defined('RESTATIFY_BOOKING_OPEN_TOKEN')) {
+    define('RESTATIFY_BOOKING_OPEN_TOKEN', '[[RESTATIFY_BOOKING_OPEN]]');
+}
 
-final class Restatify_Multi_Chat_Overlay {
-    use Restatify_MCO_Options_Trait;
-    use Restatify_MCO_Chat_Trait;
-    use Restatify_MCO_AI_Trait;
-    use Restatify_MCO_Render_Trait;
+if (!defined('RESTATIFY_BOOKING_CONFIRMED_TOKEN')) {
+    define('RESTATIFY_BOOKING_CONFIRMED_TOKEN', '[[RESTATIFY_BOOKING_CONFIRMED]]');
+}
+
+if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
+    define('RESTATIFY_BOOKING_CANCELLED_TOKEN', '[[RESTATIFY_BOOKING_CANCELLED]]');
+}
+
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
+require_once RESTATIFY_MCO_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-runtime.php';
+
+final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Runtime {
 
     public const SETTINGS_GROUP = 'restatify_ai_multichat';
     public const OPTION_KEY = 'restatify_ai_multichat_options';
@@ -157,4 +162,8 @@ final class Restatify_Multi_Chat_Overlay {
     }
 }
 
-new Restatify_Multi_Chat_Overlay();
+if (!class_exists('Restatify_Multi_Chat_Overlay', false)) {
+    class_alias('Restatify_Ai_Multichat_Plugin', 'Restatify_Multi_Chat_Overlay');
+}
+
+new Restatify_Ai_Multichat_Plugin();
