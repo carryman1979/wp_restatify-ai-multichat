@@ -43,7 +43,7 @@ class Restatify_Ai_Multichat_Options_Runtime {
     }
 
     public function register_polylang_strings(): void {
-        if (!function_exists('pll_register_string')) {
+        if (!function_exists('pll_register_string') && !class_exists('\\Restatify\\Shared\\I18n\\PolylangAdapter', false)) {
             return;
         }
 
@@ -54,12 +54,21 @@ class Restatify_Ai_Multichat_Options_Runtime {
                 continue;
             }
 
-            pll_register_string(
-                'restatify_mco_' . $key,
-                $value,
-                Restatify_Ai_Multichat_Plugin::POLYLANG_GROUP,
-                true
-            );
+            if (class_exists('\\Restatify\\Shared\\I18n\\PolylangAdapter', false)) {
+                \Restatify\Shared\I18n\PolylangAdapter::register(
+                    'restatify_mco_' . $key,
+                    $value,
+                    Restatify_Ai_Multichat_Plugin::POLYLANG_GROUP,
+                    true
+                );
+            } else {
+                pll_register_string(
+                    'restatify_mco_' . $key,
+                    $value,
+                    Restatify_Ai_Multichat_Plugin::POLYLANG_GROUP,
+                    true
+                );
+            }
         }
     }
 
@@ -186,6 +195,10 @@ class Restatify_Ai_Multichat_Options_Runtime {
      * Detect whether LightStart is installed and active (single-site or network).
      */
     protected function is_lightstart_available(): bool {
+        if (class_exists('\\Restatify\\Shared\\Runtime\\PluginState', false)) {
+            return \Restatify\Shared\Runtime\PluginState::isLightstartAvailable();
+        }
+
         if (!file_exists(WP_PLUGIN_DIR . '/wp-maintenance-mode/wp-maintenance-mode.php')) {
             return false;
         }
@@ -211,7 +224,13 @@ class Restatify_Ai_Multichat_Options_Runtime {
                 continue;
             }
 
-            $translated = pll__($value);
+            if (class_exists('\\Restatify\\Shared\\I18n\\PolylangAdapter', false)) {
+                $translated = \Restatify\Shared\I18n\PolylangAdapter::translate($value);
+            } elseif (function_exists('pll__')) {
+                $translated = pll__($value);
+            } else {
+                $translated = $value;
+            }
             if (is_string($translated) && $translated !== '') {
                 $options[$key] = $translated;
             }

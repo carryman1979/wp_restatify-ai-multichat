@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.5
+ * Version: 2.0.6
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -23,55 +23,88 @@ if (!defined('RESTATIFY_AI_MULTICHAT_PLUGIN_URL')) {
     define('RESTATIFY_AI_MULTICHAT_PLUGIN_URL', plugin_dir_url(__FILE__));
 }
 
-if (!defined('RESTATIFY_BOOKING_OPEN_TOKEN')) {
-    define('RESTATIFY_BOOKING_OPEN_TOKEN', '[[RESTATIFY_BOOKING_OPEN]]');
+if (!defined('RESTATIFY_AI_MULTICHAT_SHARED_VERSION')) {
+    define('RESTATIFY_AI_MULTICHAT_SHARED_VERSION', '1.0.0');
 }
 
-if (!defined('RESTATIFY_BOOKING_CONFIRMED_TOKEN')) {
-    define('RESTATIFY_BOOKING_CONFIRMED_TOKEN', '[[RESTATIFY_BOOKING_CONFIRMED]]');
-}
+$restatify_multichat_require_first = static function (array $paths): bool {
+    foreach ($paths as $path) {
+        if (is_string($path) && $path !== '' && file_exists($path)) {
+            require_once $path;
+            return true;
+        }
+    }
 
-if (!defined('RESTATIFY_BOOKING_CANCELLED_TOKEN')) {
-    define('RESTATIFY_BOOKING_CANCELLED_TOKEN', '[[RESTATIFY_BOOKING_CANCELLED]]');
+    return false;
+};
+
+$restatify_multichat_require_first([
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/SharedRegistry.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Contracts/BookingChatTokens.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/PluginState.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/BootstrapGuard.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/RateLimiter.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/I18n/PolylangAdapter.php',
+]);
+
+if (class_exists('\\Restatify\\Shared\\Contracts\\BookingChatTokens', false)) {
+    \Restatify\Shared\Contracts\BookingChatTokens::defineGlobalConstants();
 }
 
 $restatify_legacy_plugin_basename = 'wp_restatify-multi-chat-overlay/restatify-multi-chat-overlay.php';
 $restatify_skip_bootstrap_for_request = false;
-
-$active_plugins = get_option('active_plugins', []);
-if (is_array($active_plugins) && in_array($restatify_legacy_plugin_basename, $active_plugins, true)) {
-    $active_plugins = array_values(array_filter(
-        $active_plugins,
-        static function ($plugin) use ($restatify_legacy_plugin_basename) {
-            return $plugin !== $restatify_legacy_plugin_basename;
-        }
-    ));
-
-    update_option('active_plugins', $active_plugins);
-    set_transient('restatify_ai_multichat_admin_notice', [
-        'type' => 'warning',
-        'message' => __('Legacy plugin wurde automatisch deaktiviert, um Klassenkonflikte mit Restatify AI Multichat zu vermeiden.', 'restatify-multi-chat-overlay'),
-    ], 300);
-
-    $restatify_skip_bootstrap_for_request = true;
-}
-
-if (is_multisite()) {
-    $sitewide_plugins = get_site_option('active_sitewide_plugins', []);
-    if (is_array($sitewide_plugins) && isset($sitewide_plugins[$restatify_legacy_plugin_basename])) {
-        unset($sitewide_plugins[$restatify_legacy_plugin_basename]);
-        update_site_option('active_sitewide_plugins', $sitewide_plugins);
-        $restatify_skip_bootstrap_for_request = true;
-    }
+if (class_exists('\\Restatify\\Shared\\Runtime\\BootstrapGuard', false)) {
+    $restatify_skip_bootstrap_for_request = \Restatify\Shared\Runtime\BootstrapGuard::deactivateLegacyAndMaybeNotify(
+        [$restatify_legacy_plugin_basename],
+        'restatify_ai_multichat_admin_notice',
+        'Legacy plugin wurde automatisch deaktiviert, um Klassenkonflikte mit Restatify AI Multichat zu vermeiden.',
+        'restatify-multi-chat-overlay'
+    );
 }
 
 if ($restatify_skip_bootstrap_for_request) {
     return;
 }
 
-$migration_notice_manager_file = RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-shared-migration-notice-manager.php';
-if (file_exists($migration_notice_manager_file)) {
-    require_once $migration_notice_manager_file;
+$restatify_multichat_shared_component = 'migration_notice_manager';
+$restatify_multichat_shared_manager_class = null;
+
+if (class_exists('\\Restatify\\Shared\\SharedRegistry', false)) {
+    $registered_payload = \Restatify\Shared\SharedRegistry::get(
+        $restatify_multichat_shared_component,
+        RESTATIFY_AI_MULTICHAT_SHARED_VERSION
+    );
+
+    if (is_array($registered_payload)) {
+        $registered_class = (string) ($registered_payload['class'] ?? '');
+        if ($registered_class !== '' && class_exists($registered_class, false)) {
+            $restatify_multichat_shared_manager_class = $registered_class;
+        }
+    }
+
+    if ($restatify_multichat_shared_manager_class === null) {
+        $restatify_multichat_require_first([
+            dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Migration/MigrationNoticeManager.php',
+        ]);
+
+        if (class_exists('\\Restatify\\Shared\\Migration\\MigrationNoticeManager', false)) {
+            $restatify_multichat_shared_manager_class = '\\Restatify\\Shared\\Migration\\MigrationNoticeManager';
+            \Restatify\Shared\SharedRegistry::register(
+                $restatify_multichat_shared_component,
+                RESTATIFY_AI_MULTICHAT_SHARED_VERSION,
+                ['class' => $restatify_multichat_shared_manager_class]
+            );
+        }
+    }
+}
+
+if (
+    is_string($restatify_multichat_shared_manager_class)
+    && $restatify_multichat_shared_manager_class !== ''
+    && class_exists($restatify_multichat_shared_manager_class, false)
+    && !class_exists('Restatify_Shared_Migration_Notice_Manager', false)
+) {
+    class_alias($restatify_multichat_shared_manager_class, 'Restatify_Shared_Migration_Notice_Manager');
 }
 
 if (!class_exists('Restatify_Shared_Migration_Notice_Manager', false)) {

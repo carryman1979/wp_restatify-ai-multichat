@@ -32,6 +32,8 @@ coverage/
 .cache/
 *.tmp
 *.temp
+vendor/
+.phpunit.cache/
 
 # Archives generated for release/distribution
 *.zip

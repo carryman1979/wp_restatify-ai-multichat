@@ -4,7 +4,7 @@ Produktname (ab 2.0.0): Restatify-AI-Multichat
 WordPress-Slug (ab 2.0.0): wp_restatify-ai-multichat  
 Website: https://www.restatify.tech
 
-Stand: Version 2.0.0, getestet bis WordPress 6.9.
+Stand: Version 2.0.6, getestet bis WordPress 6.9.
 
 Diese Seite ist als zentrale One-Page-Dokumentation für Einrichtung, Betrieb, Support und Release gedacht.
 
@@ -218,6 +218,11 @@ To-do für Betreiber:
 3. Release-Checkliste durchgehen.
 4. Release-ZIP erzeugen.
 5. Smoke-Test auf externer Testinstanz durchführen.
+
+## Releases
+
+- [Release 2.0.6](Release-2.0.6)
+- [Release 2.0.0](Release-2.0.0)
 6. Commit, Tag und Push ausführen.
 7. GitHub Release Notes pflegen.
 
