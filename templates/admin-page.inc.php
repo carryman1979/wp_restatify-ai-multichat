@@ -3,7 +3,7 @@ $options = isset($options) && is_array($options) ? $options : [];
 $debug_lines = isset($debug_lines) && is_array($debug_lines) ? $debug_lines : [];
 ?>
 <div class="wrap">
-            <h1><?php esc_html_e('Multi Chat Overlay', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></h1>
+            <h1><?php esc_html_e('AI Multichat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></h1>
             <p><?php esc_html_e('Konfiguriere zuerst das grundlegende Chat-Verhalten. Erweiterte Optionen sind unten in aufklappbaren Expertenbereichen gruppiert.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
             <?php settings_errors(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>
 

@@ -1,6 +1,6 @@
 # Restatify Multi Chat Overlay - Anleitung (DE)
 
-Stand: Version 2.0.1, getestet bis WordPress 6.9.
+Stand: Version 2.0.6, getestet bis WordPress 6.9.
 
 Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Support-Ablauf.
 

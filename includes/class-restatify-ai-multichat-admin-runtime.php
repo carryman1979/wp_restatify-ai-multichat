@@ -14,8 +14,8 @@ public function enqueue_support_inbox_assets(): void {
             return;
         }
 
-        $base_url = RESTATIFY_MCO_PLUGIN_URL . 'assets/';
-        $base_path = RESTATIFY_MCO_PLUGIN_DIR . 'assets/';
+        $base_url = RESTATIFY_AI_MULTICHAT_PLUGIN_URL . 'assets/';
+        $base_path = RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'assets/';
 
         wp_enqueue_script(
             'restatify-mco-support-inbox-admin',
@@ -116,7 +116,7 @@ public function enqueue_support_inbox_assets(): void {
         }
 
         $options = $this->get_options(false);
-        require RESTATIFY_MCO_PLUGIN_DIR . 'templates/admin-page.inc.php';
+        require RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'templates/admin-page.inc.php';
     }
 
     public function enqueue_assets(): void {
@@ -125,8 +125,8 @@ public function enqueue_support_inbox_assets(): void {
             return;
         }
 
-        $base_url = RESTATIFY_MCO_PLUGIN_URL . 'assets/';
-        $base_path = RESTATIFY_MCO_PLUGIN_DIR . 'assets/';
+        $base_url = RESTATIFY_AI_MULTICHAT_PLUGIN_URL . 'assets/';
+        $base_path = RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'assets/';
 
         wp_enqueue_style(
             'restatify-multi-chat-overlay',
@@ -169,14 +169,14 @@ public function enqueue_support_inbox_assets(): void {
         $channels = $this->get_active_channels($options);
         $palette = $this->get_palette_colors();
         $delay_ms = max(0, (int) $options['delay_seconds']) * 1000;
-        require RESTATIFY_MCO_PLUGIN_DIR . 'templates/overlay.inc.php';
+        require RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'templates/overlay.inc.php';
     }
 
     private function render_support_inbox(): void {
         $store = $this->get_chat_store();
         $selected_id = sanitize_text_field(wp_unslash($_GET['conversation'] ?? ''));
         $ai_mode_options = $this->get_ai_mode_options();
-        require RESTATIFY_MCO_PLUGIN_DIR . 'templates/support-inbox.inc.php';
+        require RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'templates/support-inbox.inc.php';
 
     }
 
