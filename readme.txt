@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -152,6 +152,22 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.0.5 =
+* Renamed the WordPress settings menu label from "Multi Chat Overlay" to "AI Multichat".
+* Updated the settings page title to "AI Multichat" for UI consistency.
+
+= 2.0.4 =
+* Added self-healing mixed-environment guard: if legacy `wp_restatify-multi-chat-overlay` is still active, AI Multichat now auto-disables the legacy plugin entry and skips bootstrap for the current request.
+* Prevents `Cannot redeclare class Restatify_Ai_Multichat_Plugin` fatals during plugin activation in legacy coexistence states.
+
+= 2.0.3 =
+* Removed legacy `RESTATIFY_MCO_*` alias constants from AI Multichat bootstrap to prevent cross-plugin constant collisions.
+* Fixes mixed-environment activation/runtime fatals where legacy plugin loaders resolved includes to the wrong plugin directory.
+
+= 2.0.2 =
+* Fixed legacy constant name collisions that could resolve includes/assets to `wp_restatify-multi-chat-overlay` and cause activation fatals.
+* Switched internal path/url resolution to dedicated AI Multichat constants to ensure collision-safe bootstrap/runtime loading.
+
 = 2.0.1 =
 * Fixed a plugin activation fatal error when the migration notice helper class file is missing in partial or inconsistent deployments.
 * Added a defensive fallback so activation stays functional even if migration helper loading fails.
@@ -199,6 +215,18 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.0.5 =
+UI-only update that renames the settings menu/page title to AI Multichat.
+
+= 2.0.4 =
+Auto-recovers from legacy coexistence by removing old plugin activation entries and preventing class redeclare fatals.
+
+= 2.0.3 =
+Fixes legacy mixed-plugin collisions by removing bootstrap aliases that could poison old loader include paths.
+
+= 2.0.2 =
+Fixes activation failures caused by legacy plugin constant collisions in mixed/legacy environments.
 
 = 2.0.1 =
 Hotfix release that prevents activation fatals caused by missing migration helper includes in inconsistent deployments.

@@ -297,6 +297,32 @@
   color: #0d1117;
 }
 
+.restatify-mco__native-bubble p {
+  margin: 0;
+}
+
+.restatify-mco__native-bubble p + p {
+  margin-top: 0.45rem;
+}
+
+.restatify-mco__native-bubble ul,
+.restatify-mco__native-bubble ol {
+  margin: 0.35rem 0 0.1rem 1.1rem;
+  padding: 0;
+}
+
+.restatify-mco__native-bubble li {
+  margin: 0.18rem 0;
+}
+
+.restatify-mco__native-bubble strong {
+  font-weight: 700;
+}
+
+.restatify-mco__native-bubble em {
+  font-style: italic;
+}
+
 .restatify-mco__native-bubble.is-visitor {
   background: #fff2e9;
   border: 1px solid #f0b78d;

@@ -264,6 +264,21 @@ public function ajax_send_message(): void {
             $max_requests = $max_booking_event;
         }
 
+        if (class_exists('\\Restatify\\Shared\\Runtime\\RateLimiter', false)) {
+            $allowed = \Restatify\Shared\Runtime\RateLimiter::hit(
+                'restatify_mco_rl_',
+                $action,
+                $window,
+                $max_requests
+            );
+
+            if (!$allowed) {
+                wp_send_json_error(['message' => __('Too many requests. Please wait a moment and try again.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN)], 429);
+            }
+
+            return;
+        }
+
         $ip = $this->get_client_ip();
         $ua = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field((string) wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
         $fingerprint = md5($ip . '|' . $ua . '|' . $action);
