@@ -37,6 +37,13 @@ Diese Checkliste vor jedem Produktiv-Deployment durchgehen.
 2. KI-Antwortmodus funktioniert erwartungsgemaess (off, visitor, support, both).
 3. Wenn KI-Debug aktiv ist, sind Logs vorhanden und enthalten keine Geheimnisse.
 
+## 5a) Booking-Handover
+
+1. Bei klarer Buchungsabsicht oeffnet Session 1 das Booking-Overlay automatisch.
+2. Prefill-Daten werden an das Booking-Plugin uebergeben.
+3. Die wichtigsten Felder sind vorbelegt und der Nutzer kann direkt in den Termin-Flow einsteigen.
+4. Der End-to-End-Flow endet erst nach erfolgreichem Absenden im Booking Assistant.
+
 ## 6) Mehrsprachigkeit und Inhalte
 
 1. Polylang-Strings sind registriert und bei Bedarf uebersetzt.

@@ -4,7 +4,7 @@ Produktname (ab 2.0.0): Restatify-AI-Multichat
 WordPress-Slug (ab 2.0.0): wp_restatify-ai-multichat  
 Website: https://www.restatify.tech
 
-Stand: Version 2.0.6, getestet bis WordPress 6.9.
+Stand: Version 2.0.7, getestet bis WordPress 6.9.
 
 Diese Seite ist als zentrale One-Page-Dokumentation für Einrichtung, Betrieb, Support und Release gedacht.
 
@@ -33,6 +33,7 @@ Restatify Multi Chat Overlay stellt ein schwebendes Chat-Overlay bereit und unte
 - Support-Inbox im WordPress-Admin
 - E-Mail-Benachrichtigung bei neuen Besucher-Nachrichten
 - Optionale KI-First-Level-Antworten
+- Session-1-Buchungsworkflow mit automatischem Oeffnen des Booking-Overlays und Prefill der erkannten Daten
 - Polylang-Integration für übersetzbare Texte
 - Consent-abhängige Anzeige und Auto-Open-Logik
 - Wartbare interne Struktur für Support und Weiterentwicklung
@@ -115,6 +116,12 @@ Empfohlene Reaktionszeiten:
 - Erste Antwort innerhalb von 10 Minuten während der Support-Zeit
 - Follow-up innerhalb von 30 Minuten
 - Eskalation innerhalb von 20 Minuten nach Erkennung kritischer Fälle
+
+### Buchungs-Handover
+
+Wenn der Chat eine Buchungsabsicht erkennt, schaltet Session 1 um und oeffnet das Booking-Overlay des Booking Assistants direkt im Frontend.
+
+Dabei werden bereits erkannte Daten wie Name, E-Mail, Kontaktkanal, Kontaktdaten und Zeithinweise als Prefill uebergeben, sodass der Besucher die Angaben nur noch kontrollieren, ergaenzen und absenden muss.
 
 ---
 
@@ -221,6 +228,7 @@ To-do für Betreiber:
 
 ## Releases
 
+- [Release 2.0.7](Release-2.0.7)
 - [Release 2.0.6](Release-2.0.6)
 - [Release 2.0.0](Release-2.0.0)
 6. Commit, Tag und Push ausführen.

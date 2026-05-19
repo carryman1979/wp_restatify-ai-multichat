@@ -5,6 +5,7 @@
 - Added PHP unit-test baseline for runtime/provider behavior.
 - Added centralized shared guideline references for AGENTS and Copilot instruction files.
 - Updated readme/wiki release documentation.
+- Documented the Session 1 booking flow that opens the Booking Assistant overlay and pre-fills recognized data.
 
 ## Compatibility
 

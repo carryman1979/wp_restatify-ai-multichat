@@ -8,6 +8,7 @@ Dieses Playbook hilft Support-Teams, Website-Chat-Konversationen einheitlich und
 - Antworten klar und umsetzbar halten.
 - Komplexe Faelle frueh eskalieren.
 - KI als Assistenz nutzen, nicht als letzte Instanz.
+- Bei erkennbarer Buchungsabsicht das Booking-Overlay mitsamt Prefill an den Booking Assistant uebergeben, damit der Nutzer nur noch pruefen und absenden muss.
 
 ## Empfohlene SLAs
 

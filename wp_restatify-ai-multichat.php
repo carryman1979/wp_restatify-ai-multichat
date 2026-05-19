@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.6
+ * Version: 2.0.7
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -41,6 +41,10 @@ $restatify_multichat_require_first = static function (array $paths): bool {
 $restatify_multichat_require_first([
     dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/SharedRegistry.php',
     dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Contracts/BookingChatTokens.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Contracts/BookingPrefillSchema.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Util/BookingContactMethodsResolver.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Util/BookingContactChannelProfiles.php',
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Util/BookingContactChannels.php',
     dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/PluginState.php',
     dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/BootstrapGuard.php',
     dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/RateLimiter.php',
@@ -122,6 +126,19 @@ if (!class_exists('Restatify_Shared_Migration_Notice_Manager', false)) {
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-options-runtime.php';
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-chat-runtime.php';
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-admin-runtime.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-language-keyword-store.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-ui-string-store.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-dual-session-router.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-dual-session-state-machine.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-dual-session-slot-manager.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-dual-session-prompts.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-dual-session-cooldown-manager.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-router-debug-logger.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-session1-debug-logger.php';
+
+if (class_exists('Restatify_Ai_Multichat_Plugin', false)) {
+    return;
+}
 
 final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_Runtime {
 
@@ -138,6 +155,9 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
     public const CHAT_MAX_CONVERSATIONS = 200;
     public const CHAT_MAX_MESSAGES = 80;
     public const AI_DEBUG_MAX_ENTRIES = 120;
+    public const AI_MAX_RESPONSE_CHARS_MIN = 600;
+    public const AI_MAX_RESPONSE_CHARS_MAX = 12000;
+    public const AI_MAX_RESPONSE_CHARS_DEFAULT = 3000;
     public const DEFAULT_AI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
     public const SUPPORT_CAPABILITY = 'restatify_mco_support_chat';
     public const TEXT_DOMAIN = 'restatify-multi-chat-overlay';
@@ -152,6 +172,8 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
         'chat_title',
         'chat_placeholder',
         'chat_send_label',
+        'chat_send_failed_notice',
+        'chat_send_overload_notice',
         'ai_system_prompt',
     ];
 
@@ -199,6 +221,7 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
     ];
 
     public function __construct() {
+        add_action('init', [$this, 'maybe_install_runtime_schema'], 1);
         add_action('init', [$this, 'load_textdomain']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_init', [$this, 'register_polylang_strings']);
@@ -239,11 +262,244 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
         add_action('wp_ajax_nopriv_restatify_mco_send_message', [$this, 'ajax_send_message']);
         add_action('wp_ajax_restatify_mco_fetch_chat', [$this, 'ajax_fetch_chat']);
         add_action('wp_ajax_nopriv_restatify_mco_fetch_chat', [$this, 'ajax_fetch_chat']);
+        add_action('wp_ajax_restatify_ai_run_router_smoke_test', [$this, 'ajax_run_router_smoke_test']);
+        add_action('wp_ajax_restatify_ai_run_router_tests', [$this, 'ajax_run_router_tests']);
+        add_action('wp_ajax_restatify_ai_get_router_debug_log', [$this, 'ajax_get_router_debug_log']);
+        add_action('wp_ajax_restatify_mco_live_debug_status', [$this, 'ajax_live_debug_status']);
+        add_action('wp_ajax_nopriv_restatify_mco_live_debug_status', [$this, 'ajax_live_debug_status']);
         add_action('wp_ajax_restatify_mco_booking_event', [$this, 'ajax_booking_event']);
         add_action('wp_ajax_nopriv_restatify_mco_booking_event', [$this, 'ajax_booking_event']);
         add_action('wp_ajax_restatify_mco_support_reply', [$this, 'ajax_support_reply']);
         add_action('wp_ajax_restatify_mco_delete_conversation', [$this, 'ajax_delete_conversation']);
         add_action('wp_ajax_restatify_mco_set_ai_mode', [$this, 'ajax_set_ai_mode']);
+    }
+
+    public function maybe_install_runtime_schema(): void {
+        if (class_exists('Restatify_Ai_Language_Keyword_Store', false)) {
+            Restatify_Ai_Language_Keyword_Store::maybe_install_table();
+        }
+        if (class_exists('Restatify_Ai_Ui_String_Store', false)) {
+            Restatify_Ai_Ui_String_Store::maybe_install_table();
+        }
+    }
+
+    /**
+     * AJAX handler for Router smoke test (quick validation).
+     * Admin-only; returns component health status.
+     */
+    public function ajax_run_router_smoke_test(): void {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        $smoke_results = Restatify_Ai_Router_Integration_Test::run_smoke_test();
+        wp_send_json_success(['smoke_test' => $smoke_results]);
+    }
+
+    /**
+     * AJAX handler for running Router end-to-end tests.
+     * Admin-only; returns detailed test results with routing decisions.
+     */
+    public function ajax_run_router_tests(): void {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        // Run all test scenarios
+        $test_results = Restatify_Ai_Router_Test_Scenarios::run_all_tests();
+
+        // Send response with results
+        wp_send_json_success($test_results);
+    }
+
+    /**
+     * AJAX handler for retrieving Router debug log.
+     * Admin-only; returns recent router events and decisions.
+     */
+    public function ajax_get_router_debug_log(): void {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        $type = sanitize_text_field(wp_unslash($_GET['type'] ?? ''));
+        $session = sanitize_text_field(wp_unslash($_GET['session'] ?? ''));
+        $limit = (int) $_GET['limit'] ?? 100;
+
+        $entries = [];
+        if ($session !== '') {
+            $entries = Restatify_Ai_Router_Debug_Logger::get_session_log($session, $limit);
+        } elseif ($type !== '') {
+            $entries = Restatify_Ai_Router_Debug_Logger::get_entries_by_type($type, $limit);
+        } else {
+            $entries = Restatify_Ai_Router_Debug_Logger::get_recent_entries($limit);
+        }
+
+        wp_send_json_success(['entries' => $entries, 'count' => count($entries)]);
+    }
+
+    /**
+     * AJAX endpoint for frontend live debug overlay data.
+     * Available for admins; optionally for anonymous users when explicitly enabled.
+     */
+    public function ajax_live_debug_status(): void {
+        $this->verify_chat_nonce();
+
+        $options = $this->get_options(false);
+        if (empty($options['live_debug_enabled'])) {
+            wp_send_json_error(['message' => 'Live debug disabled'], 403);
+        }
+
+        $has_admin_access = current_user_can('manage_options');
+        $has_public_access = !empty($options['live_debug_public_enabled']);
+        if (!$has_admin_access && !$has_public_access) {
+            wp_send_json_error(['message' => 'Insufficient permissions'], 403);
+        }
+
+        $conversation_id = sanitize_text_field(wp_unslash($_POST['conversation_id'] ?? ''));
+        $conversation = null;
+        if ($conversation_id !== '') {
+            $store = $this->get_chat_store();
+            if (!empty($store[$conversation_id]) && is_array($store[$conversation_id])) {
+                $conversation = $store[$conversation_id];
+            }
+        }
+
+        $state_machine = new Restatify_Ai_Dual_Session_State_Machine();
+        $state = $conversation_id !== '' ? $state_machine->get_session_state($conversation_id) : [];
+        if (!is_array($state)) {
+            $state = [];
+        }
+
+        $confidence = max(0.0, min(1.0, floatval($state['confidence'] ?? 0.0)));
+        $level_percent = (int) round($confidence * 100);
+
+        if (!empty($state['booking_flow_active']) && (($state['current_session'] ?? '') === 'session1')) {
+            $session1_status = sprintf('Terminwunsch geaeussert. Oeffne Dialog. Level %d%%', $level_percent);
+        } elseif ($confidence >= Restatify_Ai_Dual_Session_Router::CONFIDENCE_CLARIFY_MIN) {
+            $session1_status = sprintf('Vielleicht ein Terminwunsch. Frage nach. Level %d%%', $level_percent);
+        } else {
+            $session1_status = sprintf('Kein Terminwunsch. Level %d%%', $level_percent);
+        }
+
+        $session1_last_request_at = '-';
+        if (is_array($conversation) && !empty($conversation['messages']) && is_array($conversation['messages'])) {
+            $messages_for_last_request = array_reverse($conversation['messages']);
+            foreach ($messages_for_last_request as $message) {
+                if (!is_array($message)) {
+                    continue;
+                }
+
+                if ((string) ($message['sender'] ?? '') !== 'visitor') {
+                    continue;
+                }
+
+                $timestamp = trim((string) ($message['time_gmt'] ?? ''));
+                $session1_last_request_at = $timestamp !== '' ? $timestamp : '-';
+                break;
+            }
+        }
+
+        // Get Session 1 debug logs
+        $session1_logs = Restatify_Ai_Session1_Debug_Logger::format_as_log_lines(20);
+        if (empty($session1_logs)) {
+            $session1_logs = ['(keine Session 1 Aktivität im aktuellen Gespräch)'];
+        }
+
+        $language_lock_until = (int) ($state['language_lock_until'] ?? 0);
+        $language_last_detected_at = (int) ($state['language_last_detected_at'] ?? 0);
+        $language_debug = [
+            'code' => (string) ($state['language_code'] ?? ''),
+            'candidate' => (string) ($state['language_candidate'] ?? ''),
+            'last_detected' => (string) ($state['language_last_detected'] ?? ''),
+            'last_confidence' => max(0.0, min(1.0, (float) ($state['language_last_confidence'] ?? 0.0))),
+            'switch_votes' => (int) ($state['language_switch_votes'] ?? 0),
+            'switch_reason' => (string) ($state['language_switch_reason'] ?? ''),
+            'lock_until_gmt' => $language_lock_until > 0 ? gmdate('Y-m-d H:i:s', $language_lock_until) : '-',
+            'last_detected_at_gmt' => $language_last_detected_at > 0 ? gmdate('Y-m-d H:i:s', $language_last_detected_at) : '-',
+        ];
+
+        $recognized_booking_data = [
+            'collected_fields' => is_array($state['collected_fields'] ?? null) ? (array) $state['collected_fields'] : [],
+            'partial_prefill' => is_array($state['partial_prefill'] ?? null) ? (array) $state['partial_prefill'] : [],
+        ];
+
+        $session2_timeline = [];
+        if (is_array($conversation) && !empty($conversation['messages']) && is_array($conversation['messages'])) {
+            $messages = array_slice($conversation['messages'], -20);
+            foreach ($messages as $message) {
+                if (!is_array($message)) {
+                    continue;
+                }
+
+                $sender = (string) ($message['sender'] ?? '');
+                $text = trim((string) ($message['message'] ?? ''));
+                if ($text === '') {
+                    continue;
+                }
+
+                $timestamp = (string) ($message['time_gmt'] ?? '');
+                if (function_exists('mb_substr')) {
+                    $preview = mb_substr($text, 0, 120);
+                } else {
+                    $preview = substr($text, 0, 120);
+                }
+                if ((function_exists('mb_strlen') ? mb_strlen($text) : strlen($text)) > 120) {
+                    $preview .= '...';
+                }
+
+                if ($sender === 'visitor') {
+                    $session2_timeline[] = sprintf('%s Anfrage erhalten: %s', $timestamp, $preview);
+                } elseif (in_array($sender, ['ai', 'support', 'system'], true)) {
+                    $session2_timeline[] = sprintf('%s Antwort gegeben: %s', $timestamp, $preview);
+                }
+            }
+        }
+        $session2_timeline = array_slice($session2_timeline, -10);
+
+        $log_lines = [];
+        if (!empty($options['ai_debug_enabled'])) {
+            $log_lines = $this->get_recent_ai_debug_lines(30);
+        }
+
+        if (count($log_lines) === 0) {
+            $router_entries = Restatify_Ai_Router_Debug_Logger::get_recent_entries(20);
+            foreach ($router_entries as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+
+                $time = (string) ($entry['timestamp'] ?? '');
+                $type = (string) ($entry['type'] ?? 'router');
+                $action = (string) ($entry['action'] ?? ($entry['decision'] ?? ''));
+                $msg = (string) ($entry['message_preview'] ?? ($entry['message'] ?? ''));
+                $line = trim($time . ' [' . $type . '] ' . $action . ' ' . $msg);
+                if ($line !== '') {
+                    $log_lines[] = $line;
+                }
+            }
+        }
+
+        wp_send_json_success([
+            'session1' => [
+                'status_line' => $session1_status,
+                'confidence' => $confidence,
+                'confidence_percent' => $level_percent,
+                'current_session' => (string) ($state['current_session'] ?? 'session2'),
+                'booking_flow_active' => !empty($state['booking_flow_active']),
+                'clarification_attempts' => (int) ($state['clarification_attempts'] ?? 0),
+                'last_request_at' => $session1_last_request_at,
+                'language' => $language_debug,
+                'recognized_booking_data' => $recognized_booking_data,
+                'debug_logs' => $session1_logs,
+            ],
+            'session2' => [
+                'timeline' => $session2_timeline,
+            ],
+            'log' => [
+                'enabled' => !empty($options['ai_debug_enabled']) || count($log_lines) > 0,
+                'lines' => array_slice($log_lines, -30),
+            ],
+        ]);
     }
 }
 
