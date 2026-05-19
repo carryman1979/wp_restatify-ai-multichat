@@ -109,6 +109,13 @@ $delay_ms = isset($delay_ms) ? (int) $delay_ms : 0;
                             <p class="restatify-mco__native-status" data-chat-status hidden></p>
                         </div>
                     <?php endif; ?>
+
+                    <?php if (!empty($options['privacy_policy_url'])) : ?>
+                        <p class="restatify-mco__legal-notice">
+                            <?php esc_html_e('Mit der Nutzung dieses Tools stimmst du unseren Datenschutzbestimmungen zu.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?>
+                            <a href="<?php echo esc_url((string) $options['privacy_policy_url']); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Datenschutzerklärung', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></a>.
+                        </p>
+                    <?php endif; ?>
                 </div>
             </section>
         </div>

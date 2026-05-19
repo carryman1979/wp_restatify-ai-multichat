@@ -5,6 +5,7 @@
 - PHP-Unit-Test-Baseline fuer Runtime-/Provider-Logik hinzugefuegt.
 - Zentrale Shared-Guidelines in AGENTS/Copilot-Instructions verlinkt.
 - Readme/Wiki-Release-Dokumentation aktualisiert.
+- Session-1-Buchungsworkflow mit automatischem Oeffnen des Booking-Overlays und Prefill der erkannten Daten dokumentiert.
 
 ## Kompatibilitaet
 

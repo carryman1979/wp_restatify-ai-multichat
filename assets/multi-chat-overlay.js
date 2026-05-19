@@ -4,6 +4,7 @@
   var CHAT_STORAGE_LAST_ACTIVE_KEY = 'restatify_ai_multichat_chat_last_active';
   var BOOKING_TRIGGER_STORAGE_KEY = 'restatify_ai_multichat_booking_triggers';
   var BOOKING_OPEN_TOKEN = '[[RESTATIFY_BOOKING_OPEN]]';
+  var BOOKING_PREFILL_TOKEN = '[[RESTATIFY_BOOKING_PREFILL]]';
   var BOOKING_CONFIRMED_TOKEN = '[[RESTATIFY_BOOKING_CONFIRMED]]';
   var BOOKING_CANCELLED_TOKEN = '[[RESTATIFY_BOOKING_CANCELLED]]';
   var handledBookingTriggers = {};
@@ -50,6 +51,7 @@
     }
 
     var chatEnabled = Boolean(window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.chatEnabled);
+
     var chatConfig = {
       ajaxUrl: (window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.ajaxUrl) || '',
       nonce: (window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.nonce) || '',
@@ -58,6 +60,9 @@
         ? window.restatifyMultiChatOverlay.consentCookieNames
         : [],
       pollSeconds: (window.restatifyMultiChatOverlay && Number.isFinite(window.restatifyMultiChatOverlay.pollSeconds)) ? window.restatifyMultiChatOverlay.pollSeconds : 8,
+      chatSendRetryMaxAttempts: (window.restatifyMultiChatOverlay && Number.isFinite(window.restatifyMultiChatOverlay.chatSendRetryMaxAttempts)) ? window.restatifyMultiChatOverlay.chatSendRetryMaxAttempts : 3,
+      chatSendRetryWaitMs: (window.restatifyMultiChatOverlay && Number.isFinite(window.restatifyMultiChatOverlay.chatSendRetryWaitMs)) ? window.restatifyMultiChatOverlay.chatSendRetryWaitMs : 500,
+      chatSendTimeoutMs: (window.restatifyMultiChatOverlay && Number.isFinite(window.restatifyMultiChatOverlay.chatSendTimeoutMs)) ? window.restatifyMultiChatOverlay.chatSendTimeoutMs : 20000,
       strings: (window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.strings) || {}
     };
 
@@ -485,6 +490,7 @@
     }
 
     renderMessages(messagesWrap, state.messages);
+    emitConversationState(state, state.messages);
 
     form.addEventListener('submit', function (event) {
       event.preventDefault();
@@ -495,6 +501,19 @@
         return;
       }
 
+      var retryMaxAttempts = Math.max(1, Number(config.chatSendRetryMaxAttempts || 3));
+      var retryWaitMs = Math.max(0, Number(config.chatSendRetryWaitMs || 500));
+      var sendTimeoutMs = Math.max(1000, Number(config.chatSendTimeoutMs || 20000));
+      // Backend send_message already performs retries. The browser must wait longer than
+      // that whole backend window to avoid triggering duplicate overlapping sends.
+      var frontendRequestTimeoutMs = Math.max(
+        sendTimeoutMs,
+        (retryMaxAttempts * sendTimeoutMs) + (Math.max(0, retryMaxAttempts - 1) * retryWaitMs) + 5000
+      );
+      var finalFailedNotice = String(config.strings.sendFailedNotice || 'Nora scheint verhindert zu sein. Wir haben einen Mitarbeiter zusaetzlich wegen Ihres Anliegens kontaktiert.');
+      var pendingBubble = appendPendingVisitorBubble(messagesWrap, text);
+      var thinkingBubble = appendThinkingBubble(messagesWrap, config.strings.aiThinking || 'Nora denkt...');
+
       if (hooks && typeof hooks.onBeforeSend === 'function') {
         hooks.onBeforeSend();
       }
@@ -502,7 +521,7 @@
       send.disabled = true;
       showStatus(status, config.strings.sending || 'Sending...', false);
 
-      postToAjax(config.ajaxUrl, {
+      var sendPayload = {
         action: 'restatify_mco_send_message',
         nonce: config.nonce,
         conversation_id: state.id,
@@ -510,11 +529,29 @@
         message: text,
         website: honeypot ? String(honeypot.value || '') : '',
         source_url: window.location.href
-      }).then(function (payload) {
-        if (!payload || !payload.success || !payload.data || !payload.data.conversation) {
-          throw new Error('Invalid response');
-        }
+      };
+      var attempt = 0;
 
+      function trySendMessage() {
+        attempt += 1;
+        return postToAjax(config.ajaxUrl, sendPayload, frontendRequestTimeoutMs).then(function (payload) {
+          if (!payload || !payload.success || !payload.data || !payload.data.conversation) {
+            throw new Error('Invalid response');
+          }
+
+          return payload;
+        }).catch(function (error) {
+          if (attempt >= retryMaxAttempts) {
+            throw error;
+          }
+
+          return wait(retryWaitMs).then(function () {
+            return trySendMessage();
+          });
+        });
+      }
+
+      trySendMessage().then(function (payload) {
         state.id = payload.data.conversation.id || state.id;
         state.token = payload.data.conversation.token || state.token;
         state.messages = Array.isArray(payload.data.conversation.messages) ? payload.data.conversation.messages : [];
@@ -525,10 +562,13 @@
 
         input.value = '';
         renderMessages(messagesWrap, state.messages);
+        emitConversationState(state, state.messages);
         showStatus(status, '', false);
       }).catch(function () {
+        markPendingBubbleAsFailed(pendingBubble, finalFailedNotice);
         showStatus(status, config.strings.sendFailed || 'Message could not be sent. Please try again.', true);
       }).finally(function () {
+        removeChatBubble(thinkingBubble);
         send.disabled = false;
       });
     });
@@ -559,13 +599,26 @@
     return node;
   }
 
+  function emitConversationState(state, messages) {
+    try {
+      document.dispatchEvent(new CustomEvent('restatify:mco-conversation-state', {
+        detail: {
+          conversationId: state && state.id ? String(state.id) : '',
+          messages: Array.isArray(messages) ? messages : []
+        }
+      }));
+    } catch (error) {
+      return;
+    }
+  }
+
   function fetchConversation(config, state, messagesWrap) {
     return postToAjax(config.ajaxUrl, {
       action: 'restatify_mco_fetch_chat',
       nonce: config.nonce,
       conversation_id: state.id,
       conversation_token: state.token
-    }).then(function (payload) {
+    }, Math.max(1000, Number(config.chatSendTimeoutMs || 20000))).then(function (payload) {
       if (!payload || !payload.success || !payload.data || !payload.data.conversation) {
         if (payload && payload.success === false) {
           clearChatSession(state);
@@ -578,6 +631,7 @@
       var hadChanges = fresh.length !== state.messages.length;
       if (fresh.length === state.messages.length) {
         touchChatActivityFromConversation(payload.data.conversation, state.messages);
+        emitConversationState(state, state.messages);
         return;
       }
 
@@ -586,23 +640,51 @@
         touchChatActivityFromConversation(payload.data.conversation, fresh);
       }
       renderMessages(messagesWrap, state.messages);
+      emitConversationState(state, state.messages);
     }).catch(function () {
       return;
     });
   }
 
-  function postToAjax(url, payload) {
+  function postToAjax(url, payload, timeoutMs) {
     var formData = new FormData();
     Object.keys(payload || {}).forEach(function (key) {
       formData.append(key, payload[key] == null ? '' : String(payload[key]));
     });
 
-    return fetch(url, {
+    var timeout = Math.max(1000, Number(timeoutMs || 20000));
+    var controller = null;
+    var timerId = 0;
+    var requestOptions = {
       method: 'POST',
       credentials: 'same-origin',
       body: formData
-    }).then(function (response) {
+    };
+
+    if (typeof AbortController !== 'undefined') {
+      controller = new AbortController();
+      requestOptions.signal = controller.signal;
+      timerId = window.setTimeout(function () {
+        controller.abort();
+      }, timeout);
+    }
+
+    return fetch(url, requestOptions).then(function (response) {
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+
       return response.json();
+    }).finally(function () {
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+    });
+  }
+
+  function wait(delayMs) {
+    return new Promise(function (resolve) {
+      window.setTimeout(resolve, Math.max(0, Number(delayMs || 0)));
     });
   }
 
@@ -710,9 +792,11 @@
         return;
       }
 
-      var openBooking = sender !== 'visitor' && text.indexOf(BOOKING_OPEN_TOKEN) !== -1;
+      var prefillData = extractBookingPrefill(text);
+      var openBooking = sender !== 'visitor' && (text.indexOf(BOOKING_OPEN_TOKEN) !== -1 || !!prefillData);
       text = text
         .replace(BOOKING_OPEN_TOKEN, '')
+        .replace(/\[\[RESTATIFY_BOOKING_PREFILL\]\]\s*(\{[^\n\r]*\})/g, '')
         .replace(BOOKING_CONFIRMED_TOKEN, '')
         .replace(BOOKING_CANCELLED_TOKEN, '')
         .trim();
@@ -731,11 +815,84 @@
 
         handledBookingTriggers[triggerKey] = true;
         storeHandledBookingTriggers();
-        document.dispatchEvent(new CustomEvent('restatify:booking-open'));
+        document.dispatchEvent(new CustomEvent('restatify:booking-open', {
+          detail: {
+            prefill: prefillData || null
+          }
+        }));
       }
     });
 
     container.scrollTop = container.scrollHeight;
+  }
+
+  function extractBookingPrefill(text) {
+    var value = String(text || '');
+    if (value.indexOf(BOOKING_PREFILL_TOKEN) === -1) {
+      return null;
+    }
+
+    var match = value.match(/\[\[RESTATIFY_BOOKING_PREFILL\]\]\s*(\{[^\n\r]*\})/);
+    if (!match || !match[1]) {
+      return null;
+    }
+
+    try {
+      var parsed = JSON.parse(match[1]);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function appendPendingVisitorBubble(container, text) {
+    var bubble = document.createElement('div');
+    bubble.className = 'restatify-mco__native-bubble is-visitor is-pending';
+    bubble.innerHTML = renderMarkdownToHtml(text);
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+    return bubble;
+  }
+
+  function markPendingBubbleAsFailed(bubble, noticeText) {
+    if (!bubble || !bubble.parentNode) {
+      return;
+    }
+
+    bubble.classList.remove('is-pending');
+    bubble.classList.add('is-failed');
+
+    var note = document.createElement('p');
+    note.className = 'restatify-mco__native-failed-note';
+    note.textContent = String(noticeText || '');
+    bubble.appendChild(note);
+  }
+
+  function appendThinkingBubble(container, text) {
+    var bubble = document.createElement('div');
+    bubble.className = 'restatify-mco__native-bubble is-ai is-thinking';
+
+    var spinner = document.createElement('span');
+    spinner.className = 'restatify-mco__thinking-spinner';
+    spinner.setAttribute('aria-hidden', 'true');
+    bubble.appendChild(spinner);
+
+    var label = document.createElement('span');
+    label.className = 'restatify-mco__thinking-label';
+    label.textContent = String(text || 'Nora denkt...');
+    bubble.appendChild(label);
+
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+    return bubble;
+  }
+
+  function removeChatBubble(bubble) {
+    if (!bubble || !bubble.parentNode) {
+      return;
+    }
+
+    bubble.parentNode.removeChild(bubble);
   }
 
   function showStatus(node, text, isError) {

@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.6
+Stable tag: 2.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,7 @@ Restatify Multi Chat Overlay fuegt im Frontend einen schwebenden Chat-Button hin
 * Einen direkten Admin-Link in Support-E-Mails einbetten, um die passende Unterhaltung zu oeffnen.
 * Aus dem WordPress-Admin-Support-Posteingang antworten.
 * Optional KI-basierte First-Level-Antworten erzeugen.
+* Buchungsanfragen aus dem Chat direkt an das Booking-Plugin uebergeben, das Overlay oeffnen und erkannte Felder vorbefuellen.
 * Optional das Booking Assistant Overlay aus dem Support-Posteingang ausloesen.
 * Buchungs-Lifecycle-Ereignisse (bestaetigt/abgebrochen) in Support-Unterhaltungen anzeigen.
 

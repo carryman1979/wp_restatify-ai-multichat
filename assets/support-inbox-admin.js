@@ -151,7 +151,7 @@
 
       payload.action = 'restatify_mco_set_ai_mode';
       payload.conversation_id = modeBtn.getAttribute('data-conversation-id') || '';
-      payload.ai_mode = modeSelect.value || 'visitor';
+      payload.ai_mode = modeSelect.value || 'both';
     }
 
     if (openBookingBtn) {

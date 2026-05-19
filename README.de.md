@@ -112,6 +112,40 @@ Empfehlung:
 - Keine sensiblen Daten in Prompts oder Antworten schicken.
 - Regelmaessig Antwortqualitaet pruefen.
 
+## 6a) Dual-Session-KI-Router (ab 2.0.7)
+
+Der integrierte Dual-Session-Router ermoeglicht automatische Termin-Intent-Erkennung im Chat:
+
+**Session 1 – Terminbuchung:**
+- Erkennt Terminbuchungsabsicht anhand von Konfidenzwerten (0.0–1.0).
+- Sammelt strukturiert Pflichtfelder: Name, E-Mail, Kontaktkanal, Thema, Zeitslot.
+- Holt verfuegbare Termine live aus dem Booking-Assistant-Plugin.
+- Praesentsiert maximal 3 Slots; bietet Alternativen bei keinem exakten Treffer.
+- Sperrt Sitzung nach Buchung (IP-Cooldown ~15 Minuten).
+
+**Session 2 – Allgemeiner Chat:**
+- Beantwortet allgemeine Fragen per konfiguriertem AI-Anbieter.
+- Uebergibt nahtlos an Session 1, sobald Terminabsicht erkannt wird.
+
+**Automatisches Routing:**
+- Fast-Track bei eindeutigem Intent (Konfidenz ≥ 0.98).
+- Rueckfragen bei mittlerem Intent (0.30–0.97), max. 2 Versuche.
+- Erzwungene Konvertierung zu Session 1 nach 20 Besucher-Turns.
+- Unterdrückung von Neu-Routing nach expliziter Ablehnung.
+
+**Booking-Overlay mit Prefill:**
+- Am Ende von Session 1 oeffnet das Plugin das Booking-Overlay des Booking Assistants.
+- Erfasste Daten werden als Prefill an das Booking-Plugin uebergeben.
+- Das Formular ist dann bereits mit Name, E-Mail, Kontaktkanal, Kontaktdaten sowie Zeit-/Slot-Hinweisen vorbelegt.
+- Der Besucher muss nur noch pruefen, bei Bedarf ergaenzen und absenden.
+
+**Voraussetzung:** WP Restatify Booking Assistant muss aktiv und mit der Booking-API verbunden sein.
+
+**Live-Debug-Overlay (Admin):**
+- In den Plugin-Einstellungen `Live Debug` aktivieren.
+- Im Chat erscheint ein Debug-Panel mit aktuellem Session-Status, Konfidenzlevel und Log-Eintraegen.
+- Optional fuer alle Benutzer freischaltbar (nicht fuer Produktion empfohlen).
+
 ## 7) FAQ
 
 ### Wo erscheinen eingehende Nachrichten?

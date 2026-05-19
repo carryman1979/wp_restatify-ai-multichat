@@ -121,12 +121,46 @@ public function enqueue_support_inbox_assets(): void {
 
     public function enqueue_assets(): void {
         $options = $this->get_options();
-        if (!$this->should_render($options)) {
-            return;
-        }
+        $can_load_live_debug = !empty($options['live_debug_enabled'])
+            && (current_user_can('manage_options') || !empty($options['live_debug_public_enabled']));
 
         $base_url = RESTATIFY_AI_MULTICHAT_PLUGIN_URL . 'assets/';
         $base_path = RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'assets/';
+
+        if ($can_load_live_debug) {
+            wp_enqueue_style(
+                'restatify-multi-chat-overlay-live-debug',
+                $base_url . 'multi-chat-overlay-live-debug.css',
+                [],
+                file_exists($base_path . 'multi-chat-overlay-live-debug.css') ? (string) filemtime($base_path . 'multi-chat-overlay-live-debug.css') : '1.0.0'
+            );
+
+            wp_enqueue_script(
+                'restatify-multi-chat-overlay-live-debug',
+                $base_url . 'multi-chat-overlay-live-debug.js',
+                [],
+                file_exists($base_path . 'multi-chat-overlay-live-debug.js') ? (string) filemtime($base_path . 'multi-chat-overlay-live-debug.js') : '1.0.0',
+                true
+            );
+
+            wp_localize_script('restatify-multi-chat-overlay-live-debug', 'restatifyMultiChatOverlayLiveDebug', [
+                'enabled' => true,
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('restatify_mco_chat_nonce'),
+                'pollMs' => 2000,
+                'strings' => [
+                    'debugTitle' => __('Live Debug', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                    'session1Title' => __('Session 1', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                    'session2Title' => __('Session 2', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                    'logTitle' => __('Aktives Log', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                    'debugWaiting' => __('Warte auf Konversationsdaten...', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                ],
+            ]);
+        }
+
+        if (!$this->should_render($options)) {
+            return;
+        }
 
         wp_enqueue_style(
             'restatify-multi-chat-overlay',
@@ -152,12 +186,18 @@ public function enqueue_support_inbox_assets(): void {
             'consentCookieNames' => array_values(array_filter(array_map('trim', explode(',', (string) ($options['consent_cookie_names'] ?? ''))))),
             'pollSeconds' => max(3, (int) $options['chat_poll_seconds']),
             'chatResetMinutes' => max(0, (int) $options['chat_reset_minutes']),
+            'chatSendRetryMaxAttempts' => max(1, (int) ($options['chat_send_retry_max_attempts'] ?? 3)),
+            'chatSendRetryWaitMs' => max(0, (int) ($options['chat_send_retry_wait_ms'] ?? 500)),
+            'chatSendTimeoutMs' => max(1000, (int) ($options['chat_send_timeout_ms'] ?? 20000)),
             'strings' => [
                 'sending' => __('Senden...', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                'aiThinking' => __('Nora denkt...', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
                 'sendFailed' => __('Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                'sendFailedNotice' => (string) ($options['chat_send_failed_notice'] ?? ''),
                 'emptyMessage' => __('Bitte gib zuerst eine Nachricht ein.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             ],
         ]);
+
     }
 
     public function render_overlay(): void {
