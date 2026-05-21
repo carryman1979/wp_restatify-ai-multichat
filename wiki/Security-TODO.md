@@ -1,6 +1,6 @@
 # Security TODO (AJAX Hardening)
 
-Status: Open
+Status: Open (reviewed for 2.0.8)
 Created: 2026-05-07
 Scope: Restatify Multi Chat Overlay
 

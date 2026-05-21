@@ -70,6 +70,11 @@ class Restatify_Ai_Multichat_Options_Runtime {
                 );
             }
         }
+
+        if (class_exists('\\Restatify\\Shared\\Util\\PrivacyLegalNotice', false)) {
+            $privacy_legal_notice_class = '\\Restatify\\Shared\\Util\\PrivacyLegalNotice';
+            $privacy_legal_notice_class::registerPolylangStrings();
+        }
     }
 
     public function sanitize_options($input): array {

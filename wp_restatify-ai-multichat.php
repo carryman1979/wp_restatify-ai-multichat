@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.7
+ * Version: 2.0.8
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -50,6 +50,12 @@ $restatify_multichat_require_first([
     dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/RateLimiter.php',
     dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/I18n/PolylangAdapter.php',
 ]);
+
+if (!$restatify_multichat_require_first([
+    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Util/PrivacyLegalNotice.php',
+])) {
+    throw new RuntimeException('Missing required shared dependency: wp_restatify-shared/src/php/Util/PrivacyLegalNotice.php');
+}
 
 if (class_exists('\\Restatify\\Shared\\Contracts\\BookingChatTokens', false)) {
     \Restatify\Shared\Contracts\BookingChatTokens::defineGlobalConstants();
@@ -223,6 +229,7 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
     public function __construct() {
         add_action('init', [$this, 'maybe_install_runtime_schema'], 1);
         add_action('init', [$this, 'load_textdomain']);
+        add_action('init', [$this, 'register_polylang_strings'], 20);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_init', [$this, 'register_polylang_strings']);
         add_action('admin_init', [$this, 'ensure_support_capability']);
