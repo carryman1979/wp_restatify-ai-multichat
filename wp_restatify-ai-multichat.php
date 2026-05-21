@@ -24,35 +24,38 @@ if (!defined('RESTATIFY_AI_MULTICHAT_PLUGIN_URL')) {
 }
 
 if (!defined('RESTATIFY_AI_MULTICHAT_SHARED_VERSION')) {
-    define('RESTATIFY_AI_MULTICHAT_SHARED_VERSION', '1.0.0');
+    define('RESTATIFY_AI_MULTICHAT_SHARED_VERSION', '1.0.2');
 }
 
-$restatify_multichat_require_first = static function (array $paths): bool {
-    foreach ($paths as $path) {
-        if (is_string($path) && $path !== '' && file_exists($path)) {
-            require_once $path;
-            return true;
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-shared-library.php';
+
+$restatify_multichat_shared_root = restatify_ai_multichat_shared_bootstrap();
+
+$restatify_multichat_require_all = static function (string $shared_root, array $relative_paths): bool {
+    foreach ($relative_paths as $relative_path) {
+        $full_path = $shared_root . '/src/php/' . ltrim((string) $relative_path, '/');
+        if (!file_exists($full_path)) {
+            return false;
         }
+
+        require_once $full_path;
     }
 
-    return false;
+    return true;
 };
 
-$restatify_multichat_require_first([
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/SharedRegistry.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Contracts/BookingChatTokens.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Contracts/BookingPrefillSchema.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Util/BookingContactMethodsResolver.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Util/BookingContactChannelProfiles.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Util/BookingContactChannels.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/PluginState.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/BootstrapGuard.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Runtime/RateLimiter.php',
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/I18n/PolylangAdapter.php',
-]);
-
-if (!$restatify_multichat_require_first([
-    dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Util/PrivacyLegalNotice.php',
+if (!$restatify_multichat_require_all($restatify_multichat_shared_root, [
+    'SharedRegistry.php',
+    'Contracts/BookingChatTokens.php',
+    'Contracts/BookingPrefillSchema.php',
+    'Util/BookingContactMethodsResolver.php',
+    'Util/BookingContactChannelProfiles.php',
+    'Util/BookingContactChannels.php',
+    'Runtime/PluginState.php',
+    'Runtime/BootstrapGuard.php',
+    'Runtime/RateLimiter.php',
+    'I18n/PolylangAdapter.php',
+    'Util/PrivacyLegalNotice.php',
 ])) {
     throw new RuntimeException('Missing required shared dependency: wp_restatify-shared/src/php/Util/PrivacyLegalNotice.php');
 }
@@ -93,8 +96,8 @@ if (class_exists('\\Restatify\\Shared\\SharedRegistry', false)) {
     }
 
     if ($restatify_multichat_shared_manager_class === null) {
-        $restatify_multichat_require_first([
-            dirname(__DIR__, 3) . '/wp_restatify-shared/src/php/Migration/MigrationNoticeManager.php',
+        $restatify_multichat_require_all($restatify_multichat_shared_root, [
+            'Migration/MigrationNoticeManager.php',
         ]);
 
         if (class_exists('\\Restatify\\Shared\\Migration\\MigrationNoticeManager', false)) {

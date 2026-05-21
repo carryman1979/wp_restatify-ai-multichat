@@ -8,6 +8,8 @@ Version 2.0.8 fuehrt den aktuellen stabilen Wartungsstand fort und bringt die Do
 - Readme-Stable-Tag auf `2.0.8` aktualisiert
 - Wiki und Release-Navigation fuer den neuen Stand erweitert
 - Security-TODO fuer den aktuellen Release-Zyklus erneut verifiziert
+- Hotfix-Rebuild ohne Versionssprung: bestehendes `2.0.8`-Artefakt durch Shared-Lib-Resolver-Fix ersetzt
+- Legal-Notice-Abhaengigkeit (`PrivacyLegalNotice`) wird jetzt ueber den zentralen versionsgebundenen Shared-Pfad abgesichert
 
 ## Kompatibilitaet
 

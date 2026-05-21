@@ -153,6 +153,11 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.0.8 =
+* Hotfix rebuild without version bump: replaced defective 2.0.8 release package.
+* Added shared library installer/runtime resolver for central versioned shared path handling.
+* Added packaged shared install payload in release ZIP to keep legal notice dependency (`PrivacyLegalNotice`) available during installs.
+
 = 2.0.5 =
 * Renamed the WordPress settings menu label from "Multi Chat Overlay" to "AI Multichat".
 * Updated the settings page title to "AI Multichat" for UI consistency.
@@ -216,6 +221,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.0.8 =
+Hotfix rebuild that replaces the existing 2.0.8 package with shared-library dependency safety fixes.
 
 = 2.0.5 =
 UI-only update that renames the settings menu/page title to AI Multichat.
