@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.8
+Stable tag: 2.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -153,6 +153,11 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.0.9 =
+* Mobile overlay behavior revised to full-screen mode on small viewports, with close-only interaction for a more stable chat UX.
+* Fixed mobile landscape layout so legal notice, input field and send button no longer overlap or fall outside the visible area.
+* Added compact channel-flyout toggle (`>>` / `<<`) for mobile landscape to avoid clipped controls.
+
 = 2.0.5 =
 * Renamed the WordPress settings menu label from "Multi Chat Overlay" to "AI Multichat".
 * Updated the settings page title to "AI Multichat" for UI consistency.
@@ -216,6 +221,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.0.9 =
+Improves mobile full-screen chat usability and fixes overlap/clipping issues in landscape mode.
 
 = 2.0.5 =
 UI-only update that renames the settings menu/page title to AI Multichat.
