@@ -4,7 +4,7 @@ Produktname (ab 2.0.0): Restatify-AI-Multichat
 WordPress-Slug (ab 2.0.0): wp_restatify-ai-multichat  
 Website: https://www.restatify.tech
 
-Stand: Version 2.0.8, getestet bis WordPress 6.9.
+Stand: Version 2.0.9, getestet bis WordPress 6.9.
 
 Diese Seite ist als zentrale One-Page-Dokumentation für Einrichtung, Betrieb, Support und Release gedacht.
 
