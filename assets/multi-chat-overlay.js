@@ -308,7 +308,7 @@
 
     var moreLabel = String(toggle.getAttribute('data-label-more') || 'More');
     var lessLabel = String(toggle.getAttribute('data-label-less') || 'Less');
-    var compactViewport = window.matchMedia('(orientation: landscape) and (max-width: 980px) and (max-height: 560px)');
+    var compactViewport = window.matchMedia('(max-width: 980px)');
 
     function isCompactToggle() {
       return Boolean(compactViewport && compactViewport.matches);
