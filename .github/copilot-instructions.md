@@ -7,6 +7,7 @@ Repo-specific requirements:
 - Preserve nonce and permission checks for all AJAX handlers.
 - Keep AI endpoint sanitization and provider detection behavior stable.
 - Keep support inbox capability boundaries intact.
+- Keep shared loader order stable: local root shared first for dev, otherwise exact versioned shared under plugins/mu-plugins, never mixed in one request.
 
 Required checks:
 - composer run test:unit:php
