@@ -97,11 +97,25 @@
     }
 
     var backdrop = createBackdrop();
+    var mobileViewport = window.matchMedia('(max-width: 980px)');
+
+    function isMobileViewport() {
+      return Boolean(mobileViewport && mobileViewport.matches);
+    }
 
     function updateFocusButtonState(enabled) {
       if (!focusButton) {
         return;
       }
+
+      if (isMobileViewport()) {
+        focusButton.setAttribute('hidden', 'hidden');
+        focusButton.setAttribute('aria-hidden', 'true');
+        return;
+      }
+
+      focusButton.removeAttribute('hidden');
+      focusButton.removeAttribute('aria-hidden');
 
       focusButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
       focusButton.setAttribute('aria-label', enabled ? 'Shrink chat panel' : 'Expand chat panel');
@@ -110,6 +124,13 @@
     }
 
     function setChatFocusMode(enabled) {
+      if (isMobileViewport()) {
+        root.classList.remove('is-chat-focus');
+        backdrop.classList.remove('is-visible');
+        updateFocusButtonState(false);
+        return;
+      }
+
       var isEnabled = Boolean(enabled);
       root.classList.toggle('is-chat-focus', isEnabled);
       backdrop.classList.toggle('is-visible', isEnabled && !panel.hidden);
@@ -186,8 +207,24 @@
 
     if (focusButton) {
       focusButton.addEventListener('click', function () {
+        if (isMobileViewport()) {
+          return;
+        }
+
         setChatFocusMode(!root.classList.contains('is-chat-focus'));
       });
+    }
+
+    if (mobileViewport) {
+      if (typeof mobileViewport.addEventListener === 'function') {
+        mobileViewport.addEventListener('change', function () {
+          setChatFocusMode(false);
+        });
+      } else if (typeof mobileViewport.addListener === 'function') {
+        mobileViewport.addListener(function () {
+          setChatFocusMode(false);
+        });
+      }
     }
 
     document.addEventListener('keydown', function (event) {
@@ -232,7 +269,9 @@
             openPanel();
           }
 
-          setChatFocusMode(true);
+          if (!isMobileViewport()) {
+            setChatFocusMode(true);
+          }
         }
       });
     }
@@ -269,12 +308,23 @@
 
     var moreLabel = String(toggle.getAttribute('data-label-more') || 'More');
     var lessLabel = String(toggle.getAttribute('data-label-less') || 'Less');
+    var compactViewport = window.matchMedia('(max-width: 980px)');
+
+    function isCompactToggle() {
+      return Boolean(compactViewport && compactViewport.matches);
+    }
 
     function update(expanded) {
       channels.classList.toggle('is-expanded', expanded);
       channels.classList.toggle('is-collapsed', !expanded);
       toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-      toggle.textContent = expanded ? lessLabel : moreLabel;
+      if (isCompactToggle()) {
+        toggle.textContent = expanded ? '<<' : '>>';
+        toggle.setAttribute('aria-label', expanded ? lessLabel : moreLabel);
+      } else {
+        toggle.textContent = expanded ? lessLabel : moreLabel;
+        toggle.setAttribute('aria-label', expanded ? lessLabel : moreLabel);
+      }
     }
 
     update(channels.classList.contains('is-expanded'));
@@ -283,6 +333,18 @@
       var expanded = channels.classList.contains('is-expanded');
       update(!expanded);
     });
+
+    if (compactViewport) {
+      if (typeof compactViewport.addEventListener === 'function') {
+        compactViewport.addEventListener('change', function () {
+          update(channels.classList.contains('is-expanded'));
+        });
+      } else if (typeof compactViewport.addListener === 'function') {
+        compactViewport.addListener(function () {
+          update(channels.classList.contains('is-expanded'));
+        });
+      }
+    }
   }
 
   function armConsentWatcher(root, chatConfig) {

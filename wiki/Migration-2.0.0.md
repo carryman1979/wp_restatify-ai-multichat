@@ -41,6 +41,19 @@ Warnhinweis:
 - Plugins teilen Shared-Code nur bei exakt gleicher Shared-Version.
 - Bei Versionsabweichung laedt jedes Plugin seine eigene kompatible Shared-Version.
 
+## Shared-Aufloesung (Laufzeit)
+
+1. Zuerst pruefen, ob lokales Root-Shared ohne Versionsordner vorhanden ist: `.../wp_restatify-shared/src/php/*`.
+2. Wenn vorhanden, dieses Root-Shared als `latest` fuer lokale Entwicklung verwenden (z. B. Laragon).
+3. Wenn nicht vorhanden, nur die benoetigte Release-Version unter `wp-content/plugins/wp_restatify-shared/versions/<x.y.z>/` (bzw. `mu-plugins`) laden.
+4. Keine Mischung aus Root-Shared und versioniertem Plugin-Shared in derselben Anfrage.
+
+## Shared-Installation und Aufraeumen
+
+1. Bei Installation/Update wird die vom Plugin benoetigte Shared-Version unter `plugins/wp_restatify-shared/versions/<x.y.z>/` abgelegt.
+2. Laufzeitreferenzen zeigen nur auf die benoetigte Version.
+3. Versionen ohne Referenzen durch Plugins/Themes koennen aufgeraeumt werden.
+
 ## Operator-Checkliste
 
 1. Vor Update Datenbank-Backup erstellen.
