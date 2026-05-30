@@ -203,9 +203,53 @@ if (!function_exists('restatify_booking_ai_handle_message')) {
     }
 }
 
-$shared_resolver_path = dirname(__DIR__, 4) . '/wp_restatify-shared/src/php/Util/BookingContactMethodsResolver.php';
-if (file_exists($shared_resolver_path)) {
-    require_once $shared_resolver_path;
+$restatify_multichat_test_require_first = static function (array $paths): bool {
+    foreach ($paths as $path) {
+        if (is_string($path) && $path !== '' && file_exists($path)) {
+            require_once $path;
+            return true;
+        }
+    }
+
+    return false;
+};
+
+$restatify_multichat_test_shared_version = '1.0.2';
+$restatify_multichat_test_root_shared = dirname(__DIR__, 4) . '/wp_restatify-shared';
+$restatify_multichat_test_packaged_shared = dirname(__DIR__)
+    . '/shared-install/wp_restatify-shared/versions/'
+    . $restatify_multichat_test_shared_version;
+
+$restatify_multichat_test_require_first([
+    $restatify_multichat_test_root_shared . '/versions/' . $restatify_multichat_test_shared_version . '/src/php/Util/BookingContactMethodsResolver.php',
+    $restatify_multichat_test_root_shared . '/src/php/Util/BookingContactMethodsResolver.php',
+    $restatify_multichat_test_packaged_shared . '/src/php/Util/BookingContactMethodsResolver.php',
+]);
+
+if (!class_exists('\\Restatify\\Shared\\Util\\BookingContactMethodsResolver', false)) {
+    final class Restatify_Multichat_Test_BookingContactMethodsResolver {
+        public static function methodsFromOptions(array $options): array {
+            $channels = isset($options['contact_channels']) && is_array($options['contact_channels'])
+                ? $options['contact_channels']
+                : [];
+
+            $methods = [];
+            foreach ($channels as $channel) {
+                if (!is_array($channel)) {
+                    continue;
+                }
+
+                $key = isset($channel['key']) ? trim((string) $channel['key']) : '';
+                if ($key !== '') {
+                    $methods[] = $key;
+                }
+            }
+
+            return array_values(array_unique($methods));
+        }
+    }
+
+    class_alias('Restatify_Multichat_Test_BookingContactMethodsResolver', '\\Restatify\\Shared\\Util\\BookingContactMethodsResolver');
 }
 
 require_once dirname(__DIR__) . '/includes/class-restatify-ai-multichat-options-runtime.php';
