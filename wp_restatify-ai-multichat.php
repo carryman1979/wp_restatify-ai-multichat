@@ -119,7 +119,12 @@ $restatify_multichat_require_shared = static function (string $relativePath, str
 $restatify_multichat_require_shared('src/php/SharedRegistry.php', '\\Restatify\\Shared\\SharedRegistry');
 $restatify_multichat_require_shared('src/php/Contracts/BookingChatTokens.php', '\\Restatify\\Shared\\Contracts\\BookingChatTokens');
 $restatify_multichat_require_shared('src/php/Contracts/BookingPrefillSchema.php', '\\Restatify\\Shared\\Contracts\\BookingPrefillSchema');
-$restatify_multichat_require_shared('src/php/Util/BookingContactMethodsResolver.php', '\\Restatify\\Shared\\Util\\BookingContactMethodsResolver');
+if (
+    !$restatify_multichat_duplicate_shared_roots
+    && !$restatify_multichat_require_shared('src/php/Util/BookingContactMethodsResolver.php', '\\Restatify\\Shared\\Util\\BookingContactMethodsResolver')
+) {
+    throw new RuntimeException('Missing required shared dependency: wp_restatify-shared/src/php/Util/BookingContactMethodsResolver.php');
+}
 $restatify_multichat_require_shared('src/php/Util/BookingContactChannelProfiles.php', '\\Restatify\\Shared\\Util\\BookingContactChannelProfiles');
 $restatify_multichat_require_shared('src/php/Util/BookingContactChannels.php', '\\Restatify\\Shared\\Util\\BookingContactChannels');
 $restatify_multichat_require_shared('src/php/Runtime/PluginState.php', '\\Restatify\\Shared\\Runtime\\PluginState');
@@ -455,12 +460,16 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
         $confidence = max(0.0, min(1.0, floatval($state['confidence'] ?? 0.0)));
         $level_percent = (int) round($confidence * 100);
 
-        if (!empty($state['booking_flow_active']) && (($state['current_session'] ?? '') === 'session1')) {
-            $session1_status = sprintf('Terminwunsch geaeussert. Oeffne Dialog. Level %d%%', $level_percent);
+        $current_session = (string) ($state['current_session'] ?? Restatify_Ai_Dual_Session_Router::SESSION_GENERAL_CHAT);
+
+        if (!empty($state['booking_flow_active']) && in_array($current_session, [Restatify_Ai_Dual_Session_Router::SESSION_BOOKING_COLLECTOR, 'session1'], true)) {
+            $session1_status = sprintf('Booking-Collector aktiv. Sammle Buchungsdaten. Level %d%%', $level_percent);
+        } elseif (!empty($state['contact_flow_active']) && in_array($current_session, [Restatify_Ai_Dual_Session_Router::SESSION_CONTACT_COLLECTOR, 'contact'], true)) {
+            $session1_status = sprintf('Contact-Collector aktiv. Sammle Kontaktdaten. Level %d%%', $level_percent);
         } elseif ($confidence >= Restatify_Ai_Dual_Session_Router::CONFIDENCE_CLARIFY_MIN) {
-            $session1_status = sprintf('Vielleicht ein Terminwunsch. Frage nach. Level %d%%', $level_percent);
+            $session1_status = sprintf('Intent unklar. Stelle Rueckfrage. Level %d%%', $level_percent);
         } else {
-            $session1_status = sprintf('Kein Terminwunsch. Level %d%%', $level_percent);
+            $session1_status = sprintf('General-Chat aktiv. Kein Collector erforderlich. Level %d%%', $level_percent);
         }
 
         $session1_last_request_at = '-';
@@ -481,10 +490,14 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
             }
         }
 
-        // Get Session 1 debug logs
-        $session1_logs = Restatify_Ai_Session1_Debug_Logger::format_as_log_lines(20);
+        // Get collector debug logs (session-scoped when conversation id is available).
+        if ($conversation_id !== '') {
+            $session1_logs = Restatify_Ai_Session1_Debug_Logger::format_session_log_lines($conversation_id, 20);
+        } else {
+            $session1_logs = Restatify_Ai_Session1_Debug_Logger::format_as_log_lines(20);
+        }
         if (empty($session1_logs)) {
-            $session1_logs = ['(keine Session 1 Aktivität im aktuellen Gespräch)'];
+            $session1_logs = ['(keine Booking-Collector Aktivitaet im aktuellen Gespraech)'];
         }
 
         $language_lock_until = (int) ($state['language_lock_until'] ?? 0);
@@ -503,6 +516,18 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
         $recognized_booking_data = [
             'collected_fields' => is_array($state['collected_fields'] ?? null) ? (array) $state['collected_fields'] : [],
             'partial_prefill' => is_array($state['partial_prefill'] ?? null) ? (array) $state['partial_prefill'] : [],
+        ];
+
+        $contact_form_id = sanitize_key((string) ($options['contact_form_id'] ?? ''));
+        $contact_collected_fields = is_array($state['contact_collected_fields'] ?? null) ? (array) $state['contact_collected_fields'] : [];
+        $recognized_contact_data = [
+            'collected_fields' => $contact_collected_fields,
+            'partial_prefill' => $contact_collected_fields,
+            'contact_form_payload_preview' => $contact_form_id !== '' ? [
+                'form_id' => $contact_form_id,
+                'trigger' => '#restatify-form-' . $contact_form_id,
+                'prefill' => $contact_collected_fields,
+            ] : null,
         ];
 
         $session2_timeline = [];
@@ -538,13 +563,28 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
         }
         $session2_timeline = array_slice($session2_timeline, -10);
 
+        if ($conversation_id !== '') {
+            $router_entries = Restatify_Ai_Router_Debug_Logger::get_session_log($conversation_id, 20);
+        } else {
+            $router_entries = Restatify_Ai_Router_Debug_Logger::get_recent_entries(20);
+        }
+        $last_router_action = '-';
+        $last_router_type = '-';
+        if (!empty($router_entries)) {
+            $last_router_entry = end($router_entries);
+            if (is_array($last_router_entry)) {
+                $last_router_action = (string) ($last_router_entry['action'] ?? ($last_router_entry['decision'] ?? '-'));
+                $last_router_type = (string) ($last_router_entry['type'] ?? 'router');
+            }
+            reset($router_entries);
+        }
+
         $log_lines = [];
         if (!empty($options['ai_debug_enabled'])) {
             $log_lines = $this->get_recent_ai_debug_lines(30);
         }
 
         if (count($log_lines) === 0) {
-            $router_entries = Restatify_Ai_Router_Debug_Logger::get_recent_entries(20);
             foreach ($router_entries as $entry) {
                 if (!is_array($entry)) {
                     continue;
@@ -566,12 +606,22 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
                 'status_line' => $session1_status,
                 'confidence' => $confidence,
                 'confidence_percent' => $level_percent,
-                'current_session' => (string) ($state['current_session'] ?? 'session2'),
+                'current_session' => $current_session,
                 'booking_flow_active' => !empty($state['booking_flow_active']),
+                'contact_flow_active' => !empty($state['contact_flow_active']),
+                'booking_confidence' => max(0.0, min(1.0, (float) ($state['booking_confidence'] ?? 0.0))),
+                'contact_confidence' => max(0.0, min(1.0, (float) ($state['contact_confidence'] ?? 0.0))),
+                'general_confidence' => max(0.0, min(1.0, (float) ($state['general_confidence'] ?? 0.0))),
                 'clarification_attempts' => (int) ($state['clarification_attempts'] ?? 0),
+                'contact_attempt_count' => (int) ($state['contact_attempt_count'] ?? 0),
+                'last_contact_field' => (string) ($state['last_contact_field'] ?? ''),
+                'last_contact_question' => (string) ($state['last_contact_question'] ?? ''),
                 'last_request_at' => $session1_last_request_at,
+                'last_router_action' => $last_router_action,
+                'last_router_type' => $last_router_type,
                 'language' => $language_debug,
                 'recognized_booking_data' => $recognized_booking_data,
+                'recognized_contact_data' => $recognized_contact_data,
                 'debug_logs' => $session1_logs,
             ],
             'session2' => [

@@ -10,6 +10,12 @@ Version 2.0.10 stabilisiert die Shared-Aufloesung und behebt einen Klassenkonfli
 - Shared-Dateien werden symbolsicher geladen, sodass bereits vorhandene Klassen nicht erneut inkludiert werden (Redeclare-Schutz).
 - Copilot-/Teamrichtlinien zur Shared-Loader-Reihenfolge klar dokumentiert.
 
+## Release-prep refresh (2026-05-30)
+
+- Kein Versionssprung: Release-Prep auf Basis `2.0.10`.
+- Dual-Session-Router, Sprachsteuerung und Intent-Firewall fuer laufende Hotfix-Arbeiten nachgezogen.
+- Mail-/Admin-Kontext in Runtime und Support-Inbox fuer stabile Handovers aktualisiert.
+
 ## Kompatibilitaet
 
 - Plugin-Version: `2.0.10`

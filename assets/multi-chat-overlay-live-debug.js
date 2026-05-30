@@ -23,7 +23,7 @@
     col1.className = 'restatify-mco-live-debug__col';
     var col1Heading = document.createElement('div');
     col1Heading.className = 'restatify-mco-live-debug__heading';
-    col1Heading.textContent = String((config.strings && config.strings.session1Title) || 'Session 1');
+    col1Heading.textContent = String((config.strings && config.strings.session1Title) || 'Collector Router (Booking/Contact)');
     var col1Body = document.createElement('pre');
     col1Body.className = 'restatify-mco-live-debug__body';
     col1Body.textContent = String((config.strings && config.strings.debugWaiting) || 'Warte auf Konversationsdaten...');
@@ -36,7 +36,7 @@
     col2.className = 'restatify-mco-live-debug__col';
     var col2Heading = document.createElement('div');
     col2Heading.className = 'restatify-mco-live-debug__heading';
-    col2Heading.textContent = String((config.strings && config.strings.session2Title) || 'Session 2');
+    col2Heading.textContent = String((config.strings && config.strings.session2Title) || 'General Chat Timeline');
     var col2Body = document.createElement('pre');
     col2Body.className = 'restatify-mco-live-debug__body';
     col2Body.textContent = String((config.strings && config.strings.debugWaiting) || 'Warte auf Konversationsdaten...');
@@ -88,8 +88,20 @@
     bookingSection.appendChild(bookingHeading);
     bookingSection.appendChild(bookingBody);
 
+    var contactSection = document.createElement('div');
+    contactSection.className = 'restatify-mco-live-debug__booking';
+    var contactHeading = document.createElement('div');
+    contactHeading.className = 'restatify-mco-live-debug__heading';
+    contactHeading.textContent = 'Kontaktformular-Daten';
+    var contactBody = document.createElement('pre');
+    contactBody.className = 'restatify-mco-live-debug__body';
+    contactBody.textContent = 'Warte auf Kontaktformular-Daten...';
+    contactSection.appendChild(contactHeading);
+    contactSection.appendChild(contactBody);
+
     staticSection.appendChild(languageSection);
     staticSection.appendChild(bookingSection);
+    staticSection.appendChild(contactSection);
     root.appendChild(staticSection);
 
     document.body.appendChild(root);
@@ -166,24 +178,34 @@
       var log = data.log || {};
       var language = session1.language || {};
       var recognizedBookingData = session1.recognized_booking_data || {};
+      var recognizedContactData = session1.recognized_contact_data || {};
 
-      // Session 1: Display logs + status
+      // Collector router: Display logs + status
       var session1Lines = [];
       session1Lines.push(String(session1.status_line || '-'));
       session1Lines.push('');
-      session1Lines.push('━━━ Session 1 Debug Log ━━━');
+      session1Lines.push('━━━ Booking-Collector Debug Log ━━━');
       
       var session1Logs = Array.isArray(session1.debug_logs) ? session1.debug_logs : [];
       if (session1Logs.length > 0) {
         session1Lines = session1Lines.concat(session1Logs);
       } else {
-        session1Lines.push('(keine Session 1 Aktivität)');
+        session1Lines.push('(keine Booking-Collector Aktivitaet)');
       }
       
       session1Lines.push('');
       session1Lines.push('current_session: ' + String(session1.current_session || '-'));
       session1Lines.push('booking_flow_active: ' + (session1.booking_flow_active ? 'true' : 'false'));
+      session1Lines.push('contact_flow_active: ' + (session1.contact_flow_active ? 'true' : 'false'));
+      session1Lines.push('booking_confidence: ' + String(session1.booking_confidence != null ? session1.booking_confidence : '-'));
+      session1Lines.push('contact_confidence: ' + String(session1.contact_confidence != null ? session1.contact_confidence : '-'));
+      session1Lines.push('general_confidence: ' + String(session1.general_confidence != null ? session1.general_confidence : '-'));
       session1Lines.push('clarification_attempts: ' + String(session1.clarification_attempts || 0));
+      session1Lines.push('contact_attempt_count: ' + String(session1.contact_attempt_count || 0));
+      session1Lines.push('last_contact_field: ' + String(session1.last_contact_field || '-'));
+      session1Lines.push('last_contact_question: ' + String(session1.last_contact_question || '-'));
+      session1Lines.push('last_router_action: ' + String(session1.last_router_action || '-'));
+      session1Lines.push('last_router_type: ' + String(session1.last_router_type || '-'));
       session1Lines.push('letzte Anfrage: ' + String(session1.last_request_at || '-'));
 
       session1Lines.push('');
@@ -203,6 +225,14 @@
       session1Lines.push(stringifyDebugObject(recognizedBookingData.collected_fields));
       session1Lines.push('partial_prefill:');
       session1Lines.push(stringifyDebugObject(recognizedBookingData.partial_prefill));
+      session1Lines.push('');
+      session1Lines.push('━━━ Contact-Collector Basisdaten erkannt ━━━');
+      session1Lines.push('collected_fields:');
+      session1Lines.push(stringifyDebugObject(recognizedContactData.collected_fields));
+      session1Lines.push('partial_prefill:');
+      session1Lines.push(stringifyDebugObject(recognizedContactData.partial_prefill));
+      session1Lines.push('contact_form_payload_preview:');
+      session1Lines.push(stringifyDebugObject(recognizedContactData.contact_form_payload_preview));
       col1Body.textContent = session1Lines.join('\n');
 
       // Update static language section
@@ -225,6 +255,17 @@
       bookingLines.push('partial_prefill:');
       bookingLines.push(stringifyDebugObject(recognizedBookingData.partial_prefill));
       bookingBody.textContent = bookingLines.join('\n');
+
+      var contactLines = [];
+      contactLines.push('collected_fields:');
+      contactLines.push(stringifyDebugObject(recognizedContactData.collected_fields));
+      contactLines.push('');
+      contactLines.push('partial_prefill:');
+      contactLines.push(stringifyDebugObject(recognizedContactData.partial_prefill));
+      contactLines.push('');
+      contactLines.push('contact_form_payload_preview:');
+      contactLines.push(stringifyDebugObject(recognizedContactData.contact_form_payload_preview));
+      contactBody.textContent = contactLines.join('\n');
 
       var timeline = Array.isArray(session2.timeline) ? session2.timeline : [];
       col2Body.textContent = timeline.length > 0 ? timeline.join('\n') : '-';
@@ -251,6 +292,8 @@
       col1Body.textContent = text;
       col2Body.textContent = text;
       logBody.textContent = text;
+      bookingBody.textContent = text;
+      contactBody.textContent = text;
     }
 
     function postToAjax(url, payload, timeoutMs) {

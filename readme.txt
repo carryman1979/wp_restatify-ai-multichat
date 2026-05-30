@@ -153,6 +153,11 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.0.10 =
+* Shared resolver and shared-loader ordering finalized for local-root and exact-version fallback paths.
+* Router/session hardening continued for language and intent handling in the dual-session flow.
+* Runtime/admin mail-context handling and support-inbox guardrails updated for coordinated rollout prep.
+
 = 2.0.9 =
 * Mobile overlay behavior revised to full-screen mode on small viewports, with close-only interaction for a more stable chat UX.
 * Fixed mobile landscape layout so legal notice, input field and send button no longer overlap or fall outside the visible area.
@@ -221,6 +226,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.0.10 =
+Maintenance release with shared-loader stabilization and dual-session runtime hardening.
 
 = 2.0.9 =
 Improves mobile full-screen chat usability and fixes overlap/clipping issues in landscape mode.

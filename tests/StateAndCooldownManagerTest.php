@@ -15,7 +15,7 @@ final class StateAndCooldownManagerTest extends TestCase {
         $stateMachine = new Restatify_Ai_Dual_Session_State_Machine();
         $state = $stateMachine->get_session_state('state_defaults_test');
 
-        self::assertSame('session2', $state['current_session']);
+        self::assertSame(Restatify_Ai_Dual_Session_Router::SESSION_GENERAL_CHAT, $state['current_session']);
         self::assertFalse((bool) $state['booking_flow_active']);
         self::assertSame(0, (int) $state['customer_turns']);
     }

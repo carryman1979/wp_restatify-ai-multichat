@@ -119,6 +119,9 @@ public function enqueue_support_inbox_assets(): void {
         require RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'templates/admin-page.inc.php';
     }
 
+    /**
+     * Enqueues frontend assets for the overlay and optional live debug panel.
+     */
     public function enqueue_assets(): void {
         $options = $this->get_options();
         $can_load_live_debug = !empty($options['live_debug_enabled'])
@@ -150,8 +153,8 @@ public function enqueue_support_inbox_assets(): void {
                 'pollMs' => 2000,
                 'strings' => [
                     'debugTitle' => __('Live Debug', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
-                    'session1Title' => __('Session 1', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
-                    'session2Title' => __('Session 2', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                    'session1Title' => __('Collector Router (Booking/Contact)', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                    'session2Title' => __('General Chat Timeline', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
                     'logTitle' => __('Aktives Log', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
                     'debugWaiting' => __('Warte auf Konversationsdaten...', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
                 ],
@@ -170,9 +173,17 @@ public function enqueue_support_inbox_assets(): void {
         );
 
         wp_enqueue_script(
+            'restatify-multi-chat-overlay-markdown',
+            $base_url . 'multi-chat-overlay-markdown.js',
+            [],
+            file_exists($base_path . 'multi-chat-overlay-markdown.js') ? (string) filemtime($base_path . 'multi-chat-overlay-markdown.js') : '1.0.0',
+            true
+        );
+
+        wp_enqueue_script(
             'restatify-multi-chat-overlay',
             $base_url . 'multi-chat-overlay.js',
-            [],
+            ['restatify-multi-chat-overlay-markdown'],
             file_exists($base_path . 'multi-chat-overlay.js') ? (string) filemtime($base_path . 'multi-chat-overlay.js') : '1.0.0',
             true
         );

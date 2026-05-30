@@ -5,9 +5,9 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Session 1 Debug Logger — Dedicated logging for booking workflow activation and progression
+ * Booking-Collector Debug Logger - Dedicated logging for booking workflow activation and progression
  * 
- * Tracks Session 1 entry points, user inputs, and extraction results with timestamps.
+ * Tracks Booking-Collector entry points, user inputs, and extraction results with timestamps.
  * Provides clear visibility into when/why booking workflow is triggered.
  */
 class Restatify_Ai_Session1_Debug_Logger {
@@ -16,7 +16,7 @@ class Restatify_Ai_Session1_Debug_Logger {
     const MAX_ENTRIES = 200;
 
     /**
-     * Log Session 1 entry trigger (fast-track, confidence, etc.)
+     * Log Booking-Collector entry trigger (fast-track, confidence, etc.).
      */
     public static function log_session1_entry(
         string $session_id,
@@ -44,7 +44,7 @@ class Restatify_Ai_Session1_Debug_Logger {
     }
 
     /**
-     * Log Session 1 data extraction results
+    * Log Booking-Collector data extraction results.
      */
     public static function log_session1_extraction(
         string $session_id,
@@ -77,7 +77,7 @@ class Restatify_Ai_Session1_Debug_Logger {
     }
 
     /**
-     * Log Session 1 data collection question
+    * Log Booking-Collector data collection question.
      */
     public static function log_session1_question(
         string $session_id,
@@ -101,7 +101,7 @@ class Restatify_Ai_Session1_Debug_Logger {
     }
 
     /**
-     * Log Session 1 booking confirmation/trigger
+    * Log Booking-Collector confirmation/trigger.
      */
     public static function log_session1_confirmation(
         string $session_id,
@@ -130,7 +130,7 @@ class Restatify_Ai_Session1_Debug_Logger {
     }
 
     /**
-     * Log Session 1 state (helper for debugging)
+    * Log Booking-Collector state (helper for debugging).
      */
     public static function log_session1_state(
         string $session_id,
@@ -155,7 +155,7 @@ class Restatify_Ai_Session1_Debug_Logger {
     }
 
     /**
-     * Get recent Session 1 entries
+    * Get recent Booking-Collector entries.
      */
     public static function get_recent_entries(int $limit = 50): array {
         $log = get_option(self::LOG_KEY, []);
@@ -167,7 +167,7 @@ class Restatify_Ai_Session1_Debug_Logger {
     }
 
     /**
-     * Get Session 1 entries for specific session
+    * Get Booking-Collector entries for a specific session.
      */
     public static function get_session_entries(string $session_id, int $limit = 100): array {
         $session_short = substr($session_id, 0, 12);
@@ -183,6 +183,22 @@ class Restatify_Ai_Session1_Debug_Logger {
      */
     public static function format_as_log_lines(int $limit = 30): array {
         $entries = self::get_recent_entries($limit);
+        return self::format_entries_as_log_lines($entries);
+    }
+
+    /**
+     * Format recent entries for a specific session as human-readable log lines.
+     */
+    public static function format_session_log_lines(string $session_id, int $limit = 30): array {
+        $entries = self::get_session_entries($session_id, $limit);
+        return self::format_entries_as_log_lines($entries);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $entries
+     * @return array<int,string>
+     */
+    private static function format_entries_as_log_lines(array $entries): array {
         $lines = [];
 
         foreach ($entries as $entry) {

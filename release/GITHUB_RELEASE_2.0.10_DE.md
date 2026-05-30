@@ -8,6 +8,12 @@
 - Shared-Dateien werden nur geladen, wenn die Zielklasse noch nicht vorhanden ist (Redeclare-Schutz fuer `Restatify\\Shared\\*`).
 - Copilot-Release-Notizen und Shared-Loader-Regeln wurden repo-uebergreifend synchronisiert.
 
+## Release-Prep-Refresh (2026-05-30)
+
+- Kein Versionssprung: Release-Prep verbleibt auf `2.0.10`.
+- Laufende Haertung von Router-/Session- und Sprachpfaden fuer den koordinierten Rollout abgeglichen.
+- Mail-Kontext-/Runtime-Guardrails sowie Support-Inbox-Runtime-Pfade aktualisiert.
+
 ## Kompatibilitaet
 
 - Plugin-Version: `2.0.10`

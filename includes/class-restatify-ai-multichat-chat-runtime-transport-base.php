@@ -266,6 +266,8 @@ abstract class Restatify_Ai_Multichat_Chat_Runtime_Transport_Base extends Restat
             return;
         }
 
+        $previous_message = $this->get_previous_chat_message($conversation);
+
         $inbox_link = add_query_arg(
             [
                 'page' => 'restatify-mco-support-inbox',
@@ -289,6 +291,22 @@ abstract class Restatify_Ai_Multichat_Chat_Runtime_Transport_Base extends Restat
         $body[] = __('Latest message:', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
         $body[] = $latest_message;
         $body[] = '';
+
+        $body[] = __('Previous message (context):', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+        if (!empty($previous_message)) {
+            $body[] = sprintf(
+                __('Sender: %s', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                $this->get_email_sender_label((string) ($previous_message['sender'] ?? 'visitor'))
+            );
+            $body[] = sprintf(
+                __('Text: %s', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                (string) ($previous_message['message'] ?? '')
+            );
+        } else {
+            $body[] = __('No previous message available.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+        }
+        $body[] = '';
+
         $body[] = __('Open chat in admin:', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
         $body[] = $inbox_link;
 
@@ -298,6 +316,50 @@ abstract class Restatify_Ai_Multichat_Chat_Runtime_Transport_Base extends Restat
             implode("\n", $body),
             ['Content-Type: text/plain; charset=UTF-8']
         );
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    protected function get_previous_chat_message(array $conversation): array {
+        $messages = isset($conversation['messages']) && is_array($conversation['messages'])
+            ? array_values($conversation['messages'])
+            : [];
+
+        if (count($messages) < 2) {
+            return [];
+        }
+
+        $previous = $messages[count($messages) - 2];
+        if (!is_array($previous)) {
+            return [];
+        }
+
+        $sender = sanitize_key((string) ($previous['sender'] ?? 'visitor'));
+        $message = $this->truncate_chat_text((string) ($previous['message'] ?? ''), 1000);
+
+        if ($message === '') {
+            return [];
+        }
+
+        return [
+            'sender' => $sender !== '' ? $sender : 'visitor',
+            'message' => $message,
+        ];
+    }
+
+    protected function get_email_sender_label(string $sender): string {
+        switch ($sender) {
+            case 'ai':
+                return __('KI', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+            case 'support':
+                return __('Support', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+            case 'system':
+                return __('System', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+            case 'visitor':
+            default:
+                return __('Nutzer', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+        }
     }
 
 }

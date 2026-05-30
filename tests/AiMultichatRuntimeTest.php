@@ -22,7 +22,16 @@ final class AiMultichatRuntimeTest extends TestCase {
 
         $this->runtime = new class () extends Restatify_Ai_Multichat_Chat_Runtime {
             protected function get_options(bool $force_reload = false): array {
-                return [];
+                return [
+                    'session_router_llm_json_callback' => static function (string $prompt, array $options = []): array {
+                        return [
+                            'intent' => 'booking',
+                            'booking_confidence' => 0.99,
+                            'contact_confidence' => 0.01,
+                            'general_confidence' => 0.00,
+                        ];
+                    },
+                ];
             }
 
             protected function get_client_ip(): string {
@@ -111,6 +120,20 @@ final class AiMultichatRuntimeTest extends TestCase {
         self::assertStringContainsString('Ilogu mit CRM Modul', (string) $asJoined);
     }
 
+    public function testGetBookingContactMethodsUsesSharedResolver(): void {
+        $GLOBALS['restatify_test_options'][Restatify_Booking_Assistant_Constants::OPTION_KEY] = [
+            'contact_channels' => [
+                ['key' => 'email'],
+                ['key' => 'phone'],
+                ['key' => 'email'],
+            ],
+        ];
+
+        $methods = $this->invokeProtected('get_booking_contact_methods', []);
+
+        self::assertSame(['email', 'phone'], $methods);
+    }
+
     public function testMaybeGenerateBookingReplyKeepsSession1InChatWhileDataIsMissing(): void {
         $this->runtime = $this->createRuntimeWithMockLlm([
             'name' => 'Max',
@@ -166,6 +189,63 @@ final class AiMultichatRuntimeTest extends TestCase {
         self::assertStringContainsString('"note":', $reply);
     }
 
+    public function testMaybeGenerateBookingReplyEmitsContactFormTokens(): void {
+        $GLOBALS['restatify_test_options']['restatify_forms_config'] = [
+            [
+                'id' => 'kontaktformular',
+                'title' => 'Kontaktformular',
+                'trigger' => '#restatify-form-kontaktformular',
+            ],
+        ];
+
+        $this->runtime = new class () extends Restatify_Ai_Multichat_Chat_Runtime {
+            protected function get_options(bool $force_reload = false): array {
+                return [
+                    'contact_form_id' => 'kontaktformular',
+                    'session_router_llm_json_callback' => static function (string $prompt, array $options = []): array {
+                        return [
+                            'intent' => 'contact',
+                            'booking_confidence' => 0.01,
+                            'contact_confidence' => 0.99,
+                            'general_confidence' => 0.00,
+                        ];
+                    },
+                    'session_contact_llm_json_callback' => static function (string $prompt, array $options = []): array {
+                        if (strpos($prompt, 'Return strict JSON only: {"question":"..."}') !== false) {
+                            return ['question' => 'Welche E-Mail-Adresse duerfen wir fuer die Rueckmeldung verwenden?'];
+                        }
+
+                        return [];
+                    },
+                ];
+            }
+
+            protected function get_client_ip(): string {
+                return '127.0.0.1';
+            }
+
+            protected function is_booking_plugin_available(): bool {
+                return true;
+            }
+        };
+
+        $conversation = [
+            'id' => 'runtime_contact_open',
+            'messages' => [
+                ['sender' => 'visitor', 'message' => 'Hallo'],
+            ],
+        ];
+
+        $reply = $this->invokeProtected('maybe_generate_booking_reply', [
+            'Ich moechte nur eine Nachricht hinterlassen, kein Termin. Mein Name ist Max und meine Mail ist max@example.test.',
+            $conversation,
+        ]);
+
+        self::assertStringContainsString('[[RESTATIFY_CONTACT_FORM_OPEN]]', $reply);
+        self::assertStringContainsString('[[RESTATIFY_CONTACT_FORM_PAYLOAD]]', $reply);
+        self::assertStringContainsString('"form_id":"kontaktformular"', $reply);
+    }
+
     private function invokeProtected(string $method, array $args) {
         $reflection = new ReflectionMethod($this->runtime, $method);
         $reflection->setAccessible(true);
@@ -195,6 +275,14 @@ final class AiMultichatRuntimeTest extends TestCase {
                 $question = $this->question;
 
                 return [
+                    'session_router_llm_json_callback' => static function (string $prompt, array $options = []): array {
+                        return [
+                            'intent' => 'booking',
+                            'booking_confidence' => 0.99,
+                            'contact_confidence' => 0.01,
+                            'general_confidence' => 0.00,
+                        ];
+                    },
                     'session1_llm_json_callback' => static function (string $prompt, array $options = []) use ($extraction, $question): array {
                         if (strpos($prompt, 'Return strict JSON only: {"question":"..."}') !== false) {
                             if ($question !== '') {

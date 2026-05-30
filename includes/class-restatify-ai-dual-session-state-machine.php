@@ -8,11 +8,11 @@ if (!defined('ABSPATH')) {
  * State Machine for Dual-Session Router.
  * 
  * Manages session state including:
- * - Current session (session1/session2)
- * - Booking flow active flag
+ * - Current session (booking_collector/contact_collector/general_chat)
+ * - Booking/Contact collector flow flags
  * - Confidence levels
  * - Attempt counters
- * - Collected booking fields
+ * - Collected booking/contact fields
  * - Clarification attempts
  * - Turn counts
  */
@@ -36,7 +36,11 @@ class Restatify_Ai_Dual_Session_State_Machine {
             return $this->get_default_state();
         }
 
-        return is_array($state) ? $state : $this->get_default_state();
+        if (!is_array($state)) {
+            return $this->get_default_state();
+        }
+
+        return $this->migrate_state($state);
     }
 
     /**
@@ -68,7 +72,7 @@ class Restatify_Ai_Dual_Session_State_Machine {
      */
     private function get_default_state(): array {
         return [
-            'current_session' => 'session2', // Default to general chat
+            'current_session' => 'general_chat', // Default to general chat
             'booking_flow_active' => false,
             'confidence' => 0.0,
             'clarification_attempts' => 0,
@@ -88,6 +92,28 @@ class Restatify_Ai_Dual_Session_State_Machine {
     }
 
     /**
+     * @param array<string,mixed> $state
+     * @return array<string,mixed>
+     */
+    private function migrate_state(array $state): array {
+        $current = (string) ($state['current_session'] ?? '');
+
+        if ($current === 'session1') {
+            $state['current_session'] = 'booking_collector';
+        } elseif ($current === 'session2') {
+            $state['current_session'] = 'general_chat';
+        } elseif ($current === 'contact') {
+            $state['current_session'] = 'contact_collector';
+        }
+
+        if (empty($state['current_session'])) {
+            $state['current_session'] = 'general_chat';
+        }
+
+        return $state;
+    }
+
+    /**
      * Increment booking attempt counter.
      */
     public function increment_booking_attempts(string $session_id): int {
@@ -98,7 +124,7 @@ class Restatify_Ai_Dual_Session_State_Machine {
     }
 
     /**
-     * Increment customer turn counter (Session 2 only, support turns excluded).
+    * Increment customer turn counter (General-Chat only, support turns excluded).
      */
     public function increment_customer_turns(string $session_id): int {
         $state = $this->get_session_state($session_id);
@@ -154,7 +180,7 @@ class Restatify_Ai_Dual_Session_State_Machine {
     }
 
     /**
-     * Mark session as ended (clears state and session 1 work data).
+    * Mark session as ended (clears state and collector work data).
      */
     public function mark_session_ended(string $session_id): void {
         $state = $this->get_session_state($session_id);
@@ -163,7 +189,7 @@ class Restatify_Ai_Dual_Session_State_Machine {
     }
 
     /**
-     * Delete uncertainty cache (when falling back from clarification to Session 2).
+    * Delete uncertainty cache (when falling back from clarification to General-Chat).
      */
     public function clear_uncertainty_cache(string $session_id): void {
         $state = $this->get_session_state($session_id);

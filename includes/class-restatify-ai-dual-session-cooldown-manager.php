@@ -7,8 +7,8 @@ if (!defined('ABSPATH')) {
 /**
  * IP-based Cooldown Manager for Router.
  * 
- * Tracks and enforces cooldowns after Session 1 conversion.
- * Spec: After conversion to Session 1, IP gets cooldown (~15 minutes)
+ * Tracks and enforces cooldowns after Booking-Collector conversion.
+ * Spec: After conversion to Booking-Collector, IP gets cooldown (~15 minutes)
  * with user-facing chat notice.
  */
 class Restatify_Ai_Dual_Session_Cooldown_Manager {
