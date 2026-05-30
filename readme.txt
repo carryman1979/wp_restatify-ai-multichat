@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.10
+Stable tag: 2.0.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -270,4 +270,6 @@ Enthaelt Packaging-Workflow fuer Releases und verbesserte Installationsanleitung
 = 1.2.0 =
 Enthaelt integrierten Website-Chat, Support-Posteingang, E-Mail-Benachrichtigungen und optionale KI-Autoantwort.
 Bitte Einstellungen nach dem Upgrade pruefen.
+
+
 

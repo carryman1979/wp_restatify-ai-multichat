@@ -233,8 +233,7 @@ To-do für Betreiber:
 4. Release-ZIP erzeugen.
 5. Smoke-Test auf externer Testinstanz durchführen.
 
-## Releases
-
+- [Release 2.0.11](Release-2.0.11)
 - [Release 2.0.7](Release-2.0.7)
 - [Release 2.0.6](Release-2.0.6)
 - [Release 2.0.0](Release-2.0.0)
