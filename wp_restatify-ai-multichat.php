@@ -27,6 +27,8 @@ if (!defined('RESTATIFY_AI_MULTICHAT_SHARED_VERSION')) {
     define('RESTATIFY_AI_MULTICHAT_SHARED_VERSION', '1.0.2');
 }
 
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-shared-library.php';
+
 $restatify_multichat_require_first = static function (array $paths): bool {
     foreach ($paths as $path) {
         if (is_string($path) && $path !== '' && file_exists($path)) {
@@ -41,6 +43,15 @@ $restatify_multichat_require_first = static function (array $paths): bool {
 $restatify_multichat_local_shared_root = dirname(__DIR__, 3) . '/wp_restatify-shared';
 $restatify_multichat_use_local_latest_shared = is_dir($restatify_multichat_local_shared_root . '/src/php');
 $restatify_multichat_versioned_shared_roots = [];
+$restatify_multichat_bootstrapped_shared_base = '';
+$restatify_multichat_packaged_version_root = rtrim(RESTATIFY_AI_MULTICHAT_PLUGIN_DIR, '/')
+    . '/shared-install/wp_restatify-shared/versions/'
+    . RESTATIFY_AI_MULTICHAT_SHARED_VERSION;
+$restatify_multichat_packaged_legacy_root = rtrim(RESTATIFY_AI_MULTICHAT_PLUGIN_DIR, '/') . '/shared-install/wp_restatify-shared';
+
+if (function_exists('restatify_ai_multichat_shared_bootstrap')) {
+    $restatify_multichat_bootstrapped_shared_base = (string) restatify_ai_multichat_shared_bootstrap();
+}
 
 $restatify_multichat_plugin_shared_root = '';
 if (defined('WP_PLUGIN_DIR') && is_string(WP_PLUGIN_DIR) && WP_PLUGIN_DIR !== '') {
@@ -66,28 +77,37 @@ if (!$restatify_multichat_use_local_latest_shared) {
 }
 
 $restatify_multichat_shared_candidates = static function (string $relativePath) use (
+    $restatify_multichat_bootstrapped_shared_base,
     $restatify_multichat_use_local_latest_shared,
     $restatify_multichat_local_shared_root,
-    $restatify_multichat_versioned_shared_roots
+    $restatify_multichat_versioned_shared_roots,
+    $restatify_multichat_packaged_version_root,
+    $restatify_multichat_packaged_legacy_root
 ): array {
     $relativePath = ltrim($relativePath, '/');
+    $paths = [];
+
+    if (is_string($restatify_multichat_bootstrapped_shared_base) && $restatify_multichat_bootstrapped_shared_base !== '') {
+        $paths[] = rtrim($restatify_multichat_bootstrapped_shared_base, '/') . '/' . $relativePath;
+    }
 
     if ($restatify_multichat_use_local_latest_shared) {
-        return [rtrim($restatify_multichat_local_shared_root, '/') . '/' . $relativePath];
+        $paths[] = rtrim($restatify_multichat_local_shared_root, '/') . '/' . $relativePath;
+    } else {
+        foreach ($restatify_multichat_versioned_shared_roots as $root) {
+            $paths[] = rtrim($root, '/') . '/versions/' . RESTATIFY_AI_MULTICHAT_SHARED_VERSION . '/' . $relativePath;
+        }
     }
 
-    $paths = [];
-    foreach ($restatify_multichat_versioned_shared_roots as $root) {
-        $paths[] = rtrim($root, '/') . '/versions/' . RESTATIFY_AI_MULTICHAT_SHARED_VERSION . '/' . $relativePath;
-    }
+    $paths[] = rtrim($restatify_multichat_packaged_version_root, '/') . '/' . $relativePath;
+    $paths[] = rtrim($restatify_multichat_packaged_legacy_root, '/') . '/' . $relativePath;
 
     return array_values(array_unique($paths));
 };
 
 $restatify_multichat_require_shared = static function (string $relativePath, string $className = '') use (
     $restatify_multichat_require_first,
-    $restatify_multichat_shared_candidates,
-    $restatify_multichat_duplicate_shared_roots
+    $restatify_multichat_shared_candidates
 ): bool {
     $symbolExists = static function (string $symbol): bool {
         if ($symbol === '') {
@@ -103,10 +123,6 @@ $restatify_multichat_require_shared = static function (string $relativePath, str
         return true;
     }
 
-    if ($restatify_multichat_duplicate_shared_roots) {
-        return $className !== '' ? $symbolExists($className) : false;
-    }
-
     $required = $restatify_multichat_require_first($restatify_multichat_shared_candidates($relativePath));
 
     if ($className !== '') {
@@ -119,10 +135,7 @@ $restatify_multichat_require_shared = static function (string $relativePath, str
 $restatify_multichat_require_shared('src/php/SharedRegistry.php', '\\Restatify\\Shared\\SharedRegistry');
 $restatify_multichat_require_shared('src/php/Contracts/BookingChatTokens.php', '\\Restatify\\Shared\\Contracts\\BookingChatTokens');
 $restatify_multichat_require_shared('src/php/Contracts/BookingPrefillSchema.php', '\\Restatify\\Shared\\Contracts\\BookingPrefillSchema');
-if (
-    !$restatify_multichat_duplicate_shared_roots
-    && !$restatify_multichat_require_shared('src/php/Util/BookingContactMethodsResolver.php', '\\Restatify\\Shared\\Util\\BookingContactMethodsResolver')
-) {
+if (!$restatify_multichat_require_shared('src/php/Util/BookingContactMethodsResolver.php', '\\Restatify\\Shared\\Util\\BookingContactMethodsResolver')) {
     throw new RuntimeException('Missing required shared dependency: wp_restatify-shared/src/php/Util/BookingContactMethodsResolver.php');
 }
 $restatify_multichat_require_shared('src/php/Util/BookingContactChannelProfiles.php', '\\Restatify\\Shared\\Util\\BookingContactChannelProfiles');
@@ -132,10 +145,7 @@ $restatify_multichat_require_shared('src/php/Runtime/BootstrapGuard.php', '\\Res
 $restatify_multichat_require_shared('src/php/Runtime/RateLimiter.php', '\\Restatify\\Shared\\Runtime\\RateLimiter');
 $restatify_multichat_require_shared('src/php/I18n/PolylangAdapter.php', '\\Restatify\\Shared\\I18n\\PolylangAdapter');
 
-if (
-    !$restatify_multichat_duplicate_shared_roots
-    && !$restatify_multichat_require_shared('src/php/Util/PrivacyLegalNotice.php', '\\Restatify\\Shared\\Util\\PrivacyLegalNotice')
-) {
+if (!$restatify_multichat_require_shared('src/php/Util/PrivacyLegalNotice.php', '\\Restatify\\Shared\\Util\\PrivacyLegalNotice')) {
     throw new RuntimeException('Missing required shared dependency: wp_restatify-shared/src/php/Util/PrivacyLegalNotice.php');
 }
 
