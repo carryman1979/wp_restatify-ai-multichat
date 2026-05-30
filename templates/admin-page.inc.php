@@ -1,6 +1,7 @@
 <?php
 $options = isset($options) && is_array($options) ? $options : [];
 $debug_lines = isset($debug_lines) && is_array($debug_lines) ? $debug_lines : [];
+$available_contact_forms = $this->get_available_contact_forms();
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('AI Multichat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></h1>
@@ -101,6 +102,21 @@ $debug_lines = isset($debug_lines) && is_array($debug_lines) ? $debug_lines : []
                 <td>
                     <input class="regular-text" type="email" required placeholder="yourmail@mail.com" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[support_email]" value="<?php echo esc_attr($options['support_email']); ?>">
                     <p class="description"><?php esc_html_e('Neue Besuchernachrichten können an diese Adresse weitergeleitet werden - inklusive Direktlink zum offenen Chat im Admin.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Kontaktformular fuer Nachrichtentyp', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                <td>
+                    <select name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[contact_form_id]">
+                        <option value=""><?php esc_html_e('Kein Formular ausgewaehlt', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></option>
+                        <?php foreach ($available_contact_forms as $form_item) : ?>
+                            <option value="<?php echo esc_attr((string) ($form_item['id'] ?? '')); ?>" <?php selected((string) ($options['contact_form_id'] ?? ''), (string) ($form_item['id'] ?? '')); ?>>
+                                <?php echo esc_html((string) ($form_item['title'] ?? '')); ?>
+                                <?php echo esc_html(' (' . (string) ($form_item['trigger'] ?? '') . ')'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="description"><?php esc_html_e('Wird verwendet, wenn der Chat mit hoher Sicherheit erkennt, dass der Besucher nur eine Nachricht hinterlassen moechte.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
                 </td>
             </tr>
         </table>

@@ -4,7 +4,7 @@ Produktname (ab 2.0.0): Restatify-AI-Multichat
 WordPress-Slug (ab 2.0.0): wp_restatify-ai-multichat  
 Website: https://www.restatify.tech
 
-Stand: Version 2.0.9, getestet bis WordPress 6.9.
+Stand: Version 2.0.10, getestet bis WordPress 6.9.
 
 Diese Seite ist als zentrale One-Page-Dokumentation für Einrichtung, Betrieb, Support und Release gedacht.
 
@@ -34,6 +34,7 @@ Restatify Multi Chat Overlay stellt ein schwebendes Chat-Overlay bereit und unte
 - E-Mail-Benachrichtigung bei neuen Besucher-Nachrichten
 - Optionale KI-First-Level-Antworten
 - Session-1-Buchungsworkflow mit automatischem Oeffnen des Booking-Overlays und Prefill der erkannten Daten
+- Erweiterte Router-/Intent- und Sprachlogik fuer robustere Session-Umschaltung und Sicherheitsgrenzen
 - Polylang-Integration für übersetzbare Texte
 - Consent-abhängige Anzeige und Auto-Open-Logik
 - Wartbare interne Struktur für Support und Weiterentwicklung
@@ -209,6 +210,12 @@ Prüfen:
 - Bei Mail-Benachrichtigung werden Inhalte per E-Mail versendet
 - Bei KI-Nutzung werden Inhalte an den konfigurierten Endpoint übertragen
 - Die aktuelle Plugin-Wartung verbessert zusätzlich die IDE- und Analyzer-Kompatibilität der internen Trait-Struktur
+
+## Release-Prep Status (2026-05-30)
+
+- Dokumentation auf den aktuellen 2.0.10-Hotfix-Stand synchronisiert (ohne Versionssprung).
+- Router-/Session- und Sprachpfade wurden fuer den laufenden Rollout konsolidiert.
+- Runtime-/Mail-Kontext und Guardrails fuer Support-/Admin-Flows wurden nachgezogen.
 
 To-do für Betreiber:
 

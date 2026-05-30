@@ -21,9 +21,16 @@ if (!class_exists('Restatify_Ai_Multichat_Plugin')) {
         public const CHAT_MAX_MESSAGES = 100;
         public const AI_DEBUG_LOG_KEY = 'restatify_mco_ai_debug_log';
         public const AI_DEBUG_MAX_ENTRIES = 200;
+        public const TEXT_DOMAIN = 'restatify-multi-chat-overlay';
         public const CHANNELS = [
             'whatsapp' => ['label' => 'WhatsApp'],
         ];
+    }
+}
+
+if (!class_exists('Restatify_Booking_Assistant_Constants')) {
+    final class Restatify_Booking_Assistant_Constants {
+        public const OPTION_KEY = 'restatify_booking_options';
     }
 }
 
@@ -194,6 +201,11 @@ if (!function_exists('restatify_booking_ai_handle_message')) {
     function restatify_booking_ai_handle_message(): void {
         return;
     }
+}
+
+$shared_resolver_path = dirname(__DIR__, 4) . '/wp_restatify-shared/src/php/Util/BookingContactMethodsResolver.php';
+if (file_exists($shared_resolver_path)) {
+    require_once $shared_resolver_path;
 }
 
 require_once dirname(__DIR__) . '/includes/class-restatify-ai-multichat-options-runtime.php';

@@ -7,13 +7,13 @@ if (!defined('ABSPATH')) {
 /**
  * System Prompts for Dual-Session AI.
  * 
- * Session 1: Booking Recognition + Collection
- * Session 2: General Chat (wrapped around admin-configured prompt)
+ * Booking-Collector: Booking recognition + collection
+ * General-Chat: Wrapped around admin-configured base prompt
  */
 class Restatify_Ai_Dual_Session_Prompts {
 
     /**
-     * Get Session 1 system prompt (Booking Recognition + Collection).
+   * Get Booking-Collector system prompt (Booking recognition + collection).
      * 
      * This prompt is used for all booking-related intent classification,
      * slot selection, and mandatory field collection.
@@ -164,7 +164,7 @@ PROMPT;
     }
 
     /**
-     * Get Session 2 system prompt wrapper.
+    * Get General-Chat system prompt wrapper.
      * 
      * Wraps the admin-configured base prompt with routing rules.
      */
@@ -184,8 +184,8 @@ $base_prompt
 - Nach 20 Kundeninteraktionen: Beende diese Session und leite zu Terminbuchung weiter
 
 ### Umleitung
-- Wenn Nutzer Terminbuchungs-Intent äußert: Route zu Session 1
-- Beispiel: "Ich möchte einen Termin machen" → Session 1 mit Bestätigung
+- Wenn Nutzer Terminbuchungs-Intent äußert: Route zum Booking-Collector
+- Beispiel: "Ich möchte einen Termin machen" → Booking-Collector mit Bestätigung
 - Signal: Antworte mit { "route_to_session1": true, "message": "..." }
 
 ### Kontext

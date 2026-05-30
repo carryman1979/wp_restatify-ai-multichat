@@ -6,6 +6,7 @@ $ai_mode_options = isset($ai_mode_options) && is_array($ai_mode_options) ? $ai_m
 $booking_open_token = defined('RESTATIFY_BOOKING_OPEN_TOKEN') ? (string) constant('RESTATIFY_BOOKING_OPEN_TOKEN') : '[[RESTATIFY_BOOKING_OPEN]]';
 $booking_confirmed_token = defined('RESTATIFY_BOOKING_CONFIRMED_TOKEN') ? (string) constant('RESTATIFY_BOOKING_CONFIRMED_TOKEN') : '[[RESTATIFY_BOOKING_CONFIRMED]]';
 $booking_cancelled_token = defined('RESTATIFY_BOOKING_CANCELLED_TOKEN') ? (string) constant('RESTATIFY_BOOKING_CANCELLED_TOKEN') : '[[RESTATIFY_BOOKING_CANCELLED]]';
+$contact_form_open_token = '[[RESTATIFY_CONTACT_FORM_OPEN]]';
 
 echo '<h2>' . esc_html__('Support-Posteingang', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</h2>';
 echo '<p>' . esc_html__('Offene Unterhaltungen von Website-Besuchern. Klicke auf eine Unterhaltung, um sie zu prüfen und zu antworten.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
@@ -40,7 +41,9 @@ foreach ($store as $id => $conversation) {
         $booking_open_token,
         $booking_confirmed_token,
         $booking_cancelled_token,
+        $contact_form_open_token,
     ], '', $preview);
+    $preview = preg_replace('/\[\[RESTATIFY_CONTACT_FORM_PAYLOAD\]\]\s*(\{[^\n\r]*\})/u', '', (string) $preview);
     if (function_exists('mb_substr')) {
         $preview = mb_substr($preview, 0, 100);
     } else {
@@ -135,7 +138,9 @@ if ($selected_id !== '' && !empty($store[$selected_id])) {
             $booking_open_token,
             $booking_confirmed_token,
             $booking_cancelled_token,
+            $contact_form_open_token,
         ], '', $raw_message);
+        $message_text = preg_replace('/\[\[RESTATIFY_CONTACT_FORM_PAYLOAD\]\]\s*(\{[^\n\r]*\})/u', '', (string) $message_text);
         $message_text = trim($message_text);
 
         $badge_html = '';

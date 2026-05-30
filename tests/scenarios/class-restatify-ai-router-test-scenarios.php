@@ -7,8 +7,8 @@ if (!defined('ABSPATH')) {
  * End-to-End Router Test Scenarios
  * 
  * Comprehensive test suite for Dual-Session Router covering:
- * - Session 2 (General Chat) routing
- * - Session 1 (Booking Intent) routing with confidence levels
+ * - General-Chat routing
+ * - Booking-Collector routing with confidence levels
  * - Clarification flows
  * - Forced conversion after 20 turns
  * - IP cooldown enforcement

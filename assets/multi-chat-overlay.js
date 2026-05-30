@@ -5,9 +5,16 @@
   var BOOKING_TRIGGER_STORAGE_KEY = 'restatify_ai_multichat_booking_triggers';
   var BOOKING_OPEN_TOKEN = '[[RESTATIFY_BOOKING_OPEN]]';
   var BOOKING_PREFILL_TOKEN = '[[RESTATIFY_BOOKING_PREFILL]]';
+  var CONTACT_FORM_OPEN_TOKEN = '[[RESTATIFY_CONTACT_FORM_OPEN]]';
+  var CONTACT_FORM_PAYLOAD_TOKEN = '[[RESTATIFY_CONTACT_FORM_PAYLOAD]]';
   var BOOKING_CONFIRMED_TOKEN = '[[RESTATIFY_BOOKING_CONFIRMED]]';
   var BOOKING_CANCELLED_TOKEN = '[[RESTATIFY_BOOKING_CANCELLED]]';
   var handledBookingTriggers = {};
+  var markdownRenderer = window.RestatifyMcoMarkdown;
+
+  if (!markdownRenderer || typeof markdownRenderer.renderMarkdownToHtml !== 'function' || typeof markdownRenderer.stripEmoji !== 'function') {
+    throw new Error('RestatifyMcoMarkdown runtime is missing.');
+  }
 
   function loadHandledBookingTriggers() {
     try {
@@ -750,96 +757,6 @@
     });
   }
 
-  function escapeHtml(value) {
-    return String(value || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  function stripEmoji(value) {
-    var text = String(value || '');
-    try {
-      return text.replace(/\p{Extended_Pictographic}/gu, '').replace(/[\uFE0F\u200D]/g, '');
-    } catch (error) {
-      return text;
-    }
-  }
-
-  function applyInlineMarkdown(line) {
-    var safe = escapeHtml(line);
-    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    safe = safe.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    return safe;
-  }
-
-  function renderMarkdownToHtml(text) {
-    var lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
-    var html = [];
-    var paragraph = [];
-    var listType = '';
-
-    function flushParagraph() {
-      if (!paragraph.length) {
-        return;
-      }
-      html.push('<p>' + paragraph.join('<br>') + '</p>');
-      paragraph = [];
-    }
-
-    function closeList() {
-      if (!listType) {
-        return;
-      }
-      html.push('</' + listType + '>');
-      listType = '';
-    }
-
-    lines.forEach(function (rawLine) {
-      var line = String(rawLine || '');
-      var trimmed = line.trim();
-
-      if (!trimmed) {
-        flushParagraph();
-        closeList();
-        return;
-      }
-
-      var unorderedMatch = /^[-*]\s+(.+)$/.exec(trimmed);
-      if (unorderedMatch) {
-        flushParagraph();
-        if (listType !== 'ul') {
-          closeList();
-          listType = 'ul';
-          html.push('<ul>');
-        }
-        html.push('<li>' + applyInlineMarkdown(unorderedMatch[1]) + '</li>');
-        return;
-      }
-
-      var orderedMatch = /^\d+[\.)]\s+(.+)$/.exec(trimmed);
-      if (orderedMatch) {
-        flushParagraph();
-        if (listType !== 'ol') {
-          closeList();
-          listType = 'ol';
-          html.push('<ol>');
-        }
-        html.push('<li>' + applyInlineMarkdown(orderedMatch[1]) + '</li>');
-        return;
-      }
-
-      closeList();
-      paragraph.push(applyInlineMarkdown(trimmed));
-    });
-
-    flushParagraph();
-    closeList();
-
-    return html.join('');
-  }
 
   function renderMessages(container, messages) {
     container.innerHTML = '';
@@ -855,18 +772,22 @@
       }
 
       var prefillData = extractBookingPrefill(text);
+      var contactFormPayload = extractContactFormPayload(text);
       var openBooking = sender !== 'visitor' && (text.indexOf(BOOKING_OPEN_TOKEN) !== -1 || !!prefillData);
+      var openContactForm = sender !== 'visitor' && (text.indexOf(CONTACT_FORM_OPEN_TOKEN) !== -1 || !!contactFormPayload);
       text = text
         .replace(BOOKING_OPEN_TOKEN, '')
         .replace(/\[\[RESTATIFY_BOOKING_PREFILL\]\]\s*(\{[^\n\r]*\})/g, '')
+        .replace(CONTACT_FORM_OPEN_TOKEN, '')
+        .replace(/\[\[RESTATIFY_CONTACT_FORM_PAYLOAD\]\]\s*(\{[^\n\r]*\})/g, '')
         .replace(BOOKING_CONFIRMED_TOKEN, '')
         .replace(BOOKING_CANCELLED_TOKEN, '')
         .trim();
 
       var bubble = document.createElement('div');
       bubble.className = 'restatify-mco__native-bubble is-' + sender;
-      var normalizedText = sender === 'visitor' ? text : stripEmoji(text);
-      bubble.innerHTML = renderMarkdownToHtml(normalizedText);
+      var normalizedText = sender === 'visitor' ? text : markdownRenderer.stripEmoji(text);
+      bubble.innerHTML = markdownRenderer.renderMarkdownToHtml(normalizedText);
       container.appendChild(bubble);
 
       if (openBooking) {
@@ -880,6 +801,34 @@
         document.dispatchEvent(new CustomEvent('restatify:booking-open', {
           detail: {
             prefill: prefillData || null
+          }
+        }));
+      }
+
+      if (openContactForm) {
+        var contactTriggerKey = 'contact|' + String(item && item.time_gmt ? item.time_gmt : '') + '|' + sender + '|' + text;
+        if (handledBookingTriggers[contactTriggerKey]) {
+          return;
+        }
+
+        handledBookingTriggers[contactTriggerKey] = true;
+        storeHandledBookingTriggers();
+
+        var formId = contactFormPayload && contactFormPayload.form_id ? String(contactFormPayload.form_id) : '';
+        if (formId) {
+          try {
+            if (window.location.hash !== '#restatify-form-' + formId) {
+              window.location.hash = '#restatify-form-' + formId;
+            }
+          } catch (error) {
+            // Keep event-based opening as fallback.
+          }
+        }
+
+        document.dispatchEvent(new CustomEvent('restatify:form-open', {
+          detail: {
+            formId: formId,
+            prefill: contactFormPayload && contactFormPayload.prefill ? contactFormPayload.prefill : {}
           }
         }));
       }
@@ -907,10 +856,29 @@
     }
   }
 
+  function extractContactFormPayload(text) {
+    var value = String(text || '');
+    if (value.indexOf(CONTACT_FORM_PAYLOAD_TOKEN) === -1) {
+      return null;
+    }
+
+    var match = value.match(/\[\[RESTATIFY_CONTACT_FORM_PAYLOAD\]\]\s*(\{[^\n\r]*\})/);
+    if (!match || !match[1]) {
+      return null;
+    }
+
+    try {
+      var parsed = JSON.parse(match[1]);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
   function appendPendingVisitorBubble(container, text) {
     var bubble = document.createElement('div');
     bubble.className = 'restatify-mco__native-bubble is-visitor is-pending';
-    bubble.innerHTML = renderMarkdownToHtml(text);
+    bubble.innerHTML = markdownRenderer.renderMarkdownToHtml(text);
     container.appendChild(bubble);
     container.scrollTop = container.scrollHeight;
     return bubble;

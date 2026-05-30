@@ -102,6 +102,7 @@ class Restatify_Ai_Multichat_Options_Runtime {
             'chat_send_label' => sanitize_text_field($input['chat_send_label'] ?? $defaults['chat_send_label']),
             'chat_send_failed_notice' => sanitize_text_field($input['chat_send_failed_notice'] ?? $defaults['chat_send_failed_notice']),
             'chat_send_overload_notice' => sanitize_text_field($input['chat_send_overload_notice'] ?? $defaults['chat_send_overload_notice']),
+            'contact_form_id' => sanitize_key((string) ($input['contact_form_id'] ?? $defaults['contact_form_id'])),
             'chat_poll_seconds' => max(3, min(60, absint($input['chat_poll_seconds'] ?? $defaults['chat_poll_seconds']))),
             'chat_reset_minutes' => max(0, min(525600, absint($input['chat_reset_minutes'] ?? $defaults['chat_reset_minutes']))),
             'chat_send_retry_max_attempts' => max(1, min(10, absint($input['chat_send_retry_max_attempts'] ?? $defaults['chat_send_retry_max_attempts']))),
@@ -193,6 +194,42 @@ class Restatify_Ai_Multichat_Options_Runtime {
         }
 
         return count($this->get_active_channels($options)) > 0 || !empty($options['own_chat_enabled']);
+    }
+
+    /**
+     * @return array<int,array<string,string>>
+     */
+    protected function get_available_contact_forms(): array {
+        $forms = get_option('restatify_forms_config', []);
+        if (!is_array($forms)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($forms as $form) {
+            if (!is_array($form)) {
+                continue;
+            }
+
+            $id = sanitize_key((string) ($form['id'] ?? ''));
+            if ($id === '') {
+                continue;
+            }
+
+            $title = trim((string) ($form['title'] ?? ''));
+            $trigger = trim((string) ($form['trigger'] ?? ''));
+            if ($trigger === '') {
+                $trigger = '#restatify-form-' . $id;
+            }
+
+            $items[] = [
+                'id' => $id,
+                'title' => $title !== '' ? $title : $id,
+                'trigger' => $trigger,
+            ];
+        }
+
+        return $items;
     }
 
     /**
@@ -292,6 +329,7 @@ class Restatify_Ai_Multichat_Options_Runtime {
             'chat_send_label' => __('Senden', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'chat_send_failed_notice' => __('Nora scheint verhindert zu sein. Wir haben einen Mitarbeiter zusaetzlich wegen Ihres Anliegens kontaktiert.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'chat_send_overload_notice' => __('Nora ist gerade stark ausgelastet. Bitte versuche es in wenigen Augenblicken erneut.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'contact_form_id' => '',
             'chat_poll_seconds' => 8,
             'chat_reset_minutes' => 15,
             'chat_send_retry_max_attempts' => 3,

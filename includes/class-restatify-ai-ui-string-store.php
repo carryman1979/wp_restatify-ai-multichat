@@ -132,6 +132,11 @@ class Restatify_Ai_Ui_String_Store {
                 'open_overlay.incomplete' => 'Ich öffne jetzt das Buchungsformular mit den bisher bekannten Angaben. Die fehlenden Details können Sie dort direkt ergänzen.',
                 // ── Clarification question ─────────────────────────────────
                 'clarification'           => 'Darf ich kurz fragen: Möchten Sie gleich einen Termin vereinbaren?',
+                'clarification.contact'   => 'Darf ich kurz fragen: Möchten Sie lieber einfach eine Nachricht über das Kontaktformular hinterlassen?',
+                'open_contact_form.complete' => 'Alles klar - ich öffne jetzt das Kontaktformular mit den bereits erkannten Angaben.',
+                'open_contact_form.incomplete' => 'Alles klar - ich öffne jetzt das Kontaktformular. Die fehlenden Angaben können Sie dort direkt ergänzen.',
+                'policy.malicious_injection' => 'Netter Versuch - aber heute leider ohne Zauberwort. Ich bleibe bei meinen Leitplanken. Wenn Sie möchten, helfe ich Ihnen gern bei einer fachlichen Anfrage in unserem Beratungsbereich weiter.',
+                'policy.out_of_domain' => 'Das liegt außerhalb meines aktuellen Einsatzbereichs. Für allgemeine Themen sind ChatGPT, Gemini oder Mistral eine gute Wahl. Wenn Sie möchten, unterstütze ich Sie gern bei passenden Beratungs-, Kontakt- oder Terminfragen.',
             ],
             'en' => [
                 'question.name'          => 'Sure! What name should we put on the appointment?',
@@ -143,6 +148,11 @@ class Restatify_Ai_Ui_String_Store {
                 'open_overlay.complete'   => 'One moment – I\'m opening the booking form for you.',
                 'open_overlay.incomplete' => 'I\'m now opening the booking form with the details collected so far. You can fill in the remaining information there.',
                 'clarification'           => 'Quick check: would you like to schedule an appointment now?',
+                'clarification.contact'   => 'Quick check: would you prefer to leave a message through the contact form?',
+                'open_contact_form.complete' => 'Alright - I\'m opening the contact form now with the details already recognized.',
+                'open_contact_form.incomplete' => 'Alright - I\'m opening the contact form now. You can fill in the missing details there.',
+                'policy.malicious_injection' => 'Nice try - but no magic override today. I have to keep my guardrails. If you want, I can still help with a valid business-related request.',
+                'policy.out_of_domain' => 'That topic is outside my current scope. For broad general-purpose tasks, ChatGPT, Gemini, or Mistral are great options. If you like, I can help with relevant consulting, contact, or booking requests here.',
             ],
         ];
     }
