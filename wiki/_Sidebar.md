@@ -1,6 +1,7 @@
 ## Multi Chat Overlay
 
 - [Home](Home)
+- [Release 2.0.11](Release-2.0.11)
 - [Release 2.0.10](Release-2.0.10)
 - [Release 2.0.9](Release-2.0.9)
 - [Release 2.0.8](Release-2.0.8)
