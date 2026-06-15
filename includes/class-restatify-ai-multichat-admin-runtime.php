@@ -69,6 +69,41 @@ public function enqueue_support_inbox_assets(): void {
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Support Chat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</h1>';
 
+        // API-Konfiguration für Desktop-App
+        $api_endpoint = get_option('restatify_support_api_endpoint', 'http://127.0.0.1:8089');
+        $api_keys_raw = get_option('restatify_support_api_keys', []);
+        $api_keys = is_array($api_keys_raw) ? $api_keys_raw : [];
+
+        echo '<div style="background:#f0f6fc;border:1px solid #c2d8f0;border-radius:6px;padding:16px 20px;margin:16px 0 24px;">';
+        echo '<h2 style="margin:0 0 10px;">' . esc_html__('Desktop-App Konfiguration', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</h2>';
+        echo '<p style="margin:0 0 12px;color:#3c434a;">' . esc_html__('Diese Zugangsdaten in der Support-Chat-App unter Einstellungen eintragen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+        echo '<table class="form-table" style="margin:0;">';
+        echo '<tr><th style="padding:4px 20px 4px 0;white-space:nowrap;">' . esc_html__('API-Endpunkt', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+        echo '<td><code style="font-size:13px;">' . esc_html($api_endpoint) . '</code></td></tr>';
+        echo '</table>';
+
+        if (count($api_keys) > 0) {
+            echo '<p style="margin:12px 0 6px;font-weight:600;">' . esc_html__('Generierte API-Schlüssel', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+            echo '<table class="widefat" style="max-width:700px;">';
+            echo '<thead><tr>';
+            echo '<th>' . esc_html__('Benutzer', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+            echo '<th>' . esc_html__('Erstellt am (UTC)', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+            echo '<th>' . esc_html__('API-Schlüssel', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+            echo '</tr></thead><tbody>';
+            foreach ($api_keys as $entry) {
+                if (!is_array($entry) || empty($entry['key'])) { continue; }
+                echo '<tr>';
+                echo '<td>' . esc_html((string)($entry['user_login'] ?? '')) . '</td>';
+                echo '<td>' . esc_html((string)($entry['created_at'] ?? '')) . '</td>';
+                echo '<td><code style="font-size:11px;">' . esc_html((string)$entry['key']) . '</code></td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        } else {
+            echo '<p style="margin:12px 0 0;color:#666;">' . esc_html__('Noch keine API-Schlüssel generiert. In der Desktop-App einloggen und "Zugangsdaten speichern" aktivieren.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+        }
+        echo '</div>';
+
         if (empty($options['own_chat_enabled'])) {
             echo '<p>' . esc_html__('Der integrierte Website-Chat ist derzeit deaktiviert. Aktiviere ihn in den Multi-Chat-Overlay-Einstellungen, um hier Unterhaltungen zu empfangen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
             echo '</div>';
