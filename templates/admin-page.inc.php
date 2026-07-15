@@ -94,6 +94,13 @@ $available_contact_forms = $this->get_available_contact_forms();
                 <td><input class="regular-text" type="text" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[chat_title]" value="<?php echo esc_attr($options['chat_title']); ?>"></td>
             </tr>
             <tr>
+                <th scope="row"><?php esc_html_e('Zusatztext für Datenschutzhinweis', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                <td>
+                    <input class="regular-text" type="text" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[chat_ai_legal_notice]" value="<?php echo esc_attr((string) ($options['chat_ai_legal_notice'] ?? '')); ?>">
+                    <p class="description"><?php esc_html_e('Dieser Text wird bei aktiver KI direkt im bestehenden Datenschutzhinweis ergänzt. Mit Polylang in der Gruppe "Restatify Multi Chat Overlay" übersetzbar.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
+                </td>
+            </tr>
+            <tr>
                 <th scope="row"><?php esc_html_e('Platzhalter für Chat-Eingabe', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
                 <td><input class="regular-text" type="text" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[chat_placeholder]" value="<?php echo esc_attr($options['chat_placeholder']); ?>"></td>
             </tr>

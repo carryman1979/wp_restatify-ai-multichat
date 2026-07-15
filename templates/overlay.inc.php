@@ -112,7 +112,10 @@ $delay_ms = isset($delay_ms) ? (int) $delay_ms : 0;
 
                     <?php
                     $privacy_legal_notice_class = '\\Restatify\\Shared\\Util\\PrivacyLegalNotice';
-                    echo $privacy_legal_notice_class::renderDefault((string) ($options['privacy_policy_url'] ?? ''), 'restatify-mco__legal-notice');
+                    $legal_notice_text = !empty($options['ai_enabled'])
+                        ? (string) ($options['chat_ai_legal_notice'] ?? Restatify_Ai_Multichat_Plugin::CHAT_AI_LEGAL_NOTICE_TEXT)
+                        : $privacy_legal_notice_class::NOTICE_TEXT;
+                    echo $privacy_legal_notice_class::render($legal_notice_text, (string) ($options['privacy_policy_url'] ?? ''), $privacy_legal_notice_class::LINK_LABEL_TEXT, 'restatify-mco__legal-notice');
                     ?>
                 </div>
             </section>

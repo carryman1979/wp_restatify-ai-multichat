@@ -22,6 +22,9 @@ if (!class_exists('Restatify_Ai_Multichat_Plugin')) {
         public const AI_DEBUG_LOG_KEY = 'restatify_mco_ai_debug_log';
         public const AI_DEBUG_MAX_ENTRIES = 200;
         public const TEXT_DOMAIN = 'restatify-multi-chat-overlay';
+        public const POLYLANG_GROUP = 'Restatify Multi Chat Overlay';
+        public const CHAT_AI_LEGAL_NOTICE_TEXT = 'Mit der Nutzung dieses Tools stimmst du unseren Datenschutzbestimmungen zu und erkennst an, dass du mit einer KI-Assistenz kommunizierst. Antworten können unvollständig oder fehlerhaft sein und sind nicht rechtsverbindlich.';
+        public const TRANSLATABLE_OPTION_KEYS = ['chat_ai_legal_notice'];
         public const CHANNELS = [
             'whatsapp' => ['label' => 'WhatsApp'],
         ];

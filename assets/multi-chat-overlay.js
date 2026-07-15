@@ -62,6 +62,7 @@
     var chatConfig = {
       ajaxUrl: (window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.ajaxUrl) || '',
       nonce: (window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.nonce) || '',
+      liveUpdatesWsUrl: (window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.liveUpdatesWsUrl) || '',
       requireConsent: Boolean(window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.requireConsent),
       consentCookieNames: Array.isArray(window.restatifyMultiChatOverlay && window.restatifyMultiChatOverlay.consentCookieNames)
         ? window.restatifyMultiChatOverlay.consentCookieNames
@@ -550,8 +551,150 @@
     var state = {
       id: loadStorage(CHAT_STORAGE_ID_KEY),
       token: loadStorage(CHAT_STORAGE_TOKEN_KEY),
-      messages: []
+      messages: [],
+      ws: null,
+      wsConnected: false,
+      wsReconnectTimer: 0,
+      wsReconnectBackoffMs: 1000
     };
+
+    function clearWsReconnectTimer() {
+      if (!state.wsReconnectTimer) {
+        return;
+      }
+
+      window.clearTimeout(state.wsReconnectTimer);
+      state.wsReconnectTimer = 0;
+    }
+
+    function closeLiveUpdatesSocket() {
+      clearWsReconnectTimer();
+      state.wsConnected = false;
+      if (!state.ws) {
+        return;
+      }
+
+      try {
+        state.ws.onopen = null;
+        state.ws.onmessage = null;
+        state.ws.onerror = null;
+        state.ws.onclose = null;
+        state.ws.close();
+      } catch (error) {
+        // Ignore close errors.
+      }
+
+      state.ws = null;
+    }
+
+    function buildLiveUpdatesWsUrl() {
+      if (!state.id || !state.token) {
+        return '';
+      }
+
+      var raw = String(config.liveUpdatesWsUrl || '').trim();
+      if (!raw) {
+        return '';
+      }
+
+      if (raw.indexOf('http://') === 0) {
+        raw = 'ws://' + raw.slice('http://'.length);
+      } else if (raw.indexOf('https://') === 0) {
+        raw = 'wss://' + raw.slice('https://'.length);
+      }
+
+      if (raw.indexOf('ws://') !== 0 && raw.indexOf('wss://') !== 0) {
+        return '';
+      }
+
+      try {
+        var wsUrl = new URL(raw);
+        wsUrl.searchParams.set('conversation_id', state.id);
+        wsUrl.searchParams.set('conversation_token', state.token);
+        return wsUrl.toString();
+      } catch (error) {
+        return '';
+      }
+    }
+
+    function scheduleLiveUpdatesReconnect() {
+      if (!state.id || !state.token || state.wsReconnectTimer) {
+        return;
+      }
+
+      var delay = Math.min(30000, Math.max(1000, state.wsReconnectBackoffMs));
+      state.wsReconnectTimer = window.setTimeout(function () {
+        state.wsReconnectTimer = 0;
+        connectLiveUpdates();
+      }, delay);
+      state.wsReconnectBackoffMs = Math.min(30000, delay * 2);
+    }
+
+    function connectLiveUpdates() {
+      if (!state.id || !state.token) {
+        return;
+      }
+
+      if (state.ws && (state.ws.readyState === WebSocket.OPEN || state.ws.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
+      var wsUrl = buildLiveUpdatesWsUrl();
+      if (!wsUrl) {
+        return;
+      }
+
+      clearWsReconnectTimer();
+
+      var socket;
+      try {
+        socket = new WebSocket(wsUrl);
+      } catch (error) {
+        scheduleLiveUpdatesReconnect();
+        return;
+      }
+
+      state.ws = socket;
+      socket.onopen = function () {
+        state.wsConnected = true;
+        state.wsReconnectBackoffMs = 1000;
+      };
+
+      socket.onmessage = function (event) {
+        var payload = null;
+        try {
+          payload = JSON.parse(String(event.data || ''));
+        } catch (error) {
+          return;
+        }
+
+        if (!payload || typeof payload !== 'object') {
+          return;
+        }
+
+        if (payload.type === 'connected') {
+          return;
+        }
+
+        if (payload.conversation_id && String(payload.conversation_id) !== String(state.id)) {
+          return;
+        }
+
+        if (payload.type === 'message_added' || payload.type === 'conversation_deleted') {
+          fetchConversation(config, state, messagesWrap);
+        }
+      };
+
+      socket.onerror = function () {
+        // Close handler manages reconnect fallback.
+      };
+
+      socket.onclose = function () {
+        state.wsConnected = false;
+        state.ws = null;
+        scheduleLiveUpdatesReconnect();
+      };
+    }
 
     var resetMinutes = Math.max(0, Number(config.chatResetMinutes || (Number(config.chatResetHours || 0) * 60) || 0));
     if (isChatExpired(resetMinutes)) {
@@ -632,6 +775,7 @@
         input.value = '';
         renderMessages(messagesWrap, state.messages);
         emitConversationState(state, state.messages);
+        connectLiveUpdates();
         showStatus(status, '', false);
       }).catch(function () {
         markPendingBubbleAsFailed(pendingBubble, finalFailedNotice);
@@ -644,6 +788,7 @@
 
     if (state.id && state.token) {
       fetchConversation(config, state, messagesWrap);
+      connectLiveUpdates();
     }
 
     var pollMs = Math.max(3000, Number(config.pollSeconds || 8) * 1000);
@@ -652,8 +797,16 @@
         return;
       }
 
+      if (state.wsConnected) {
+        return;
+      }
+
       fetchConversation(config, state, messagesWrap);
     }, pollMs);
+
+    window.addEventListener('beforeunload', function () {
+      closeLiveUpdatesSocket();
+    });
   }
 
   function createBackdrop() {

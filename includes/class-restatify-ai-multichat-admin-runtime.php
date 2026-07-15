@@ -65,9 +65,80 @@ public function enqueue_support_inbox_assets(): void {
             wp_die(esc_html__('Unzureichende Berechtigungen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN));
         }
 
+        $api_key_notice = '';
+        $api_key_notice_type = '';
+        if (
+            strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST'
+            && isset($_POST['restatify_mco_api_keys_action'])
+        ) {
+            $action = sanitize_key(wp_unslash($_POST['restatify_mco_api_keys_action']));
+            if ($action === 'delete_all') {
+                $nonce = sanitize_text_field(wp_unslash($_POST['restatify_mco_api_keys_nonce'] ?? ''));
+                if (!wp_verify_nonce($nonce, 'restatify_mco_api_keys_action')) {
+                    $api_key_notice_type = 'error';
+                    $api_key_notice = __('Sicherheitsprüfung fehlgeschlagen. Seite neu laden und erneut versuchen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+                } else {
+                    update_option('restatify_support_api_keys', [], false);
+                    $api_key_notice_type = 'success';
+                    $api_key_notice = __('Alle aktiven API-Schlüssel wurden gelöscht.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+                }
+            }
+        }
+
         $options = $this->get_options(false);
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Support Chat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</h1>';
+
+        if ($api_key_notice !== '') {
+            echo '<div class="notice notice-' . esc_attr($api_key_notice_type) . ' is-dismissible"><p>' . esc_html($api_key_notice) . '</p></div>';
+        }
+
+        // API-Konfiguration für Desktop-App
+        $api_endpoint = get_option('restatify_support_api_endpoint', 'http://127.0.0.1:8089');
+        $api_keys_raw = get_option('restatify_support_api_keys', []);
+        $api_keys = is_array($api_keys_raw) ? $api_keys_raw : [];
+
+        echo '<div style="background:#f0f6fc;border:1px solid #c2d8f0;border-radius:6px;padding:16px 20px;margin:16px 0 24px;">';
+        echo '<h2 style="margin:0 0 10px;">' . esc_html__('Desktop-App Konfiguration', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</h2>';
+        echo '<p style="margin:0 0 12px;color:#3c434a;">' . esc_html__('Diese Zugangsdaten in der Support-Chat-App unter Einstellungen eintragen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+        echo '<table class="form-table" style="margin:0;">';
+        echo '<tr><th style="padding:4px 20px 4px 0;white-space:nowrap;">' . esc_html__('API-Endpunkt', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+        echo '<td><code style="font-size:13px;">' . esc_html($api_endpoint) . '</code></td></tr>';
+        echo '</table>';
+
+        if (count($api_keys) > 0) {
+            echo '<details style="margin-top:14px;background:#fff;border:1px solid #d0d7de;border-radius:6px;padding:10px 12px;">';
+            echo '<summary style="cursor:pointer;font-weight:600;">' . esc_html(sprintf(
+                /* translators: %d = number of active support API keys */
+                __('Aktive API-Schlüssel (%d)', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+                count($api_keys)
+            )) . '</summary>';
+            echo '<p style="margin:10px 0 12px;color:#3c434a;">' . esc_html__('Für Notfälle: Nach Passwortwechsel oder Verdacht auf Kompromittierung alle Schlüssel löschen und in den Apps neu anmelden.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+            echo '<form method="post" style="margin:0 0 12px;">';
+            echo '<input type="hidden" name="restatify_mco_api_keys_action" value="delete_all" />';
+            wp_nonce_field('restatify_mco_api_keys_action', 'restatify_mco_api_keys_nonce');
+            echo '<button type="submit" class="button button-secondary" onclick="return window.confirm(' . esc_attr(wp_json_encode(__('Wirklich alle aktiven API-Schlüssel löschen? Alle verbundenen Apps müssen sich danach neu anmelden.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN))) . ');">' . esc_html__('Lösche alle', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</button>';
+            echo '</form>';
+            echo '<table class="widefat" style="max-width:700px;">';
+            echo '<thead><tr>';
+            echo '<th>' . esc_html__('Benutzer', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+            echo '<th>' . esc_html__('Erstellt am (UTC)', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+            echo '<th>' . esc_html__('API-Schlüssel', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+            echo '</tr></thead><tbody>';
+            foreach ($api_keys as $entry) {
+                if (!is_array($entry) || empty($entry['key'])) { continue; }
+                echo '<tr>';
+                echo '<td>' . esc_html((string)($entry['user_login'] ?? '')) . '</td>';
+                echo '<td>' . esc_html((string)($entry['created_at'] ?? '')) . '</td>';
+                echo '<td><code style="font-size:11px;">' . esc_html((string)$entry['key']) . '</code></td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+            echo '</details>';
+        } else {
+            echo '<p style="margin:12px 0 0;color:#666;">' . esc_html__('Noch keine API-Schlüssel generiert. In der Desktop-App einloggen und "Zugangsdaten speichern" aktivieren.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+        }
+        echo '</div>';
 
         if (empty($options['own_chat_enabled'])) {
             echo '<p>' . esc_html__('Der integrierte Website-Chat ist derzeit deaktiviert. Aktiviere ihn in den Multi-Chat-Overlay-Einstellungen, um hier Unterhaltungen zu empfangen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
@@ -192,6 +263,7 @@ public function enqueue_support_inbox_assets(): void {
             'dismissHours' => 24,
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('restatify_mco_chat_nonce'),
+            'liveUpdatesWsUrl' => (string) apply_filters('restatify_mco_live_updates_ws_url', ''),
             'chatEnabled' => !empty($options['own_chat_enabled']),
             'requireConsent' => !empty($options['require_cookie_consent']),
             'consentCookieNames' => array_values(array_filter(array_map('trim', explode(',', (string) ($options['consent_cookie_names'] ?? ''))))),
