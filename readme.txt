@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.11
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -153,6 +153,12 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.1.0 =
+* Added optional WebSocket-first live updates for frontend chat sync with automatic reconnect and polling fallback.
+* Added configurable AI legal-notice extension text and Polylang registration for the new translatable option.
+* Extended support admin runtime with API key visibility and one-click revoke-all action for incident response.
+* Integrated conversation deletion live-update handling for cleaner support and visitor session behavior.
+
 = 2.0.10 =
 * Shared resolver and shared-loader ordering finalized for local-root and exact-version fallback paths.
 * Router/session hardening continued for language and intent handling in the dual-session flow.
@@ -226,6 +232,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Adds realtime WebSocket updates and AI legal-notice controls; includes support API key management hardening.
 
 = 2.0.10 =
 Maintenance release with shared-loader stabilization and dual-session runtime hardening.

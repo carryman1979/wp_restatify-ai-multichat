@@ -75,6 +75,22 @@ class Restatify_Ai_Multichat_Options_Runtime {
             $privacy_legal_notice_class = '\\Restatify\\Shared\\Util\\PrivacyLegalNotice';
             $privacy_legal_notice_class::registerPolylangStrings();
         }
+
+        if (class_exists('\\Restatify\\Shared\\I18n\\PolylangAdapter', false)) {
+            \Restatify\Shared\I18n\PolylangAdapter::register(
+                'restatify_mco_chat_ai_legal_notice',
+                Restatify_Ai_Multichat_Plugin::CHAT_AI_LEGAL_NOTICE_TEXT,
+                Restatify_Ai_Multichat_Plugin::POLYLANG_GROUP,
+                false
+            );
+        } elseif (function_exists('pll_register_string')) {
+            pll_register_string(
+                'restatify_mco_chat_ai_legal_notice',
+                Restatify_Ai_Multichat_Plugin::CHAT_AI_LEGAL_NOTICE_TEXT,
+                Restatify_Ai_Multichat_Plugin::POLYLANG_GROUP,
+                false
+            );
+        }
     }
 
     public function sanitize_options($input): array {
@@ -88,6 +104,7 @@ class Restatify_Ai_Multichat_Options_Runtime {
             'consent_cookie_names' => $this->sanitize_cookie_match_list((string) ($input['consent_cookie_names'] ?? $defaults['consent_cookie_names'])),
             'team_name' => sanitize_text_field($input['team_name'] ?? $defaults['team_name']),
             'message' => sanitize_text_field($input['message'] ?? $defaults['message']),
+            'chat_ai_legal_notice' => sanitize_text_field($input['chat_ai_legal_notice'] ?? $defaults['chat_ai_legal_notice']),
             'cta_label' => sanitize_text_field($input['cta_label'] ?? $defaults['cta_label']),
             'channels_more_label' => sanitize_text_field($input['channels_more_label'] ?? $defaults['channels_more_label']),
             'channels_less_label' => sanitize_text_field($input['channels_less_label'] ?? $defaults['channels_less_label']),
@@ -325,6 +342,7 @@ class Restatify_Ai_Multichat_Options_Runtime {
             'support_email' => get_option('admin_email', ''),
             'support_notify_on_message' => true,
             'chat_title' => __('Schreibe uns direkt', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            'chat_ai_legal_notice' => Restatify_Ai_Multichat_Plugin::CHAT_AI_LEGAL_NOTICE_TEXT,
             'chat_placeholder' => __('Nachricht hier eingeben...', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'chat_send_label' => __('Senden', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
             'chat_send_failed_notice' => __('Nora scheint verhindert zu sein. Wir haben einen Mitarbeiter zusaetzlich wegen Ihres Anliegens kontaktiert.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),

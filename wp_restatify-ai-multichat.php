@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.0.11
+ * Version: 2.1.0
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -258,9 +258,11 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
     public const SUPPORT_CAPABILITY = 'restatify_mco_support_chat';
     public const TEXT_DOMAIN = 'restatify-multi-chat-overlay';
     public const POLYLANG_GROUP = 'Restatify Multi Chat Overlay';
+    public const CHAT_AI_LEGAL_NOTICE_TEXT = 'Mit der Nutzung dieses Tools stimmst du unseren Datenschutzbestimmungen zu und erkennst an, dass du mit einer KI-Assistenz kommunizierst. Antworten können unvollständig oder fehlerhaft sein und sind nicht rechtsverbindlich.';
     public const TRANSLATABLE_OPTION_KEYS = [
         'team_name',
         'message',
+        'chat_ai_legal_notice',
         'cta_label',
         'channels_more_label',
         'channels_less_label',
@@ -320,6 +322,7 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
         add_action('init', [$this, 'maybe_install_runtime_schema'], 1);
         add_action('init', [$this, 'load_textdomain']);
         add_action('init', [$this, 'register_polylang_strings'], 20);
+        add_filter('restatify_mco_live_updates_ws_url', [$this, 'resolve_live_updates_ws_url'], 5);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_init', [$this, 'register_polylang_strings']);
         add_action('admin_init', [$this, 'ensure_support_capability']);
@@ -369,6 +372,34 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
         add_action('wp_ajax_restatify_mco_support_reply', [$this, 'ajax_support_reply']);
         add_action('wp_ajax_restatify_mco_delete_conversation', [$this, 'ajax_delete_conversation']);
         add_action('wp_ajax_restatify_mco_set_ai_mode', [$this, 'ajax_set_ai_mode']);
+    }
+
+    public function resolve_live_updates_ws_url(string $configured_url): string {
+        $configured_url = trim($configured_url);
+        if ($configured_url !== '') {
+            return $configured_url;
+        }
+
+        $api_endpoint = trim((string) get_option('restatify_support_api_endpoint', 'http://127.0.0.1:8089'));
+        if ($api_endpoint === '') {
+            return '';
+        }
+
+        $parsed = wp_parse_url($api_endpoint);
+        if (!is_array($parsed)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parsed['scheme'] ?? ''));
+        $host = (string) ($parsed['host'] ?? '');
+        if ($host === '' || ($scheme !== 'http' && $scheme !== 'https' && $scheme !== 'ws' && $scheme !== 'wss')) {
+            return '';
+        }
+
+        $ws_scheme = $scheme === 'https' || $scheme === 'wss' ? 'wss' : 'ws';
+        $port = isset($parsed['port']) ? ':' . (int) $parsed['port'] : '';
+
+        return sprintf('%s://%s%s/v1/support/ws/visitor-updates', $ws_scheme, $host, $port);
     }
 
     public function maybe_install_runtime_schema(): void {
