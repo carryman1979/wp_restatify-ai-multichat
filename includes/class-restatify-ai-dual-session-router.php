@@ -36,6 +36,8 @@ class Restatify_Ai_Dual_Session_Router {
     const SESSION_BOOKING_COLLECTOR           = 'booking_collector';
     const SESSION_CONTACT_COLLECTOR           = 'contact_collector';
     const SESSION_GENERAL_CHAT                = 'general_chat';
+    const CONFIRMATION_ACTION_BOOKING         = 'booking';
+    const CONFIRMATION_ACTION_CONTACT         = 'contact';
     const CONFIDENCE_POLICY_OOD_BLOCK         = 0.72;
     const CONFIDENCE_POLICY_INJECTION_BLOCK   = 0.62;
 
@@ -92,6 +94,22 @@ class Restatify_Ai_Dual_Session_Router {
         $booking_available = $this->is_booking_flow_available();
         $contact_available = $this->is_contact_flow_available();
 
+        $pending_confirmation_response = $this->maybe_handle_pending_confirmation(
+            $latest_message,
+            $turns,
+            $session_id,
+            $state,
+            $language_code
+        );
+        if ( is_array( $pending_confirmation_response ) ) {
+            return $pending_confirmation_response;
+        }
+
+        $pending_abort_followup_active = ! empty( $state['pending_abort_followup'] );
+        if ( $pending_abort_followup_active ) {
+            $state['pending_abort_followup'] = false;
+        }
+
         if ( ! $booking_available && ! $contact_available ) {
             $state['current_session'] = self::SESSION_GENERAL_CHAT;
             $this->state_machine->update_session_state( $session_id, $state );
@@ -110,6 +128,31 @@ class Restatify_Ai_Dual_Session_Router {
             return $this->build_contact_collector_response( $latest_message, $turns, $session_id, $state, $language_code, (float) ( $state['contact_confidence'] ?? 0.0 ) );
         }
 
+        // ── Fast-track explicit acceptance after a booking prompt/clarification ──
+        if ( $booking_available && $this->is_explicit_booking_acceptance( $latest_message, $conversation, $language_code ) ) {
+            $state['current_session'] = self::SESSION_BOOKING_COLLECTOR;
+            $state['booking_flow_active'] = true;
+            $state['contact_flow_active'] = false;
+            $state['confidence'] = max( (float) ( $state['confidence'] ?? 0.0 ), self::CONFIDENCE_AUTO_BOOKING );
+            $state['booking_confidence'] = max( (float) ( $state['booking_confidence'] ?? 0.0 ), self::CONFIDENCE_AUTO_BOOKING );
+            $state['clarification_attempts'] = 0;
+            $this->state_machine->update_session_state( $session_id, $state );
+
+            return $this->build_session1_response( $latest_message, $turns, $session_id, $state, $language_code );
+        }
+
+        if ( $contact_available && $this->is_explicit_contact_acceptance( $latest_message, $conversation, $language_code ) ) {
+            $state['current_session'] = self::SESSION_CONTACT_COLLECTOR;
+            $state['booking_flow_active'] = false;
+            $state['contact_flow_active'] = true;
+            $state['confidence'] = max( (float) ( $state['confidence'] ?? 0.0 ), self::CONFIDENCE_AUTO_CONTACT );
+            $state['contact_confidence'] = max( (float) ( $state['contact_confidence'] ?? 0.0 ), self::CONFIDENCE_AUTO_CONTACT );
+            $state['clarification_attempts'] = 0;
+            $this->state_machine->update_session_state( $session_id, $state );
+
+            return $this->build_contact_collector_response( $latest_message, $turns, $session_id, $state, $language_code, (float) ( $state['contact_confidence'] ?? self::CONFIDENCE_AUTO_CONTACT ) );
+        }
+
         // ── Rejection suppression (cool-down after explicit "no") ────────────
         if ( ( $state['rejection_suppression'] ?? 0 ) > 0 ) {
             $state['rejection_suppression'] = max( 0, $state['rejection_suppression'] - 1 );
@@ -118,17 +161,9 @@ class Restatify_Ai_Dual_Session_Router {
         }
 
         // ── Explicit rejection ───────────────────────────────────────────────
-        if ( $this->is_explicit_booking_rejection( $latest_message, $turns ) || $this->is_explicit_contact_rejection( $latest_message, $turns ) ) {
-            $state['current_session']      = self::SESSION_GENERAL_CHAT;
-            $state['rejection_suppression'] = self::BOOKING_REJECTION_SUPPRESS_TURNS;
-            $this->state_machine->update_session_state( $session_id, $state );
-            return [
-                'session'               => self::SESSION_GENERAL_CHAT,
-                'action'                => 'routing_session2',
-                'delegate_to_session2_ai' => true,
-                'user_facing_text'      => '',
-                'confidence'            => 0.0,
-            ];
+        if ( ! $pending_abort_followup_active && ( $this->is_explicit_booking_rejection( $latest_message, $turns ) || $this->is_explicit_contact_rejection( $latest_message, $turns ) ) ) {
+            $source = $this->is_explicit_contact_rejection( $latest_message, $turns ) ? 'contact' : 'booking';
+            return $this->build_post_abort_followup_response( $session_id, $state, $language_code, $source );
         }
 
         // ── Capability-gated LLM routing ────────────────────────────────────
@@ -218,7 +253,7 @@ class Restatify_Ai_Dual_Session_Router {
             $clarification_mode = 'booking';
             $clarification_confidence = $booking_confidence;
         }
-        if ( $intent === 'contact' && $contact_available && $contact_explicit && $contact_confidence >= self::CONFIDENCE_CLARIFY_MIN_CONTACT && $contact_confidence <= self::CONFIDENCE_CLARIFY_MAX_CONTACT ) {
+        if ( $intent === 'contact' && $contact_explicit && $contact_confidence >= self::CONFIDENCE_CLARIFY_MIN_CONTACT && $contact_confidence <= self::CONFIDENCE_CLARIFY_MAX_CONTACT ) {
             $clarification_mode = 'contact';
             $clarification_confidence = $contact_confidence;
         }
@@ -509,6 +544,35 @@ class Restatify_Ai_Dual_Session_Router {
         return false;
     }
 
+    private function is_explicit_contact_acceptance( string $message, array $conversation, string $language ): bool {
+        $turns = $this->extract_message_turns( $conversation );
+        $msg = mb_strtolower( trim( $message ) );
+
+        $contact_terms = [
+            'kontaktformular', 'kontakt', 'nachricht', 'nachricht hinterlassen',
+            'contact form', 'contact', 'message', 'leave a message',
+        ];
+
+        if ( $this->contains_any_phrase( $msg, $contact_terms ) ) {
+            return $this->conversation_has_intent_context( $turns, $contact_terms );
+        }
+
+        $affirmations = [
+            'ja', 'gerne', 'ja gerne', 'bitte', 'ok', 'okay', 'klar', 'einverstanden',
+            'yes', 'sure', 'please', 'okay', 'ok',
+        ];
+
+        foreach ( $affirmations as $a ) {
+            if ( $msg === $a || mb_strpos( $msg, $a . ' ' ) === 0 || mb_strpos( $msg, $a . ',' ) === 0 ) {
+                if ( $this->conversation_has_intent_context( $turns, $contact_terms ) ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     // -------------------------------------------------------------------------
     // Booking-Collector response builder
     // -------------------------------------------------------------------------
@@ -518,20 +582,33 @@ class Restatify_Ai_Dual_Session_Router {
      */
     private function build_session1_response( string $message, array $turns, string $session_id, array $state, string $language_code = 'de' ): array {
         if ( $this->should_exit_booking_collector_on_rejection( $message, $turns, $language_code ) ) {
-            $state['current_session'] = self::SESSION_GENERAL_CHAT;
-            $state['booking_flow_active'] = false;
-            $state['contact_flow_active'] = false;
-            $state['last_session1_field'] = '';
-            $state['last_session1_question'] = '';
-            $state['rejection_suppression'] = self::BOOKING_REJECTION_SUPPRESS_TURNS;
-            $this->state_machine->update_session_state( $session_id, $state );
-            return $this->build_session2_response();
+            return $this->build_post_abort_followup_response( $session_id, $state, $language_code, 'booking' );
         }
 
         $prefill   = $this->extract_prefill_from_context( $message, $turns, $state, $language_code );
         $collected = array_merge( $state['collected_fields'] ?? [], $prefill );
         $collected = $this->finalize_booking_prefill( $collected, $turns, $message );
-        $missing_fields = $this->get_missing_required_booking_fields( $collected );
+        $retry_counts = is_array( $state['booking_field_retry_counts'] ?? null ) ? (array) $state['booking_field_retry_counts'] : [];
+        $skipped_fields = is_array( $state['booking_skipped_fields'] ?? null ) ? (array) $state['booking_skipped_fields'] : [];
+
+        foreach ( $this->get_required_booking_fields_order() as $field_key ) {
+            if ( $this->is_booking_field_satisfied( $field_key, $collected ) ) {
+                unset( $retry_counts[ $field_key ], $skipped_fields[ $field_key ] );
+            }
+        }
+
+        $last_requested_field = (string) ( $state['last_session1_field'] ?? '' );
+        if ( $last_requested_field !== '' && ! $this->is_booking_field_satisfied( $last_requested_field, $collected ) && empty( $skipped_fields[ $last_requested_field ] ) ) {
+            $retry_counts[ $last_requested_field ] = (int) ( $retry_counts[ $last_requested_field ] ?? 0 ) + 1;
+            if ( (int) $retry_counts[ $last_requested_field ] >= 2 ) {
+                $skipped_fields[ $last_requested_field ] = true;
+                unset( $retry_counts[ $last_requested_field ] );
+            }
+        }
+
+        $state['booking_field_retry_counts'] = $retry_counts;
+        $state['booking_skipped_fields'] = $skipped_fields;
+        $missing_fields = $this->get_missing_required_booking_fields( $collected, $skipped_fields );
         $question_count = (int) ( $state['booking_attempt_count'] ?? 0 );
 
         $state['collected_fields'] = $collected;
@@ -563,6 +640,7 @@ class Restatify_Ai_Dual_Session_Router {
 
         $state['last_session1_field'] = '';
         $state['last_session1_question'] = '';
+    $state['booking_field_retry_counts'] = [];
 
         $this->state_machine->update_session_state( $session_id, $state );
 
@@ -572,6 +650,37 @@ class Restatify_Ai_Dual_Session_Router {
         }
 
         $open_text = $this->get_open_overlay_text( $language_code, empty( $missing_fields ) );
+
+        // After the overlay is about to open, immediately reset the router to
+        // neutral chat mode. Conversation history stays intact, but the next
+        // visitor message must be routed fresh instead of sticking in the
+        // booking workflow.
+        $state['current_session'] = self::SESSION_GENERAL_CHAT;
+        $state['booking_flow_active'] = false;
+        $state['last_session1_field'] = '';
+        $state['last_session1_question'] = '';
+        $state['booking_field_retry_counts'] = [];
+        $state['booking_skipped_fields'] = [];
+        $this->state_machine->update_session_state( $session_id, $state );
+
+        if ( $this->is_eu_ai_act_enabled() ) {
+            return $this->build_pending_confirmation_response(
+                self::CONFIRMATION_ACTION_BOOKING,
+                [
+                    'session' => self::SESSION_BOOKING_COLLECTOR,
+                    'action' => 'open_booking_overlay',
+                    'confidence' => $state['confidence'] ?? 0.0,
+                    'user_facing_text' => $open_text,
+                    'booking_payload' => ! empty( $collected ) ? $collected : null,
+                    'force_overlay' => true,
+                    'partial_prefill' => $collected,
+                    'delegate_to_session2_ai' => false,
+                ],
+                $session_id,
+                $state,
+                $language_code
+            );
+        }
 
         return [
             'session'                 => self::SESSION_BOOKING_COLLECTOR,
@@ -616,7 +725,86 @@ class Restatify_Ai_Dual_Session_Router {
         }
 
         // Fallback for setups without LLM callback/API response.
-        return $this->is_explicit_booking_rejection( $message, $turns );
+        return $this->is_explicit_booking_rejection( $message, $turns ) || $this->is_generic_abort_message( $message );
+    }
+
+    private function should_exit_contact_collector_on_rejection( string $message, array $turns, string $language_code ): bool {
+        $latest = trim( $message );
+        if ( $latest === '' ) {
+            return false;
+        }
+
+        $transcript = $this->build_prefill_transcript( $turns, $latest );
+        if ( $transcript === '' ) {
+            return $this->is_explicit_contact_rejection( $message, $turns ) || $this->is_generic_abort_message( $message );
+        }
+
+        $prompt_parts = [];
+        $prompt_parts[] = 'You detect whether the visitor explicitly rejects continuing the currently active contact flow.';
+        $prompt_parts[] = 'Return strict JSON only.';
+        $prompt_parts[] = 'Use this schema exactly:';
+        $prompt_parts[] = '{"reject_explicit":false,"confidence":0.0,"reason":"short"}';
+        $prompt_parts[] = 'Set reject_explicit true only for explicit cancellation/refusal of contact-flow continuation.';
+        $prompt_parts[] = 'Language hint: ' . $this->normalize_language_code( $language_code ) . '.';
+        $prompt_parts[] = 'Transcript:';
+        $prompt_parts[] = $transcript;
+
+        $payload = $this->run_structured_json_llm_task( implode( "\n", $prompt_parts ), 'session_rejection_llm_json_callback' );
+        if ( is_array( $payload ) && ! empty( $payload ) ) {
+            $reject_explicit = ! empty( $payload['reject_explicit'] );
+            $confidence = max( 0.0, min( 1.0, (float) ( $payload['confidence'] ?? 0.0 ) ) );
+            if ( $reject_explicit && $confidence >= 0.50 ) {
+                return true;
+            }
+        }
+
+        return $this->is_explicit_contact_rejection( $message, $turns ) || $this->is_generic_abort_message( $message );
+    }
+
+    private function is_generic_abort_message( string $message ): bool {
+        $msg = mb_strtolower( trim( $message ) );
+        if ( $msg === '' ) {
+            return false;
+        }
+
+        $abort_terms = [
+            'abbruch', 'abbrechen', 'stopp', 'stop', 'cancel', 'aborted',
+            'nein', 'ne danke', 'nein danke', 'no thanks', 'not now', 'later',
+            'ich will nicht', 'ich moechte nicht', 'lieber nicht', 'kein termin', 'keine nachricht',
+        ];
+
+        return $this->contains_any_phrase( $msg, $abort_terms );
+    }
+
+    /**
+     * @param array<string,mixed> $state
+     */
+    private function build_post_abort_followup_response( string $session_id, array $state, string $language_code, string $source ): array {
+        $state['current_session'] = self::SESSION_GENERAL_CHAT;
+        $state['booking_flow_active'] = false;
+        $state['contact_flow_active'] = false;
+        $state['last_session1_field'] = '';
+        $state['last_session1_question'] = '';
+        $state['booking_field_retry_counts'] = [];
+        $state['booking_skipped_fields'] = [];
+        $state['last_contact_field'] = '';
+        $state['last_contact_question'] = '';
+        $state['contact_field_retry_counts'] = [];
+        $state['contact_skipped_fields'] = [];
+        $state['rejection_suppression'] = 0;
+        $state['pending_abort_followup'] = true;
+        $state['pending_abort_source'] = $source;
+        $this->state_machine->update_session_state( $session_id, $state );
+
+        return [
+            'session'                 => 'clarification',
+            'action'                  => 'ask_post_abort_followup',
+            'confidence'              => 1.0,
+            'clarification_mode'      => 'post_abort',
+            'post_abort_source'       => $source,
+            'user_facing_text'        => $this->get_post_abort_followup_text( $language_code ),
+            'delegate_to_session2_ai' => false,
+        ];
     }
 
     /**
@@ -647,18 +835,11 @@ class Restatify_Ai_Dual_Session_Router {
      * @return array<string,string>
      */
     private function finalize_booking_prefill( array $collected, array $turns, string $latest_message ): array {
-        if ( empty( $collected['contact_method'] ) ) {
-            if ( ! empty( $collected['email'] ) ) {
-                $collected['contact_method'] = 'email';
-            } elseif ( ! empty( $collected['phone'] ) ) {
-                $collected['contact_method'] = 'phone';
-            }
-        }
-
-        if ( empty( $collected['contact_value'] ) ) {
-            if ( ! empty( $collected['email'] ) ) {
+        if ( empty( $collected['contact_value'] ) && ! empty( $collected['contact_method'] ) ) {
+            $contact_method = sanitize_key( (string) $collected['contact_method'] );
+            if ( in_array( $contact_method, [ 'email', 'teams', 'zoom', 'google_meet' ], true ) && ! empty( $collected['email'] ) ) {
                 $collected['contact_value'] = (string) $collected['email'];
-            } elseif ( ! empty( $collected['phone'] ) ) {
+            } elseif ( in_array( $contact_method, [ 'phone', 'whatsapp', 'signal' ], true ) && ! empty( $collected['phone'] ) ) {
                 $collected['contact_value'] = (string) $collected['phone'];
             }
         }
@@ -685,13 +866,16 @@ class Restatify_Ai_Dual_Session_Router {
     /**
      * @return array<int,string>
      */
-    private function get_missing_required_booking_fields( array $collected ): array {
-        // subject is auto-inferred from context once name+contact are present – not asked explicitly.
-        $required = [ 'name', 'email', 'contact_value' ];
+    private function get_missing_required_booking_fields( array $collected, array $skipped_fields = [] ): array {
+        $required = $this->get_required_booking_fields_order();
         $missing  = [];
 
         foreach ( $required as $field ) {
-            if ( empty( $collected[ $field ] ) ) {
+            if ( ! empty( $skipped_fields[ $field ] ) ) {
+                continue;
+            }
+
+            if ( ! $this->is_booking_field_satisfied( $field, $collected ) ) {
                 $missing[] = $field;
             }
         }
@@ -708,6 +892,34 @@ class Restatify_Ai_Dual_Session_Router {
         $llm_question = $this->build_session1_question_via_llm( $field, $collected, $turns, $latest_message, $language_code, $state );
         if ( $llm_question !== '' ) {
             return $llm_question;
+        }
+
+        if ( $field === 'schedule_preference' ) {
+            return $language_code === 'en'
+                ? 'Do you already have a preferred day or time window for the first conversation?'
+                : 'Haben Sie bereits einen Wunschtag oder ein bevorzugtes Zeitfenster für das Erstgespräch?';
+        }
+
+        if ( $field === 'contact_method' ) {
+            $labels = $this->get_booking_contact_method_labels();
+            $joined = implode( ', ', $labels );
+            if ( $joined === '' ) {
+                $joined = $language_code === 'en' ? 'phone or email' : 'Telefon oder E-Mail';
+            }
+
+            return $language_code === 'en'
+                ? 'Which contact channel do you prefer for the appointment: ' . $joined . '?'
+                : 'Welchen Kontaktweg bevorzugen Sie für den Termin: ' . $joined . '?';
+        }
+
+        if ( $field === 'contact_value' && ! empty( $collected['contact_method'] ) ) {
+            $profile = $this->get_booking_contact_method_profile( (string) $collected['contact_method'] );
+            $value_label = (string) ( $profile['value_label'] ?? '' );
+            if ( $value_label !== '' ) {
+                return $language_code === 'en'
+                    ? 'Which ' . $value_label . ' should we use for that contact channel?'
+                    : 'Welche ' . $value_label . ' sollen wir für diesen Kontaktweg verwenden?';
+            }
         }
 
         if ( $field === 'contact_value' && ! empty( $collected['email'] ) ) {
@@ -730,7 +942,15 @@ class Restatify_Ai_Dual_Session_Router {
      * @return array<int,string>
      */
     private function get_required_booking_fields_order(): array {
-        return [ 'name', 'email', 'contact_value' ];
+        return [ 'schedule_preference', 'name', 'email', 'contact_method', 'contact_value' ];
+    }
+
+    private function is_booking_field_satisfied( string $field, array $collected ): bool {
+        if ( $field === 'schedule_preference' ) {
+            return ! empty( $collected['date'] ) || ! empty( $collected['time'] ) || ! empty( $collected['time_of_day'] );
+        }
+
+        return ! empty( $collected[ $field ] );
     }
 
     private function build_prefill_transcript( array $turns, string $latest_message ): string {
@@ -777,6 +997,7 @@ class Restatify_Ai_Dual_Session_Router {
         if ( $last_question !== '' ) {
             $prompt_parts[] = 'Last assistant question: ' . $last_question;
         }
+        $prompt_parts[] = 'If the visitor confirms a booking request, keep extracting any useful booking fields from the transcript even when some fields are still missing.';
         $prompt_parts[] = 'Conversation language hint: ' . $this->normalize_language_code( $language_code ) . '.';
         $prompt_parts[] = 'JSON schema keys:';
         $prompt_parts[] = '{"name":"","email":"","phone":"","contact_method":"","contact_value":"","date":"","time":"","time_of_day":"","subject":"","note":"","chat_purpose_title":"","chat_request_summary":""}';
@@ -887,6 +1108,12 @@ class Restatify_Ai_Dual_Session_Router {
         $prompt_parts[] = 'Write exactly one short follow-up question for a booking assistant.';
         $prompt_parts[] = 'Question language must match: ' . $this->normalize_language_code( $language_code ) . '.';
         $prompt_parts[] = 'Target missing field: ' . $target_field . '.';
+        $prompt_parts[] = 'Do not claim that you will send appointment suggestions, proposals, links, or confirmation emails yourself. The booking tool will later present available appointment slots.';
+        $prompt_parts[] = 'Do not invent completed actions. Ask only for the missing field.';
+        $field_guidance = $this->get_booking_field_prompt_guidance( $target_field, $collected, $language_code );
+        if ( $field_guidance !== '' ) {
+            $prompt_parts[] = 'Field guidance: ' . $field_guidance;
+        }
         $prompt_parts[] = 'Known collected fields JSON: ' . $this->json_encode_safe( $collected, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
         if ( ! empty( $state['last_session1_question'] ) ) {
             $prompt_parts[] = 'Avoid repeating this exact previous question: ' . (string) $state['last_session1_question'];
@@ -906,6 +1133,132 @@ class Restatify_Ai_Dual_Session_Router {
         }
 
         return $this->trim_question_sentence( $question );
+    }
+
+    private function get_booking_field_prompt_guidance( string $target_field, array $collected, string $language_code ): string {
+        if ( $target_field === 'schedule_preference' ) {
+            return $language_code === 'en'
+                ? 'Ask for a preferred day, date, time, or time window. If the visitor does not know an exact slot yet, a rough preference is enough.'
+                : 'Frage nach bevorzugtem Tag, Datum, Uhrzeit oder Zeitfenster. Wenn noch kein exakter Termin bekannt ist, reicht eine grobe Präferenz.';
+        }
+
+        if ( $target_field === 'contact_method' ) {
+            $labels = $this->get_booking_contact_method_labels();
+            $joined = implode( ', ', $labels );
+            return $language_code === 'en'
+                ? 'Ask the visitor to choose one contact channel from: ' . $joined . '.'
+                : 'Bitte den Besucher genau einen Kontaktweg aus diesen Optionen wählen lassen: ' . $joined . '.';
+        }
+
+        if ( $target_field === 'contact_value' ) {
+            $profile = $this->get_booking_contact_method_profile( (string) ( $collected['contact_method'] ?? '' ) );
+            $value_label = (string) ( $profile['value_label'] ?? '' );
+            $input_kind = (string) ( $profile['input_kind'] ?? '' );
+            if ( $value_label !== '' ) {
+                return $language_code === 'en'
+                    ? 'Ask for the matching contact detail for the chosen contact channel. Expected value kind: ' . $input_kind . '; label: ' . $value_label . '.'
+                    : 'Frage nach der passenden Kontaktadresse für den gewählten Kontaktweg. Erwarteter Werttyp: ' . $input_kind . '; Bezeichnung: ' . $value_label . '.';
+            }
+        }
+
+        if ( $target_field === 'email' ) {
+            return $language_code === 'en'
+                ? 'Ask for the visitor email address to use for the booking process. Do not say that proposals are sent by email.'
+                : 'Frage nach der E-Mail-Adresse für den Buchungsprozess. Sage nicht, dass Terminvorschläge per E-Mail verschickt werden.';
+        }
+
+        return '';
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function get_booking_contact_method_labels(): array {
+        $labels = [];
+        foreach ( $this->get_booking_contact_method_profiles() as $profile ) {
+            $label = trim( (string) ( $profile['label'] ?? '' ) );
+            if ( $label !== '' ) {
+                $labels[] = $label;
+            }
+        }
+
+        return $labels;
+    }
+
+    /**
+     * @return array<string,array{key:string,label:string,input_kind:string,placeholder:string,value_label:string}>
+     */
+    private function get_booking_contact_method_profiles(): array {
+        $methods = [];
+        if ( class_exists( '\\Restatify\\Shared\\Util\\BookingContactMethodsResolver', false ) && class_exists( 'Restatify_Booking_Assistant_Constants', false ) && function_exists( 'get_option' ) ) {
+            $option_key = defined( 'Restatify_Booking_Assistant_Constants::OPTION_KEY' )
+                ? (string) constant( 'Restatify_Booking_Assistant_Constants::OPTION_KEY' )
+                : 'restatify_booking_options';
+            $booking_options = get_option( $option_key, [] );
+            if ( is_array( $booking_options ) ) {
+                $methods = \Restatify\Shared\Util\BookingContactMethodsResolver::methodsFromOptions( $booking_options );
+            }
+        }
+
+        if ( count( $methods ) === 0 && class_exists( '\\Restatify\\Shared\\Contracts\\BookingPrefillSchema', false ) ) {
+            $methods = \Restatify\Shared\Contracts\BookingPrefillSchema::defaultContactMethods();
+        }
+
+        if ( count( $methods ) === 0 ) {
+            $methods = [ 'phone', 'whatsapp', 'teams', 'zoom', 'google_meet', 'signal' ];
+        }
+
+        $profiles = [];
+        if ( class_exists( '\\Restatify\\Shared\\Util\\BookingContactChannelProfiles', false ) ) {
+            $profiles = \Restatify\Shared\Util\BookingContactChannelProfiles::defaultProfiles();
+        }
+
+        if ( count( $profiles ) === 0 ) {
+            $profiles = [
+                'phone' => [ 'label' => 'Telefon', 'input_kind' => 'tel', 'placeholder' => '+49...', 'value_label' => 'Telefonnummer' ],
+                'whatsapp' => [ 'label' => 'WhatsApp', 'input_kind' => 'tel', 'placeholder' => '+49...', 'value_label' => 'Handynummer' ],
+                'teams' => [ 'label' => 'Microsoft Teams', 'input_kind' => 'email', 'placeholder' => 'name@example.com', 'value_label' => 'E-Mail-Adresse' ],
+                'zoom' => [ 'label' => 'Zoom', 'input_kind' => 'email', 'placeholder' => 'name@example.com', 'value_label' => 'E-Mail-Adresse' ],
+                'google_meet' => [ 'label' => 'Google Meet', 'input_kind' => 'email', 'placeholder' => 'name@example.com', 'value_label' => 'E-Mail-Adresse' ],
+                'signal' => [ 'label' => 'Signal', 'input_kind' => 'tel', 'placeholder' => '+49...', 'value_label' => 'Handynummer' ],
+            ];
+        }
+
+        $rows = [];
+        foreach ( $methods as $method ) {
+            $key = sanitize_key( (string) $method );
+            if ( $key === '' ) {
+                continue;
+            }
+
+            $profile = is_array( $profiles[ $key ] ?? null ) ? $profiles[ $key ] : [];
+            $rows[ $key ] = [
+                'key' => $key,
+                'label' => (string) ( $profile['label'] ?? $key ),
+                'input_kind' => (string) ( $profile['input_kind'] ?? 'text' ),
+                'placeholder' => (string) ( $profile['placeholder'] ?? '' ),
+                'value_label' => (string) ( $profile['value_label'] ?? 'Kontaktdaten' ),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array{key:string,label:string,input_kind:string,placeholder:string,value_label:string}
+     */
+    private function get_booking_contact_method_profile( string $method ): array {
+        $profiles = $this->get_booking_contact_method_profiles();
+        $key = sanitize_key( $method );
+        return is_array( $profiles[ $key ] ?? null )
+            ? $profiles[ $key ]
+            : [
+                'key' => $key,
+                'label' => $key,
+                'input_kind' => 'text',
+                'placeholder' => '',
+                'value_label' => 'Kontaktdaten',
+            ];
     }
 
     /**
@@ -1060,6 +1413,14 @@ class Restatify_Ai_Dual_Session_Router {
     private function build_contact_open_response( string $message, array $turns, string $session_id, array $state, string $language_code, float $confidence ): array {
         $form_id = $this->get_configured_contact_form_id();
         if ( $form_id === '' ) {
+            if ( $this->is_booking_flow_available() ) {
+                $state['current_session'] = self::SESSION_BOOKING_COLLECTOR;
+                $state['contact_flow_active'] = false;
+                $state['booking_flow_active'] = true;
+                $this->state_machine->update_session_state( $session_id, $state );
+                return $this->build_session1_response( $message, $turns, $session_id, $state, $language_code );
+            }
+
             return $this->build_session2_response();
         }
 
@@ -1072,9 +1433,10 @@ class Restatify_Ai_Dual_Session_Router {
         $state['contact_flow_active'] = false;
         $state['last_contact_field'] = '';
         $state['last_contact_question'] = '';
+        $state['contact_field_retry_counts'] = [];
         $this->state_machine->update_session_state( $session_id, $state );
 
-        return [
+        $response = [
             'session' => self::SESSION_CONTACT_COLLECTOR,
             'action' => 'open_contact_form',
             'confidence' => $confidence,
@@ -1087,15 +1449,182 @@ class Restatify_Ai_Dual_Session_Router {
             ],
             'delegate_to_session2_ai' => false,
         ];
+
+        if ( $this->is_eu_ai_act_enabled() ) {
+            return $this->build_pending_confirmation_response(
+                self::CONFIRMATION_ACTION_CONTACT,
+                $response,
+                $session_id,
+                $state,
+                $language_code
+            );
+        }
+
+        return $response;
+    }
+
+    /**
+     * @param array<string,mixed> $state
+     * @return array<string,mixed>|null
+     */
+    private function maybe_handle_pending_confirmation( string $message, array $turns, string $session_id, array $state, string $language_code ): ?array {
+        $pending_action = (string) ( $state['pending_confirmation_action'] ?? '' );
+        if ( ! $this->is_eu_ai_act_enabled() || $pending_action === '' ) {
+            return null;
+        }
+
+        $confirmation_language = $this->get_pending_confirmation_language_code( $state, $language_code );
+        $trigger_answer = $this->get_confirmation_trigger_answer( $pending_action, $confirmation_language );
+        $negative_answer = $this->get_confirmation_negative_answer( $pending_action, $confirmation_language );
+
+        if ( $this->is_exact_confirmation_reply( $message, $trigger_answer ) ) {
+            $payload = $state['pending_confirmation_payload'] ?? [];
+            if ( ! is_array( $payload ) ) {
+                $payload = [];
+            }
+            $state = $this->clear_pending_confirmation_state( $state, $confirmation_language );
+            $state['language_code'] = $confirmation_language;
+            $state['language_candidate'] = $confirmation_language;
+            $state['language_last_detected'] = $confirmation_language;
+            $state['language_last_confidence'] = 1.0;
+            $state['language_switch_reason'] = 'eu_ai_act_confirmation_lock';
+            $state['language_switch_votes'] = 0;
+            // Return the router to neutral chat mode after the trigger fires,
+            // so the next message is routed fresh instead of sticking to the
+            // previous booking workflow.
+            $state['current_session'] = self::SESSION_GENERAL_CHAT;
+            $state['booking_flow_active'] = false;
+            $state['last_session1_field'] = '';
+            $state['last_session1_question'] = '';
+            $state['booking_field_retry_counts'] = [];
+            $state['booking_skipped_fields'] = [];
+            $this->state_machine->update_session_state( $session_id, $state );
+            return $payload;
+        }
+
+        if ( $this->is_exact_confirmation_reply( $message, $negative_answer ) || $this->is_negative_leaning_confirmation_reply( $message, $turns, $pending_action, $confirmation_language ) ) {
+            $state = $this->clear_pending_confirmation_state( $state, $confirmation_language );
+            $state['language_code'] = $confirmation_language;
+            $state['language_candidate'] = $confirmation_language;
+            $state['language_last_detected'] = $confirmation_language;
+            $state['language_last_confidence'] = 1.0;
+            $state['language_switch_reason'] = 'eu_ai_act_confirmation_lock';
+            $state['language_switch_votes'] = 0;
+            $state['current_session'] = self::SESSION_GENERAL_CHAT;
+            $state['booking_flow_active'] = false;
+            $state['contact_flow_active'] = false;
+            $this->state_machine->update_session_state( $session_id, $state );
+            return $this->build_session2_response();
+        }
+
+        $retry_prompt = $this->get_confirmation_retry_prompt( $pending_action, $confirmation_language );
+        $state['language_code'] = $confirmation_language;
+        $state['language_candidate'] = $confirmation_language;
+        $state['language_last_detected'] = $confirmation_language;
+        $state['language_last_confidence'] = 1.0;
+        $state['language_switch_reason'] = 'eu_ai_act_confirmation_lock';
+        $state['pending_confirmation_retry_count'] = (int) ( $state['pending_confirmation_retry_count'] ?? 0 ) + 1;
+        $this->state_machine->update_session_state( $session_id, $state );
+
+        return [
+            'session' => 'clarification',
+            'action' => 'ask_confirmation_retry',
+            'confidence' => 1.0,
+            'clarification_mode' => $pending_action . '_confirmation',
+            'user_facing_text' => $retry_prompt,
+            'delegate_to_session2_ai' => false,
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $payload
+     * @param array<string,mixed> $state
+     * @return array<string,mixed>
+     */
+    private function build_pending_confirmation_response( string $action, array $payload, string $session_id, array $state, string $language_code ): array {
+        $state['pending_confirmation_action'] = $action;
+        $state['pending_confirmation_payload'] = $payload;
+        $state['pending_confirmation_retry_count'] = 0;
+        $confirmation_language = $this->normalize_language_code( $language_code );
+        $state['pending_confirmation_language_code'] = $confirmation_language;
+        $state['language_code'] = $confirmation_language;
+        $state['language_candidate'] = $confirmation_language;
+        $state['language_last_detected'] = $confirmation_language;
+        $state['language_last_confidence'] = 1.0;
+        $state['language_switch_reason'] = 'eu_ai_act_confirmation_lock';
+        $state['language_switch_votes'] = 0;
+        $this->state_machine->update_session_state( $session_id, $state );
+
+        return [
+            'session' => 'clarification',
+            'action' => 'ask_confirmation',
+            'confidence' => $payload['confidence'] ?? 1.0,
+            'clarification_mode' => $action . '_confirmation',
+            'user_facing_text' => $this->get_confirmation_question_text( $action, $confirmation_language ),
+            'delegate_to_session2_ai' => false,
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $state
+     * @return array<string,mixed>
+     */
+    private function clear_pending_confirmation_state( array $state, string $language_code = '' ): array {
+        $state['pending_confirmation_action'] = '';
+        $state['pending_confirmation_payload'] = [];
+        $state['pending_confirmation_retry_count'] = 0;
+        $state['pending_confirmation_language_code'] = $this->get_pending_confirmation_language_code( $state, $language_code );
+        return $state;
+    }
+
+    private function get_pending_confirmation_language_code( array $state, string $fallback_language_code ): string {
+        $stored = $this->normalize_language_code( (string) ( $state['pending_confirmation_language_code'] ?? '' ) );
+        if ( $stored !== '' ) {
+            return $stored;
+        }
+
+        $fallback = $this->normalize_language_code( $fallback_language_code );
+        return $fallback !== '' ? $fallback : 'de';
     }
 
     private function build_contact_collector_response( string $message, array $turns, string $session_id, array $state, string $language_code, float $confidence ): array {
+        $collector_has_prompted = ! empty( $state['last_contact_question'] ) || ( (int) ( $state['contact_attempt_count'] ?? 0 ) > 0 );
+        if ( $collector_has_prompted && $this->should_exit_contact_collector_on_rejection( $message, $turns, $language_code ) ) {
+            return $this->build_post_abort_followup_response( $session_id, $state, $language_code, 'contact' );
+        }
+
+        $schema = $this->get_configured_contact_form_schema();
         $collected = array_merge(
             is_array( $state['contact_collected_fields'] ?? null ) ? (array) $state['contact_collected_fields'] : [],
             $this->extract_contact_prefill_from_context( $message, $turns, $state, $language_code )
         );
 
-        $missing_fields = $this->get_missing_required_contact_fields( $collected );
+        $retry_counts = is_array( $state['contact_field_retry_counts'] ?? null ) ? (array) $state['contact_field_retry_counts'] : [];
+        $skipped_fields = is_array( $state['contact_skipped_fields'] ?? null ) ? (array) $state['contact_skipped_fields'] : [];
+        foreach ( $schema as $field ) {
+            $field_id = (string) ( $field['id'] ?? '' );
+            if ( $field_id === '' ) {
+                continue;
+            }
+
+            if ( $this->is_contact_field_satisfied( $field, $collected ) ) {
+                unset( $retry_counts[ $field_id ], $skipped_fields[ $field_id ] );
+            }
+        }
+
+        $last_contact_field = (string) ( $state['last_contact_field'] ?? '' );
+        $last_field_schema = $last_contact_field !== '' ? $this->find_contact_form_field( $schema, $last_contact_field ) : null;
+        if ( is_array( $last_field_schema ) && ! $this->is_contact_field_satisfied( $last_field_schema, $collected ) && empty( $skipped_fields[ $last_contact_field ] ) ) {
+            $retry_counts[ $last_contact_field ] = (int) ( $retry_counts[ $last_contact_field ] ?? 0 ) + 1;
+            if ( (int) $retry_counts[ $last_contact_field ] >= 2 ) {
+                $skipped_fields[ $last_contact_field ] = true;
+                unset( $retry_counts[ $last_contact_field ] );
+            }
+        }
+
+        $state['contact_field_retry_counts'] = $retry_counts;
+        $state['contact_skipped_fields'] = $skipped_fields;
+        $missing_fields = $this->get_missing_required_contact_fields( $collected, $schema, $skipped_fields );
         $question_count = (int) ( $state['contact_attempt_count'] ?? 0 );
 
         $state['current_session'] = self::SESSION_CONTACT_COLLECTOR;
@@ -1105,9 +1634,10 @@ class Restatify_Ai_Dual_Session_Router {
         $state['partial_prefill'] = $collected;
 
         if ( ! empty( $missing_fields ) && $question_count < self::CONTACT_MAX_QUESTIONS ) {
-            $question = $this->build_contact_collector_question( (string) ( $missing_fields[0] ?? '' ), $collected, $turns, $message, $language_code, $state );
+            $target_field_id = (string) ( $missing_fields[0] ?? '' );
+            $question = $this->build_contact_collector_question( $target_field_id, $collected, $turns, $message, $language_code, $state, $schema );
             $state['contact_attempt_count'] = $question_count + 1;
-            $state['last_contact_field'] = (string) ( $missing_fields[0] ?? '' );
+            $state['last_contact_field'] = $target_field_id;
             $state['last_contact_question'] = $question;
             $this->state_machine->update_session_state( $session_id, $state );
 
@@ -1129,23 +1659,39 @@ class Restatify_Ai_Dual_Session_Router {
     /**
      * @return array<int,string>
      */
-    private function get_missing_required_contact_fields( array $collected ): array {
-        $required = [ 'name', 'email', 'message' ];
+    private function get_missing_required_contact_fields( array $collected, array $schema, array $skipped_fields = [] ): array {
         $missing = [];
 
-        foreach ( $required as $field ) {
-            if ( empty( $collected[ $field ] ) ) {
-                $missing[] = $field;
+        foreach ( $schema as $field ) {
+            if ( ! is_array( $field ) || empty( $field['required'] ) ) {
+                continue;
+            }
+
+            $field_id = (string) ( $field['id'] ?? '' );
+            if ( $field_id === '' || ! empty( $skipped_fields[ $field_id ] ) ) {
+                continue;
+            }
+
+            if ( ! $this->is_contact_field_satisfied( $field, $collected ) ) {
+                $missing[] = $field_id;
             }
         }
 
         return $missing;
     }
 
-    private function build_contact_collector_question( string $target_field, array $collected, array $turns, string $latest_message, string $language_code, array $state ): string {
-        $question = $this->build_contact_question_via_llm( $target_field, $collected, $turns, $latest_message, $language_code, $state );
+    private function build_contact_collector_question( string $target_field, array $collected, array $turns, string $latest_message, string $language_code, array $state, array $schema = [] ): string {
+        $field_schema = $this->find_contact_form_field( $schema, $target_field );
+        $question = $this->build_contact_question_via_llm( $target_field, $collected, $turns, $latest_message, $language_code, $state, $field_schema );
         if ( $question !== '' ) {
             return $question;
+        }
+
+        $field_label = trim( (string) ( $field_schema['label'] ?? '' ) );
+        if ( $field_label !== '' ) {
+            return $language_code === 'en'
+                ? 'Could you please provide ' . $field_label . '?'
+                : 'Könnten Sie bitte ' . $field_label . ' angeben?';
         }
 
         if ( $target_field === 'name' ) {
@@ -1159,7 +1705,7 @@ class Restatify_Ai_Dual_Session_Router {
         return $language_code === 'en' ? 'Please briefly describe your request so we can prefill the contact form.' : 'Bitte beschreiben Sie kurz Ihr Anliegen, damit wir das Kontaktformular vorbereiten koennen.';
     }
 
-    private function build_contact_question_via_llm( string $target_field, array $collected, array $turns, string $latest_message, string $language_code, array $state ): string {
+    private function build_contact_question_via_llm( string $target_field, array $collected, array $turns, string $latest_message, string $language_code, array $state, ?array $field_schema = null ): string {
         if ( $target_field === '' ) {
             return '';
         }
@@ -1173,6 +1719,10 @@ class Restatify_Ai_Dual_Session_Router {
         $prompt_parts[] = 'Write exactly one short follow-up question for a contact collector.';
         $prompt_parts[] = 'Language must match: ' . $this->normalize_language_code( $language_code ) . '.';
         $prompt_parts[] = 'Target missing field: ' . $target_field . '.';
+        if ( is_array( $field_schema ) && ! empty( $field_schema ) ) {
+            $prompt_parts[] = 'Field schema JSON: ' . $this->json_encode_safe( $field_schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+        }
+        $prompt_parts[] = 'Do not invent completed actions or claim that a message was already sent. Ask only for the missing form field.';
         $prompt_parts[] = 'Known fields JSON: ' . $this->json_encode_safe( $collected, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
         if ( ! empty( $state['last_contact_question'] ) ) {
             $prompt_parts[] = 'Avoid repeating this exact previous question: ' . (string) $state['last_contact_question'];
@@ -1192,6 +1742,86 @@ class Restatify_Ai_Dual_Session_Router {
         }
 
         return $this->trim_question_sentence( $question );
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private function get_configured_contact_form_schema(): array {
+        $form_id = $this->get_configured_contact_form_id();
+        if ( $form_id === '' || ! function_exists( 'get_option' ) ) {
+            return [];
+        }
+
+        $forms = get_option( 'restatify_forms_config', [] );
+        if ( ! is_array( $forms ) ) {
+            return [];
+        }
+
+        foreach ( $forms as $form ) {
+            if ( ! is_array( $form ) ) {
+                continue;
+            }
+
+            $candidate_id = sanitize_key( (string) ( $form['id'] ?? '' ) );
+            if ( $candidate_id !== $form_id ) {
+                continue;
+            }
+
+            $fields = is_array( $form['fields'] ?? null ) ? $form['fields'] : [];
+            $schema = [];
+            foreach ( $fields as $field ) {
+                if ( ! is_array( $field ) ) {
+                    continue;
+                }
+
+                $field_id = sanitize_key( (string) ( $field['id'] ?? '' ) );
+                if ( $field_id === '' ) {
+                    continue;
+                }
+
+                $schema[] = [
+                    'id' => $field_id,
+                    'type' => sanitize_key( (string) ( $field['type'] ?? 'text' ) ),
+                    'label' => sanitize_text_field( (string) ( $field['label'] ?? '' ) ),
+                    'placeholder' => sanitize_text_field( (string) ( $field['placeholder'] ?? '' ) ),
+                    'required' => ! empty( $field['required'] ),
+                    'options' => is_array( $field['options'] ?? null ) ? array_values( array_map( 'sanitize_text_field', (array) $field['options'] ) ) : [],
+                ];
+            }
+
+            return $schema;
+        }
+
+        return [];
+    }
+
+    private function find_contact_form_field( array $schema, string $field_id ): ?array {
+        foreach ( $schema as $field ) {
+            if ( is_array( $field ) && (string) ( $field['id'] ?? '' ) === $field_id ) {
+                return $field;
+            }
+        }
+
+        return null;
+    }
+
+    private function is_contact_field_satisfied( array $field, array $collected ): bool {
+        $field_id = (string) ( $field['id'] ?? '' );
+        if ( $field_id === '' ) {
+            return true;
+        }
+
+        $value = $collected[ $field_id ] ?? '';
+        if ( is_string( $value ) ) {
+            return trim( $value ) !== '';
+        }
+
+        if ( is_array( $value ) ) {
+            return count( $value ) > 0;
+        }
+
+        return ! empty( $value );
     }
 
     private function build_error_response( string $msg ): array {
@@ -1339,6 +1969,10 @@ class Restatify_Ai_Dual_Session_Router {
             return false;
         }
 
+        if ( $this->is_language_neutral_contact_reply( $latest ) ) {
+            return false;
+        }
+
         $word_count = preg_match_all( '/\p{L}+/u', $latest, $matches );
         if ( $word_count === false ) {
             return false;
@@ -1431,6 +2065,10 @@ class Restatify_Ai_Dual_Session_Router {
             return false;
         }
 
+        if ( $this->is_language_neutral_contact_reply( $latest ) ) {
+            return false;
+        }
+
         $char_count = function_exists( 'mb_strlen' ) ? mb_strlen( $latest ) : strlen( $latest );
         $word_count = preg_match_all( '/\p{L}+/u', $latest, $matches );
         if ( $word_count === false ) {
@@ -1464,6 +2102,26 @@ class Restatify_Ai_Dual_Session_Router {
         }
 
         return false;
+    }
+
+    private function is_language_neutral_contact_reply( string $latest_message ): bool {
+        $latest = trim( $latest_message );
+        if ( $latest === '' ) {
+            return false;
+        }
+
+        $contains_email = preg_match( '/[\w.+\-]+@[\w\-]+\.[A-Za-z]{2,}/u', $latest ) === 1;
+        $contains_url = preg_match( '/\b(?:https?:\/\/|www\.)\S+/iu', $latest ) === 1;
+        if ( ! $contains_email && ! $contains_url ) {
+            return false;
+        }
+
+        $word_count = preg_match_all( '/\p{L}+/u', $latest, $matches );
+        if ( $word_count === false ) {
+            $word_count = 0;
+        }
+
+        return $word_count <= 6;
     }
 
     /**
@@ -1500,6 +2158,119 @@ class Restatify_Ai_Dual_Session_Router {
     private function get_open_contact_form_text( string $language_code, bool $has_prefill ): string {
         $key = $has_prefill ? 'open_contact_form.complete' : 'open_contact_form.incomplete';
         return Restatify_Ai_Ui_String_Store::get( $key, $language_code, $this->options );
+    }
+
+    private function get_post_abort_followup_text( string $language_code ): string {
+        return Restatify_Ai_Ui_String_Store::get( 'post_abort.followup', $language_code, $this->options );
+    }
+
+    private function is_eu_ai_act_enabled(): bool {
+        return ! empty( $this->options['eu_ai_act_enabled'] );
+    }
+
+    private function get_confirmation_question_text( string $action, string $language_code ): string {
+        $option_key = $action === self::CONFIRMATION_ACTION_CONTACT
+            ? 'eu_ai_act_contact_question'
+            : 'eu_ai_act_booking_question';
+
+        $fallback = $action === self::CONFIRMATION_ACTION_CONTACT
+            ? 'Soll ich fuer Sie das Kontaktformular oeffnen und es mit den Gespraechsinhalten aus dieser Sitzung vorausfuellen? Bitte antworten Sie mit einem eindeutigen "Ja" oder "Nein".'
+            : 'Soll ich fuer Sie das Terminbuchungstool oeffnen und es schon mit den Gespraechsinhalten aus dieser Sitzung vorausfuellen? Bitte antworten Sie mit einem eindeutigen "Ja" oder "Nein".';
+
+        return $this->get_confirmation_option_text( $option_key, $fallback, $language_code );
+    }
+
+    private function get_confirmation_trigger_answer( string $action, string $language_code ): string {
+        $option_key = $action === self::CONFIRMATION_ACTION_CONTACT
+            ? 'eu_ai_act_contact_trigger_answer'
+            : 'eu_ai_act_booking_trigger_answer';
+
+        return $this->get_confirmation_option_text( $option_key, 'Ja', $language_code );
+    }
+
+    private function get_confirmation_negative_answer( string $action, string $language_code ): string {
+        $option_key = $action === self::CONFIRMATION_ACTION_CONTACT
+            ? 'eu_ai_act_contact_negative_answer'
+            : 'eu_ai_act_booking_negative_answer';
+
+        return $this->get_confirmation_option_text( $option_key, 'Nein', $language_code );
+    }
+
+    private function get_confirmation_retry_prompt( string $action, string $language_code ): string {
+        $option_key = $action === self::CONFIRMATION_ACTION_CONTACT
+            ? 'eu_ai_act_contact_retry_prompt'
+            : 'eu_ai_act_booking_retry_prompt';
+
+        $fallback = 'Bitte antworten Sie nur mit "Ja" oder "Nein". Die oertlichen Regularien erfordern das.';
+        return $this->get_confirmation_option_text( $option_key, $fallback, $language_code );
+    }
+
+    private function get_confirmation_option_text( string $option_key, string $fallback, string $language_code ): string {
+        $value = trim( (string) ( $this->options[ $option_key ] ?? '' ) );
+        if ( $value === '' ) {
+            $value = $fallback;
+        }
+
+        if ( class_exists( 'Restatify_Ai_Eu_Ai_Act_Translation_Store', false ) ) {
+            $action = strpos( $option_key, 'contact_' ) !== false ? self::CONFIRMATION_ACTION_CONTACT : self::CONFIRMATION_ACTION_BOOKING;
+            $field_kind = 'question';
+            if ( strpos( $option_key, 'trigger_answer' ) !== false ) {
+                $field_kind = 'trigger_answer';
+            } elseif ( strpos( $option_key, 'retry_prompt' ) !== false ) {
+                $field_kind = 'retry_prompt';
+            } elseif ( strpos( $option_key, 'negative_answer' ) !== false ) {
+                $field_kind = 'negative_answer';
+            }
+
+            return Restatify_Ai_Eu_Ai_Act_Translation_Store::get(
+                $action,
+                $field_kind,
+                $value,
+                $language_code,
+                $this->options
+            );
+        }
+
+        return $value;
+    }
+
+    private function is_exact_confirmation_reply( string $message, string $expected ): bool {
+        return $this->normalize_confirmation_text( $message ) === $this->normalize_confirmation_text( $expected );
+    }
+
+    private function normalize_confirmation_text( string $value ): string {
+        $normalized = trim( mb_strtolower( $value ) );
+        return trim( $normalized, " \t\n\r\0\x0B.!?,;:\"'()[]{}" );
+    }
+
+    private function is_negative_leaning_confirmation_reply( string $message, array $turns, string $action, string $language_code ): bool {
+        $latest = trim( $message );
+        if ( $latest === '' ) {
+            return false;
+        }
+
+        $prompt_parts = [];
+        $prompt_parts[] = 'You classify whether the latest visitor reply tends to reject a pending compliance confirmation.';
+        $prompt_parts[] = 'Return strict JSON only.';
+        $prompt_parts[] = 'Use this schema exactly:';
+        $prompt_parts[] = '{"tends_negative":false,"confidence":0.0}';
+        $prompt_parts[] = 'A clear exact yes is handled elsewhere. Only mark tends_negative true for clear or leaning refusal/cancel/no answers.';
+        $prompt_parts[] = 'Action type: ' . $action . '.';
+        $prompt_parts[] = 'Language hint: ' . $this->normalize_language_code( $language_code ) . '.';
+        $prompt_parts[] = 'Transcript:';
+        $prompt_parts[] = $this->build_prefill_transcript( $turns, $latest );
+
+        $payload = $this->run_structured_json_llm_task( implode( "\n", $prompt_parts ), 'session_confirmation_llm_json_callback' );
+        if ( is_array( $payload ) && ! empty( $payload ) ) {
+            $tends_negative = ! empty( $payload['tends_negative'] );
+            $confidence = max( 0.0, min( 1.0, (float) ( $payload['confidence'] ?? 0.0 ) ) );
+            if ( $tends_negative && $confidence >= 0.60 ) {
+                return true;
+            }
+        }
+
+        $signals = $this->get_intent_signals_for_language( $language_code );
+        return $this->contains_any_phrase( mb_strtolower( $latest ), (array) ( $signals['rejection'] ?? [] ) );
     }
 
     private function is_booking_flow_available(): bool {
@@ -1546,6 +2317,7 @@ class Restatify_Ai_Dual_Session_Router {
         $visitor_messages = $this->build_contact_visitor_messages( $turns, $latest_message );
         $transcript = implode( "\n", $visitor_messages );
         $prefill = [];
+        $schema = $this->get_configured_contact_form_schema();
 
         if ( $transcript === '' ) {
             return $prefill;
@@ -1590,6 +2362,32 @@ class Restatify_Ai_Dual_Session_Router {
         }
         if ( $message_summary !== '' ) {
             $prefill['message'] = $message_summary;
+        }
+
+        foreach ( $schema as $field ) {
+            if ( ! is_array( $field ) ) {
+                continue;
+            }
+
+            $field_id = (string) ( $field['id'] ?? '' );
+            if ( $field_id === '' || isset( $prefill[ $field_id ] ) ) {
+                continue;
+            }
+
+            $type = (string) ( $field['type'] ?? 'text' );
+            $hints = strtolower( trim( (string) ( $field['id'] ?? '' ) . ' ' . (string) ( $field['label'] ?? '' ) . ' ' . (string) ( $field['placeholder'] ?? '' ) ) );
+
+            if ( ( $type === 'email' || strpos( $hints, 'mail' ) !== false ) && ! empty( $prefill['email'] ) ) {
+                $prefill[ $field_id ] = (string) $prefill['email'];
+            } elseif ( ( $type === 'tel' || strpos( $hints, 'telefon' ) !== false || strpos( $hints, 'phone' ) !== false || strpos( $hints, 'whatsapp' ) !== false ) && ! empty( $prefill['phone'] ) ) {
+                $prefill[ $field_id ] = (string) $prefill['phone'];
+            } elseif ( ( $type === 'textarea' || strpos( $hints, 'nachricht' ) !== false || strpos( $hints, 'message' ) !== false || strpos( $hints, 'beschreibung' ) !== false ) && ! empty( $prefill['message'] ) ) {
+                $prefill[ $field_id ] = (string) $prefill['message'];
+            } elseif ( strpos( $hints, 'name' ) !== false && ! empty( $prefill['name'] ) ) {
+                $prefill[ $field_id ] = (string) $prefill['name'];
+            } elseif ( ( strpos( $hints, 'betreff' ) !== false || strpos( $hints, 'subject' ) !== false || strpos( $hints, 'titel' ) !== false ) && ! empty( $prefill['subject'] ) ) {
+                $prefill[ $field_id ] = (string) $prefill['subject'];
+            }
         }
 
         return $prefill;

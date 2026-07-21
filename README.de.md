@@ -1,12 +1,13 @@
 # Restatify Multi Chat Overlay - Anleitung (DE)
 
-Stand: Version 2.1.0, getestet bis WordPress 6.9.
+Stand: Version 2.1.1, getestet bis WordPress 6.9.
 
 Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Support-Ablauf.
 
-## Release-Prep Update (2026-07-15)
+## Release-Prep Update (2026-07-21)
 
-- Versionssprung auf 2.1.0 fuer den WebSocket-Live-Update-Ausbau und EU-AI-Act-Basisanpassungen.
+- Versionssprung auf 2.1.1 fuer Router-/Runtime-Konsolidierung und koordinierte Mehr-Repo-Freigabe.
+- EU AI ACT Support explizit eingebaut: compliance-konforme Trigger-Bestaetigungen (Ja/Nein) inkl. lokalisierbarer Compliance-Texte.
 - Frontend-Chat kann Live-Updates per WebSocket nutzen (Reconnect + Polling-Fallback nur bei Bedarf).
 - KI-Zusatztext fuer Datenschutzhinweis als Option aufgenommen und fuer Polylang-Übersetzung registriert.
 - Support-Adminbereich um API-Key-Übersicht und "alle Schlüssel löschen"-Sicherheitsaktion erweitert.

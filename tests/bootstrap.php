@@ -24,6 +24,9 @@ if (!class_exists('Restatify_Ai_Multichat_Plugin')) {
         public const TEXT_DOMAIN = 'restatify-multi-chat-overlay';
         public const POLYLANG_GROUP = 'Restatify Multi Chat Overlay';
         public const CHAT_AI_LEGAL_NOTICE_TEXT = 'Mit der Nutzung dieses Tools stimmst du unseren Datenschutzbestimmungen zu und erkennst an, dass du mit einer KI-Assistenz kommunizierst. Antworten können unvollständig oder fehlerhaft sein und sind nicht rechtsverbindlich.';
+        public const EU_AI_ACT_BOOKING_QUESTION_TEXT = 'Soll ich für Sie das Terminbuchungstool öffnen und es schon mit den Gesprächsinhalten aus dieser Sitzung vorausfüllen? Bitte antworten Sie mit einem eindeutigen "Ja" oder "Nein".';
+        public const EU_AI_ACT_CONTACT_QUESTION_TEXT = 'Soll ich für Sie das Kontaktformular öffnen und es mit den Gesprächsinhalten aus dieser Sitzung vorausfüllen? Bitte antworten Sie mit einem eindeutigen "Ja" oder "Nein".';
+        public const EU_AI_ACT_RETRY_PROMPT_TEXT = 'Bitte antworten Sie nur mit "Ja" oder "Nein". Die örtlichen Regularien erfordern das.';
         public const TRANSLATABLE_OPTION_KEYS = ['chat_ai_legal_notice'];
         public const CHANNELS = [
             'whatsapp' => ['label' => 'WhatsApp'],
@@ -257,6 +260,7 @@ if (!class_exists('\\Restatify\\Shared\\Util\\BookingContactMethodsResolver', fa
 
 require_once dirname(__DIR__) . '/includes/class-restatify-ai-multichat-options-runtime.php';
 require_once dirname(__DIR__) . '/includes/class-restatify-ai-multichat-chat-runtime.php';
+require_once dirname(__DIR__) . '/includes/class-restatify-ai-eu-ai-act-translation-store.php';
 require_once dirname(__DIR__) . '/includes/class-restatify-ai-dual-session-state-machine.php';
 require_once dirname(__DIR__) . '/includes/class-restatify-ai-dual-session-slot-manager.php';
 require_once dirname(__DIR__) . '/includes/class-restatify-ai-dual-session-cooldown-manager.php';

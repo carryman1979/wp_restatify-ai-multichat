@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
 
+require_once __DIR__ . '/../includes/class-restatify-ai-dual-session-prompts.php';
+
 if (!function_exists('wp_json_encode')) {
     function wp_json_encode($value): string {
         return (string) json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -94,6 +96,8 @@ final class AiMultichatRuntimeTest extends TestCase {
         self::assertStringContainsString('WIEDERHOLUNGSVERBOT', $prompt);
         self::assertStringContainsString('BUCHUNGSMODUS', $prompt);
         self::assertStringContainsString('KURZANTWORT-REGEL', $prompt);
+        self::assertStringContainsString('Kontaktformular', $prompt);
+        self::assertStringContainsString('Terminbuchungstool', $prompt);
     }
 
     public function testBuildAiMessagesKeepsUserFactsFromLongHistory(): void {
@@ -139,7 +143,7 @@ final class AiMultichatRuntimeTest extends TestCase {
             'name' => 'Max',
             'subject' => 'Digitalisierung der Filialprozesse',
             'note' => 'Kunde moechte Erstgespraech zur Digitalisierung.',
-        ], 'Welche E-Mail-Adresse duerfen wir fuer die Terminabstimmung verwenden?');
+        ], 'Welcher Tag oder welche Uhrzeit waere fuer das Erstgespraech fuer Sie passend?');
 
         $conversation = [
             'id' => 'runtime_session1_collect',
@@ -155,7 +159,7 @@ final class AiMultichatRuntimeTest extends TestCase {
             $conversation,
         ]);
 
-        self::assertStringContainsString('E-Mail-Adresse', $reply);
+        self::assertStringContainsString('Uhrzeit', $reply);
         self::assertStringNotContainsString('[[RESTATIFY_BOOKING_OPEN]]', $reply);
     }
 
@@ -165,6 +169,8 @@ final class AiMultichatRuntimeTest extends TestCase {
             'email' => 'max@example.test',
             'contact_method' => 'email',
             'contact_value' => 'max@example.test',
+            'date' => '2026-08-14',
+            'time' => '10:30',
             'subject' => 'Digitalisierung der Getraenkemarkt-Filialen',
             'note' => 'Kunde betreibt 3 Getraenkemarktfilialen und sucht Beratung zur Digitalisierung.',
         ]);
@@ -195,6 +201,7 @@ final class AiMultichatRuntimeTest extends TestCase {
                 'id' => 'kontaktformular',
                 'title' => 'Kontaktformular',
                 'trigger' => '#restatify-form-kontaktformular',
+                'fields' => [],
             ],
         ];
 
@@ -244,6 +251,53 @@ final class AiMultichatRuntimeTest extends TestCase {
         self::assertStringContainsString('[[RESTATIFY_CONTACT_FORM_OPEN]]', $reply);
         self::assertStringContainsString('[[RESTATIFY_CONTACT_FORM_PAYLOAD]]', $reply);
         self::assertStringContainsString('"form_id":"kontaktformular"', $reply);
+    }
+
+    public function testResolveConversationLanguageKeepsGermanForEmailOnlyReplies(): void {
+        $runtime = new class () extends Restatify_Ai_Multichat_Chat_Runtime {
+            protected function get_options(bool $force_reload = false): array {
+                return [
+                    'ai_debug_enabled' => false,
+                    'language_detection_llm_json_callback' => static function (string $prompt, array $options = []): array {
+                        return [
+                            'language' => 'en',
+                            'confidence' => 0.99,
+                        ];
+                    },
+                ];
+            }
+
+            protected function get_client_ip(): string {
+                return '127.0.0.1';
+            }
+
+            protected function is_booking_plugin_available(): bool {
+                return true;
+            }
+        };
+
+        $conversation = [
+            'id' => 'runtime_language_email_only',
+            'messages' => [
+                ['sender' => 'visitor', 'message' => 'Hallo, ich brauche Hilfe.'],
+            ],
+        ];
+
+        $reflection = new ReflectionMethod($runtime, 'resolve_conversation_language_code');
+        $reflection->setAccessible(true);
+
+        $language = $reflection->invoke($runtime, $conversation, 'Meine Mail ist max@example.test');
+
+        self::assertSame('de', $language);
+    }
+
+    public function testSession2PromptForbidsChatBasedMessageDropoff(): void {
+        $prompt = Restatify_Ai_Dual_Session_Prompts::get_session2_system_prompt_wrapper('Basis-Prompt');
+        $prompt_lower = mb_strtolower($prompt);
+
+        self::assertStringContainsString('Kontaktformular', $prompt);
+        self::assertStringContainsString('Terminbuchungstool', $prompt);
+        self::assertStringContainsString('antworte niemals mit "schreiben sie die nachricht hier in den chat"', $prompt_lower);
     }
 
     private function invokeProtected(string $method, array $args) {

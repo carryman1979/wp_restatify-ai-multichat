@@ -7,6 +7,9 @@ $available_contact_forms = $this->get_available_contact_forms();
     <h1><?php esc_html_e('AI Multichat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></h1>
     <p><?php esc_html_e('Konfiguriere zuerst das grundlegende Chat-Verhalten. Erweiterte Optionen sind unten in aufklappbaren Expertenbereichen gruppiert.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
     <?php settings_errors(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>
+    <?php if (!empty($eu_ai_translation_notice['message'])) : ?>
+        <div class="notice notice-<?php echo esc_attr((string) ($eu_ai_translation_notice['type'] ?? 'info')); ?> is-dismissible"><p><?php echo esc_html((string) $eu_ai_translation_notice['message']); ?></p></div>
+    <?php endif; ?>
 
     <div class="notice notice-info" style="padding:12px 14px; margin: 12px 0 16px;">
         <p><strong><?php esc_html_e('Schnellhilfe', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></strong></p>
@@ -20,7 +23,7 @@ $available_contact_forms = $this->get_available_contact_forms();
         </ol>
     </div>
 
-    <form method="post" action="options.php">
+    <form method="post" action="options.php" id="restatify-ai-multichat-settings-form">
         <?php settings_fields(Restatify_Ai_Multichat_Plugin::SETTINGS_GROUP); ?>
 
         <h2><?php esc_html_e('Allgemeine Einstellungen', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></h2>
@@ -123,7 +126,7 @@ $available_contact_forms = $this->get_available_contact_forms();
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="description"><?php esc_html_e('Wird verwendet, wenn der Chat mit hoher Sicherheit erkennt, dass der Besucher nur eine Nachricht hinterlassen moechte.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
+                    <p class="description"><?php esc_html_e('Wird verwendet, wenn der Chat mit hoher Sicherheit erkennt, dass der Besucher Kontakt aufnehmen moechte oder eine Nachricht hinterlassen will.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
                 </td>
             </tr>
         </table>
@@ -172,6 +175,64 @@ $available_contact_forms = $this->get_available_contact_forms();
                 </td>
             </tr>
         </table>
+
+        <?php
+        $booking_available_for_regulations = function_exists('restatify_booking_ai_handle_message');
+        $contact_available_for_regulations = !empty($available_contact_forms) && !empty($options['contact_form_id']);
+        ?>
+
+        <h2><?php esc_html_e('Staatliche Regularien', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Konfiguriere das Plugin fuer EU AI ACT', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[eu_ai_act_enabled]" value="1" <?php checked(!empty($options['eu_ai_act_enabled'])); ?>>
+                        <?php esc_html_e('Vor automatischem Oeffnen externer Tools immer eine explizite menschliche Bestaetigung verlangen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?>
+                    </label>
+                </td>
+            </tr>
+        </table>
+
+        <?php if ($booking_available_for_regulations) : ?>
+            <details style="margin:12px 0 16px;">
+                <summary><strong><?php esc_html_e('EU AI ACT: Terminbuchung', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></strong></summary>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Trigger-Frage Terminbuchung', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <td><textarea class="large-text" rows="3" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[eu_ai_act_booking_question]"><?php echo esc_textarea((string) ($options['eu_ai_act_booking_question'] ?? '')); ?></textarea></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Exakte Trigger-Antwort Terminbuchung', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <td><input class="regular-text" type="text" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[eu_ai_act_booking_trigger_answer]" value="<?php echo esc_attr((string) ($options['eu_ai_act_booking_trigger_answer'] ?? 'Ja')); ?>"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Nachfragetext bei nicht eindeutigem Ja', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <td><textarea class="large-text" rows="2" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[eu_ai_act_booking_retry_prompt]"><?php echo esc_textarea((string) ($options['eu_ai_act_booking_retry_prompt'] ?? '')); ?></textarea></td>
+                    </tr>
+                </table>
+            </details>
+        <?php endif; ?>
+
+        <?php if ($contact_available_for_regulations) : ?>
+            <details style="margin:12px 0 16px;">
+                <summary><strong><?php esc_html_e('EU AI ACT: Kontaktformular', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></strong></summary>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Trigger-Frage Kontaktformular', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <td><textarea class="large-text" rows="3" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[eu_ai_act_contact_question]"><?php echo esc_textarea((string) ($options['eu_ai_act_contact_question'] ?? '')); ?></textarea></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Exakte Trigger-Antwort Kontaktformular', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <td><input class="regular-text" type="text" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[eu_ai_act_contact_trigger_answer]" value="<?php echo esc_attr((string) ($options['eu_ai_act_contact_trigger_answer'] ?? 'Ja')); ?>"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Nachfragetext bei nicht eindeutigem Ja', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <td><textarea class="large-text" rows="2" name="<?php echo esc_attr(Restatify_Ai_Multichat_Plugin::OPTION_KEY); ?>[eu_ai_act_contact_retry_prompt]"><?php echo esc_textarea((string) ($options['eu_ai_act_contact_retry_prompt'] ?? '')); ?></textarea></td>
+                    </tr>
+                </table>
+            </details>
+        <?php endif; ?>
 
         <details style="margin:12px 0 16px;">
             <summary><strong><?php esc_html_e('Experteneinstellungen', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></strong></summary>
@@ -357,6 +418,60 @@ $available_contact_forms = $this->get_available_contact_forms();
             <textarea class="large-text code" rows="10" readonly><?php echo esc_textarea(implode("\n", $debug_lines)); ?></textarea>
         </details>
 
-        <?php submit_button(); ?>
     </form>
+
+    <details style="margin:12px 0 16px;">
+        <summary><strong><?php esc_html_e('EU AI ACT: Übersetzungen', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></strong></summary>
+        <p class="description"><?php esc_html_e('Automatisch erzeugte Übersetzungen der Bestätigungsfrage, Trigger-Antwort und Nachfragetexte. 10 Einträge pro Seite.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
+        <?php if (empty($eu_ai_translation_payload['items'])) : ?>
+            <p><?php esc_html_e('Noch keine gecachten EU-AI-Act-Übersetzungen vorhanden.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></p>
+        <?php else : ?>
+            <table class="widefat striped" style="margin-top:10px;">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Aktion', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <th><?php esc_html_e('Feld', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <th><?php esc_html_e('Zielsprache', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <th><?php esc_html_e('Quelle', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <th><?php esc_html_e('Übersetzung', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                        <th><?php esc_html_e('Aktion', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ((array) $eu_ai_translation_payload['items'] as $entry) : ?>
+                    <tr>
+                        <td><?php echo esc_html((string) ($entry['action_type'] ?? '')); ?></td>
+                        <td><?php echo esc_html((string) ($entry['field_kind'] ?? '')); ?></td>
+                        <td><?php echo esc_html((string) ($entry['target_language_code'] ?? '')); ?></td>
+                        <td style="max-width:260px;"><?php echo esc_html((string) ($entry['source_text'] ?? '')); ?></td>
+                        <td style="min-width:280px;">
+                            <form method="post">
+                                <input type="hidden" name="restatify_mco_eu_ai_translation_action" value="update_translation">
+                                <input type="hidden" name="restatify_mco_translation_id" value="<?php echo esc_attr((string) ($entry['id'] ?? 0)); ?>">
+                                <?php wp_nonce_field('restatify_mco_eu_ai_translation_action', 'restatify_mco_eu_ai_translation_nonce'); ?>
+                                <textarea class="large-text" rows="3" name="restatify_mco_translation_value"><?php echo esc_textarea((string) ($entry['translated_text'] ?? '')); ?></textarea>
+                        </td>
+                        <td style="white-space:nowrap;vertical-align:top;">
+                                <button type="submit" class="button button-secondary"><?php esc_html_e('Speichern', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN); ?></button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php if (!empty($eu_ai_translation_payload['total_pages']) && (int) $eu_ai_translation_payload['total_pages'] > 1) : ?>
+                <p style="margin-top:12px;">
+                    <?php for ($page = 1; $page <= (int) $eu_ai_translation_payload['total_pages']; $page++) : ?>
+                        <?php if ($page === (int) $eu_ai_translation_payload['current_page']) : ?>
+                            <strong style="margin-right:8px;"><?php echo esc_html((string) $page); ?></strong>
+                        <?php else : ?>
+                            <a style="margin-right:8px;" href="<?php echo esc_url(add_query_arg(['restatify_mco_eu_ai_page' => $page])); ?>"><?php echo esc_html((string) $page); ?></a>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+                </p>
+            <?php endif; ?>
+        <?php endif; ?>
+    </details>
+
+    <?php submit_button(null, 'primary', 'submit', true, ['form' => 'restatify-ai-multichat-settings-form']); ?>
 </div>

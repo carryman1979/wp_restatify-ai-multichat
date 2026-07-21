@@ -38,17 +38,43 @@ trait Restatify_Ai_Multichat_Ai_Core_Language_Trait {
 
         $current = $this->normalize_simple_language_code((string) ($state['language_code'] ?? ''));
         $sample = $this->build_language_detection_sample($conversation, $latest_message);
+        $options = $this->get_options(false);
+        $debug_enabled = !empty($options['ai_debug_enabled']);
         if ($sample === '') {
             return $current !== '' ? $current : 'de';
+        }
+
+        if ($this->is_language_neutral_contact_reply($latest_message)) {
+            $fallback = $current !== '' ? $current : 'de';
+            $state['language_code'] = $fallback;
+            $state['language_candidate'] = $fallback;
+            $state['language_switch_votes'] = 0;
+            $state['language_last_detected'] = $fallback;
+            $state['language_last_confidence'] = 0.5;
+            $state['language_switch_reason'] = 'contact_reply_hold';
+            $state['language_last_sample_hash'] = md5($sample);
+            $state['language_last_detected_at'] = time();
+
+            $this->log_ai_debug($debug_enabled, 'Language detection decision', [
+                'current_language' => $fallback,
+                'detected_language' => $fallback,
+                'confidence' => 0.5,
+                'switch_reason' => 'contact_reply_hold',
+                'candidate' => $fallback,
+                'switch_votes' => 0,
+            ]);
+
+            if ($state_machine !== null) {
+                $state_machine->update_session_state($conversation_id, $state);
+            }
+
+            return $fallback;
         }
 
         $sample_hash = md5($sample);
         if ((string) ($state['language_last_sample_hash'] ?? '') === $sample_hash && $current !== '') {
             return $current;
         }
-
-        $options = $this->get_options(false);
-        $debug_enabled = !empty($options['ai_debug_enabled']);
 
         if ($this->is_ambiguous_short_language_probe($latest_message)) {
             $fallback = $current !== '' ? $current : 'de';
@@ -163,6 +189,10 @@ trait Restatify_Ai_Multichat_Ai_Core_Language_Trait {
             return false;
         }
 
+        if ($this->is_language_neutral_contact_reply($latest_message)) {
+            return false;
+        }
+
         if (function_exists('mb_strlen')) {
             $char_count = mb_strlen($latest);
         } else {
@@ -229,6 +259,10 @@ trait Restatify_Ai_Multichat_Ai_Core_Language_Trait {
             return false;
         }
 
+        if ($this->is_language_neutral_contact_reply($latest)) {
+            return true;
+        }
+
         $normalized = mb_strtolower($latest);
         $normalized = preg_replace('/[\s\.!?,;:\-]+/u', ' ', $normalized);
         $normalized = trim((string) $normalized);
@@ -252,6 +286,26 @@ trait Restatify_Ai_Multichat_Ai_Core_Language_Trait {
         }
 
         return strlen($normalized) <= 14;
+    }
+
+    protected function is_language_neutral_contact_reply(string $latest_message): bool {
+        $latest = trim($latest_message);
+        if ($latest === '') {
+            return false;
+        }
+
+        $contains_email = preg_match('/[\w.+\-]+@[\w\-]+\.[A-Za-z]{2,}/u', $latest) === 1;
+        $contains_url = preg_match('/\b(?:https?:\/\/|www\.)\S+/iu', $latest) === 1;
+        if (!$contains_email && !$contains_url) {
+            return false;
+        }
+
+        $word_count = preg_match_all('/\p{L}+/u', $latest, $matches);
+        if ($word_count === false) {
+            $word_count = 0;
+        }
+
+        return $word_count <= 6;
     }
 
     /**

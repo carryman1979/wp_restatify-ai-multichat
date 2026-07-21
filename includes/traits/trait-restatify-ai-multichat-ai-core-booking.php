@@ -21,6 +21,7 @@ trait Restatify_Ai_Multichat_Ai_Core_Booking_Trait {
             '- Halte die Antwortlänge bei maximal ' . $max_response_chars . ' Zeichen.',
             '- Wenn der Nutzer bereits ein konkretes Anliegen schreibt, antworte direkt darauf und beginne nicht mit einer allgemeinen Begrüßung.',
             '- Erfinde keine internen Schritte oder Aktionen (z.B. Weiterleitung, technische Prüfung, Abstimmung mit Team), wenn sie nicht tatsächlich in diesem Chat ausgelöst wurden.',
+            '- Wenn der Nutzer Kontakt wünscht, nur eine Nachricht hinterlassen will oder den Support erreichen möchte, fordere ihn niemals auf, die Nachricht direkt hier in den Chat zu schreiben. Leite stattdessen immer auf das konfigurierte Kontaktformular; falls keines verfügbar ist, auf das Terminbuchungstool.',
             '- Mache keine rechtlichen Garantien als Fakt (z.B. "vollständig rechtssicher", "automatisch DSGVO/UWG-konform"). Formuliere vorsichtig und empfehle fachliche Prüfung.',
             '- Erfinde keine Integrations- oder Produktfähigkeiten als bestehende Tatsache (keine fiktiven Konnektoren, APIs, Features).',
             '',

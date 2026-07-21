@@ -186,8 +186,52 @@ public function enqueue_support_inbox_assets(): void {
             return;
         }
 
+        $eu_ai_translation_notice = $this->handle_eu_ai_translation_update();
+
         $options = $this->get_options(false);
+        $eu_ai_translation_page = max(1, absint($_GET['restatify_mco_eu_ai_page'] ?? 1));
+        $eu_ai_translation_payload = class_exists('Restatify_Ai_Eu_Ai_Act_Translation_Store', false)
+            ? Restatify_Ai_Eu_Ai_Act_Translation_Store::list_entries($eu_ai_translation_page, 10)
+            : ['items' => [], 'total' => 0, 'total_pages' => 0, 'current_page' => 1];
         require RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'templates/admin-page.inc.php';
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private function handle_eu_ai_translation_update(): array {
+        $empty = ['type' => '', 'message' => ''];
+        if (
+            strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST'
+            || !isset($_POST['restatify_mco_eu_ai_translation_action'])
+            || !class_exists('Restatify_Ai_Eu_Ai_Act_Translation_Store', false)
+        ) {
+            return $empty;
+        }
+
+        $action = sanitize_key(wp_unslash($_POST['restatify_mco_eu_ai_translation_action'] ?? ''));
+        if ($action !== 'update_translation') {
+            return $empty;
+        }
+
+        $nonce = sanitize_text_field(wp_unslash($_POST['restatify_mco_eu_ai_translation_nonce'] ?? ''));
+        if (!wp_verify_nonce($nonce, 'restatify_mco_eu_ai_translation_action')) {
+            return [
+                'type' => 'error',
+                'message' => __('Sicherheitsprüfung für die Übersetzungsbearbeitung fehlgeschlagen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            ];
+        }
+
+        $entry_id = absint($_POST['restatify_mco_translation_id'] ?? 0);
+        $translated_text = sanitize_textarea_field(wp_unslash($_POST['restatify_mco_translation_value'] ?? ''));
+        $ok = Restatify_Ai_Eu_Ai_Act_Translation_Store::update_translation($entry_id, $translated_text);
+
+        return [
+            'type' => $ok ? 'success' : 'error',
+            'message' => $ok
+                ? __('EU-AI-Act-Übersetzung gespeichert.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN)
+                : __('EU-AI-Act-Übersetzung konnte nicht gespeichert werden.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+        ];
     }
 
     /**
@@ -265,6 +309,13 @@ public function enqueue_support_inbox_assets(): void {
             'nonce' => wp_create_nonce('restatify_mco_chat_nonce'),
             'liveUpdatesWsUrl' => (string) apply_filters('restatify_mco_live_updates_ws_url', ''),
             'chatEnabled' => !empty($options['own_chat_enabled']),
+            'euAiActEnabled' => !empty($options['eu_ai_act_enabled']),
+            'euAiActBookingQuestion' => (string) ($options['eu_ai_act_booking_question'] ?? ''),
+            'euAiActBookingTriggerAnswer' => (string) ($options['eu_ai_act_booking_trigger_answer'] ?? 'Ja'),
+            'euAiActBookingRetryPrompt' => (string) ($options['eu_ai_act_booking_retry_prompt'] ?? ''),
+            'euAiActContactQuestion' => (string) ($options['eu_ai_act_contact_question'] ?? ''),
+            'euAiActContactTriggerAnswer' => (string) ($options['eu_ai_act_contact_trigger_answer'] ?? 'Ja'),
+            'euAiActContactRetryPrompt' => (string) ($options['eu_ai_act_contact_retry_prompt'] ?? ''),
             'requireConsent' => !empty($options['require_cookie_consent']),
             'consentCookieNames' => array_values(array_filter(array_map('trim', explode(',', (string) ($options['consent_cookie_names'] ?? ''))))),
             'pollSeconds' => max(3, (int) $options['chat_poll_seconds']),

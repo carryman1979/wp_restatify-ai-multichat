@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.1.0
+ * Version: 2.1.1
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -224,6 +224,7 @@ require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-mu
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-multichat-admin-runtime.php';
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-language-keyword-store.php';
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-ui-string-store.php';
+require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-eu-ai-act-translation-store.php';
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-dual-session-router.php';
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-dual-session-state-machine.php';
 require_once RESTATIFY_AI_MULTICHAT_PLUGIN_DIR . 'includes/class-restatify-ai-dual-session-slot-manager.php';
@@ -259,6 +260,9 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
     public const TEXT_DOMAIN = 'restatify-multi-chat-overlay';
     public const POLYLANG_GROUP = 'Restatify Multi Chat Overlay';
     public const CHAT_AI_LEGAL_NOTICE_TEXT = 'Mit der Nutzung dieses Tools stimmst du unseren Datenschutzbestimmungen zu und erkennst an, dass du mit einer KI-Assistenz kommunizierst. Antworten können unvollständig oder fehlerhaft sein und sind nicht rechtsverbindlich.';
+    public const EU_AI_ACT_BOOKING_QUESTION_TEXT = 'Soll ich für Sie das Terminbuchungstool öffnen und es schon mit den Gesprächsinhalten aus dieser Sitzung vorausfüllen? Bitte antworten Sie mit einem eindeutigen "Ja" oder "Nein".';
+    public const EU_AI_ACT_CONTACT_QUESTION_TEXT = 'Soll ich für Sie das Kontaktformular öffnen und es mit den Gesprächsinhalten aus dieser Sitzung vorausfüllen? Bitte antworten Sie mit einem eindeutigen "Ja" oder "Nein".';
+    public const EU_AI_ACT_RETRY_PROMPT_TEXT = 'Bitte antworten Sie nur mit "Ja" oder "Nein". Die örtlichen Regularien erfordern das.';
     public const TRANSLATABLE_OPTION_KEYS = [
         'team_name',
         'message',
@@ -408,6 +412,9 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
         }
         if (class_exists('Restatify_Ai_Ui_String_Store', false)) {
             Restatify_Ai_Ui_String_Store::maybe_install_table();
+        }
+        if (class_exists('Restatify_Ai_Eu_Ai_Act_Translation_Store', false)) {
+            Restatify_Ai_Eu_Ai_Act_Translation_Store::maybe_install_table();
         }
     }
 

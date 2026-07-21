@@ -637,6 +637,19 @@
   color: #e8edf4;
 }
 
+:root[data-rs-theme="dark"] .restatify-mco__panel {
+  background: color-mix(in srgb, var(--rs-color-background, #10151f) 94%, #1b2230 6%);
+  color: var(--rs-color-text, #e7ecf3);
+  border-color: color-mix(in srgb, #d2d8e1 14%, transparent);
+}
+
+:root[data-rs-theme="dark"] .restatify-mco__message,
+:root[data-rs-theme="dark"] .restatify-mco__native-messages {
+  background: color-mix(in srgb, #0f1726 84%, #243042 16%);
+  border-color: color-mix(in srgb, #d2d8e1 16%, transparent);
+  color: #e8edf4;
+}
+
 :root[data-rs-theme="dark"] .restatify-mco__native-form {
   background: color-mix(in srgb, #0f1726 93%, #243042 7%);
 }
@@ -648,6 +661,50 @@
   color-scheme: dark;
 }
 
+:root[data-rs-theme="dark"] .restatify-mco__native-bubble.is-visitor {
+  background: #4b3018;
+  border-color: #8e6039;
+  color: #ffe6d1;
+}
+
+:root[data-rs-theme="dark"] .restatify-mco__native-bubble.is-support {
+  background: #1a2a45;
+  border-color: #4f6f9d;
+  color: #dce9ff;
+}
+
+:root[data-rs-theme="dark"] .restatify-mco__native-bubble.is-ai {
+  background: #173625;
+  border-color: #44815d;
+  color: #d8fbe7;
+}
+
+:root[data-rs-theme="dark"] .restatify-mco__thinking-spinner {
+  border-color: color-mix(in srgb, #d8fbe7 36%, transparent);
+  border-top-color: #d8fbe7;
+}
+
+:root[data-rs-theme="dark"] .restatify-mco__native-bubble.is-failed {
+  border-color: #f27777;
+}
+
+:root[data-rs-theme="dark"] .restatify-mco__native-failed-note {
+  color: #ffb8b2;
+}
+
+:root[data-rs-theme="light"] .restatify-mco__native-messages {
+  background: color-mix(in srgb, var(--rs-color-background, var(--mco-bg-light)) 88%, #fff 12%);
+  border-color: color-mix(in srgb, var(--rs-color-text, var(--mco-text-light)) 12%, transparent);
+  color: var(--rs-color-text, var(--mco-text-light));
+}
+
+:root[data-rs-theme="light"] .restatify-mco__panel {
+  background: color-mix(in srgb, var(--rs-color-background, #f8fafc) 92%, #d7d7d7 8%);
+  color: var(--rs-color-text, #0b1221);
+  border-color: color-mix(in srgb, var(--rs-color-text, #0b1221) 15%, transparent);
+}
+
+:root[data-rs-theme="light"] .restatify-mco__message,
 :root[data-rs-theme="light"] .restatify-mco__native-messages {
   background: color-mix(in srgb, var(--rs-color-background, var(--mco-bg-light)) 88%, #fff 12%);
   border-color: color-mix(in srgb, var(--rs-color-text, var(--mco-text-light)) 12%, transparent);
@@ -658,11 +715,152 @@
   background: color-mix(in srgb, var(--rs-color-background, var(--mco-bg-light)) 95%, #fff 5%);
 }
 
+:root[data-rs-theme="light"] .restatify-mco__native-bubble.is-visitor {
+  background: #fff2e9;
+  border-color: #f0b78d;
+  color: #3d200a;
+}
+
+:root[data-rs-theme="light"] .restatify-mco__native-bubble.is-support {
+  background: #eaf2ff;
+  border-color: #a5c0eb;
+  color: #12253f;
+}
+
+:root[data-rs-theme="light"] .restatify-mco__native-bubble.is-ai {
+  background: #e6f8ee;
+  border-color: #8fcca7;
+  color: #113a25;
+}
+
+:root[data-rs-theme="light"] .restatify-mco__native-bubble.is-failed {
+  border-color: #b3261e;
+}
+
+:root[data-rs-theme="light"] .restatify-mco__native-failed-note {
+  color: #8f1b14;
+}
+
+:root[data-rs-theme="light"] .restatify-mco__thinking-spinner {
+  border-color: color-mix(in srgb, #113a25 35%, transparent);
+  border-top-color: #113a25;
+}
+
 :root[data-rs-theme="light"] .restatify-mco__native-input {
   background: color-mix(in srgb, var(--rs-color-background, var(--mco-bg-light)) 92%, #fff 8%);
   border-color: color-mix(in srgb, var(--rs-color-text, var(--mco-text-light)) 22%, transparent);
   color: var(--rs-color-text, var(--mco-text-light));
   color-scheme: light;
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__panel {
+  background: color-mix(in srgb, var(--rs-color-background, #10151f) 94%, #1b2230 6%);
+  color: var(--rs-color-text, #e7ecf3);
+  border-color: color-mix(in srgb, #d2d8e1 14%, transparent);
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__message,
+.restatify-mco.is-theme-dark .restatify-mco__native-messages {
+  background: color-mix(in srgb, #0f1726 84%, #243042 16%);
+  border-color: color-mix(in srgb, #d2d8e1 16%, transparent);
+  color: #e8edf4;
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__native-form {
+  background: color-mix(in srgb, #0f1726 93%, #243042 7%);
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__native-input {
+  background: #0f1726;
+  border-color: #3a485e;
+  color: #e8edf4;
+  color-scheme: dark;
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__native-bubble.is-visitor {
+  background: #4b3018;
+  border-color: #8e6039;
+  color: #ffe6d1;
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__native-bubble.is-support {
+  background: #1a2a45;
+  border-color: #4f6f9d;
+  color: #dce9ff;
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__native-bubble.is-ai {
+  background: #173625;
+  border-color: #44815d;
+  color: #d8fbe7;
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__thinking-spinner {
+  border-color: color-mix(in srgb, #d8fbe7 36%, transparent);
+  border-top-color: #d8fbe7;
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__native-bubble.is-failed {
+  border-color: #f27777;
+}
+
+.restatify-mco.is-theme-dark .restatify-mco__native-failed-note {
+  color: #ffb8b2;
+}
+
+.restatify-mco.is-theme-light .restatify-mco__panel {
+  background: color-mix(in srgb, var(--rs-color-background, #f8fafc) 92%, #d7d7d7 8%);
+  color: var(--rs-color-text, #0b1221);
+  border-color: color-mix(in srgb, var(--rs-color-text, #0b1221) 15%, transparent);
+}
+
+.restatify-mco.is-theme-light .restatify-mco__message,
+.restatify-mco.is-theme-light .restatify-mco__native-messages {
+  background: color-mix(in srgb, var(--rs-color-background, var(--mco-bg-light)) 88%, #fff 12%);
+  border-color: color-mix(in srgb, var(--rs-color-text, var(--mco-text-light)) 12%, transparent);
+  color: var(--rs-color-text, var(--mco-text-light));
+}
+
+.restatify-mco.is-theme-light .restatify-mco__native-form {
+  background: color-mix(in srgb, var(--rs-color-background, var(--mco-bg-light)) 95%, #fff 5%);
+}
+
+.restatify-mco.is-theme-light .restatify-mco__native-input {
+  background: color-mix(in srgb, var(--rs-color-background, var(--mco-bg-light)) 92%, #fff 8%);
+  border-color: color-mix(in srgb, var(--rs-color-text, var(--mco-text-light)) 22%, transparent);
+  color: var(--rs-color-text, var(--mco-text-light));
+  color-scheme: light;
+}
+
+.restatify-mco.is-theme-light .restatify-mco__native-bubble.is-visitor {
+  background: #fff2e9;
+  border-color: #f0b78d;
+  color: #3d200a;
+}
+
+.restatify-mco.is-theme-light .restatify-mco__native-bubble.is-support {
+  background: #eaf2ff;
+  border-color: #a5c0eb;
+  color: #12253f;
+}
+
+.restatify-mco.is-theme-light .restatify-mco__native-bubble.is-ai {
+  background: #e6f8ee;
+  border-color: #8fcca7;
+  color: #113a25;
+}
+
+.restatify-mco.is-theme-light .restatify-mco__native-bubble.is-failed {
+  border-color: #b3261e;
+}
+
+.restatify-mco.is-theme-light .restatify-mco__native-failed-note {
+  color: #8f1b14;
+}
+
+.restatify-mco.is-theme-light .restatify-mco__thinking-spinner {
+  border-color: color-mix(in srgb, #113a25 35%, transparent);
+  border-top-color: #113a25;
 }
 
 @media (max-width: 768px) {
