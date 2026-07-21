@@ -10,6 +10,39 @@ require_once __DIR__ . '/class-restatify-ai-multichat-chat-runtime-transport-bas
  * Handles chat AJAX endpoints.
  */
 class Restatify_Ai_Multichat_Chat_Runtime extends Restatify_Ai_Multichat_Chat_Runtime_Transport_Base {
+public function register_support_bridge_rest_routes(): void {
+        register_rest_route('restatify-support/v1', '/bridge', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => [$this, 'handle_support_bridge_rest_request'],
+            'permission_callback' => [$this, 'authorize_support_bridge_rest_request'],
+        ]);
+    }
+
+    public function authorize_support_bridge_rest_request(WP_REST_Request $request) {
+        if ($this->is_support_bridge_request_authorized($request)) {
+            return true;
+        }
+
+        return new WP_Error(
+            'restatify_support_bridge_forbidden',
+            __('Unauthorized bridge request.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN),
+            ['status' => 403]
+        );
+    }
+
+    public function handle_support_bridge_rest_request(WP_REST_Request $request): WP_REST_Response {
+        $payload = $request->get_json_params();
+        if (!is_array($payload)) {
+            $payload = $request->get_body_params();
+        }
+
+        if (!is_array($payload)) {
+            $payload = [];
+        }
+
+        return rest_ensure_response($this->process_support_bridge_payload($payload));
+    }
+
 public function ajax_send_message(): void {
         $this->enforce_public_rate_limit('send');
         $this->verify_chat_nonce();
@@ -293,6 +326,334 @@ public function ajax_send_message(): void {
         $this->save_chat_store($store);
 
         wp_send_json_success(['ai_mode' => $store[$conversation_id]['ai_mode']]);
+    }
+
+    protected function get_support_bridge_api_key(): string {
+        if (defined('RESTATIFY_SUPPORT_BRIDGE_API_KEY')) {
+            return trim((string) constant('RESTATIFY_SUPPORT_BRIDGE_API_KEY'));
+        }
+
+        return trim((string) get_option('restatify_support_bridge_api_key', ''));
+    }
+
+    protected function is_support_bridge_request_authorized(WP_REST_Request $request): bool {
+        $configured_key = $this->get_support_bridge_api_key();
+        if ($configured_key === '') {
+            return false;
+        }
+
+        $provided_key = trim((string) $request->get_header('X-Restatify-Bridge-Key'));
+        if ($provided_key === '') {
+            return false;
+        }
+
+        return hash_equals($configured_key, $provided_key);
+    }
+
+    protected function process_support_bridge_payload(array $payload): array {
+        $action = sanitize_key((string) ($payload['action'] ?? ''));
+        if ($action === '') {
+            return ['ok' => false, 'error' => 'action is required'];
+        }
+
+        $store = $this->get_chat_store();
+
+        if ($action === 'load_store') {
+            return ['ok' => true, 'store' => $store];
+        }
+
+        if ($action === 'append_support_message') {
+            $conversation_id = sanitize_text_field((string) ($payload['conversation_id'] ?? ''));
+            $message = $this->sanitize_chat_message_content((string) ($payload['message'] ?? ''));
+
+            if ($conversation_id === '' || $message === '') {
+                return ['ok' => false, 'error' => 'conversation_id and message are required'];
+            }
+
+            if (empty($store[$conversation_id]) || !is_array($store[$conversation_id])) {
+                return ['ok' => false, 'error' => 'Conversation not found'];
+            }
+
+            $entry = $this->format_chat_message('support', $message);
+            $store[$conversation_id]['messages'][] = $entry;
+            $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
+
+            $options = $this->get_options();
+            if (!empty($options['ai_enabled']) && $this->should_ai_reply_for_sender($store[$conversation_id], 'support')) {
+                $lock_ttl = $this->get_ai_lock_ttl_seconds($options);
+                $lock_token = $this->acquire_ai_generation_lock((string) $conversation_id, $lock_ttl);
+                if ($lock_token === '') {
+                    $this->enqueue_pending_ai_message((string) $conversation_id, 'support', $message);
+                    $this->log_ai_debug(!empty($options['ai_debug_enabled']), 'AI generation skipped due to active lock (bridge rest)', [
+                        'conversation_id' => (string) $conversation_id,
+                        'sender' => 'support',
+                    ]);
+                } else {
+                    try {
+                        $ai_reply = $this->generate_ai_reply($options, $store[$conversation_id], $message);
+                        $ai_reply = $this->sanitize_chat_message_content($ai_reply);
+                        if ($ai_reply !== '') {
+                            $store[$conversation_id]['messages'][] = $this->format_chat_message('ai', $ai_reply);
+                            $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
+                        }
+
+                        $store[$conversation_id] = $this->process_pending_ai_messages_after_generation($options, $store[$conversation_id]);
+                    } finally {
+                        $this->release_ai_generation_lock((string) $conversation_id, $lock_token);
+                    }
+                }
+            }
+
+            $store[$conversation_id]['messages'] = array_slice($store[$conversation_id]['messages'], -Restatify_Ai_Multichat_Plugin::CHAT_MAX_MESSAGES);
+            $this->save_chat_store($store);
+
+            $ai_entry = null;
+            $last_message = end($store[$conversation_id]['messages']);
+            if (is_array($last_message) && (string) ($last_message['sender'] ?? '') === 'ai') {
+                $ai_entry = [
+                    'sender' => 'ai',
+                    'message' => (string) ($last_message['message'] ?? ''),
+                    'time_gmt' => (string) ($last_message['time_gmt'] ?? ''),
+                ];
+            }
+            reset($store[$conversation_id]['messages']);
+
+            return ['ok' => true, 'entry' => $entry, 'ai_entry' => $ai_entry];
+        }
+
+        if ($action === 'get_conversation_tools') {
+            $conversation_id = sanitize_text_field((string) ($payload['conversation_id'] ?? ''));
+            if ($conversation_id === '') {
+                return ['ok' => false, 'error' => 'conversation_id is required'];
+            }
+
+            if (empty($store[$conversation_id]) || !is_array($store[$conversation_id])) {
+                return ['ok' => false, 'error' => 'Conversation not found'];
+            }
+
+            return [
+                'ok' => true,
+                'ai_mode' => $this->normalize_ai_mode((string) ($store[$conversation_id]['ai_mode'] ?? 'both')),
+                'booking_overlay_available' => function_exists('restatify_booking_ai_handle_message') || shortcode_exists('restatify_booking_popup'),
+            ];
+        }
+
+        if ($action === 'set_conversation_ai_mode') {
+            $conversation_id = sanitize_text_field((string) ($payload['conversation_id'] ?? ''));
+            if ($conversation_id === '') {
+                return ['ok' => false, 'error' => 'conversation_id is required'];
+            }
+
+            if (empty($store[$conversation_id]) || !is_array($store[$conversation_id])) {
+                return ['ok' => false, 'error' => 'Conversation not found'];
+            }
+
+            $mode = $this->normalize_ai_mode(sanitize_key((string) ($payload['ai_mode'] ?? 'both')));
+            $store[$conversation_id]['ai_mode'] = $mode;
+            $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
+            $this->save_chat_store($store);
+
+            return ['ok' => true, 'ai_mode' => $mode];
+        }
+
+        if ($action === 'delete_conversation') {
+            $conversation_id = sanitize_text_field((string) ($payload['conversation_id'] ?? ''));
+            if ($conversation_id === '') {
+                return ['ok' => false, 'error' => 'conversation_id is required'];
+            }
+
+            if (empty($store[$conversation_id]) || !is_array($store[$conversation_id])) {
+                return ['ok' => true, 'deleted' => true, 'already_gone' => true];
+            }
+
+            unset($store[$conversation_id]);
+            delete_option($this->get_ai_pending_option_key($conversation_id));
+            $this->save_chat_store($store);
+
+            return ['ok' => true, 'deleted' => true, 'already_gone' => false];
+        }
+
+        if ($action === 'trigger_booking_overlay') {
+            $conversation_id = sanitize_text_field((string) ($payload['conversation_id'] ?? ''));
+            if ($conversation_id === '') {
+                return ['ok' => false, 'error' => 'conversation_id is required'];
+            }
+
+            if (empty($store[$conversation_id]) || !is_array($store[$conversation_id])) {
+                return ['ok' => false, 'error' => 'Conversation not found'];
+            }
+
+            if (!function_exists('restatify_booking_ai_handle_message') && !shortcode_exists('restatify_booking_popup')) {
+                return ['ok' => false, 'error' => 'Booking overlay unavailable'];
+            }
+
+            $booking_open_token = defined('RESTATIFY_BOOKING_OPEN_TOKEN')
+                ? (string) constant('RESTATIFY_BOOKING_OPEN_TOKEN')
+                : '[[RESTATIFY_BOOKING_OPEN]]';
+            $entry = $this->format_chat_message(
+                'support',
+                trim($booking_open_token . ' ' . 'Ich habe das Buchungstool fuer dich geoeffnet. Bitte waehle einen Termin und bestaetige deine Reservierung.')
+            );
+
+            $store[$conversation_id]['messages'][] = $entry;
+            $store[$conversation_id]['updated_at_gmt'] = gmdate('c');
+            $store[$conversation_id]['messages'] = array_slice($store[$conversation_id]['messages'], -Restatify_Ai_Multichat_Plugin::CHAT_MAX_MESSAGES);
+            $this->save_chat_store($store);
+
+            return ['ok' => true, 'entry' => $entry];
+        }
+
+        if ($action === 'validate_conversation_token') {
+            $conversation_id = sanitize_text_field((string) ($payload['conversation_id'] ?? ''));
+            $conversation_token = sanitize_text_field((string) ($payload['conversation_token'] ?? ''));
+            if ($conversation_id === '' || $conversation_token === '') {
+                return ['ok' => true, 'valid' => false];
+            }
+
+            if (empty($store[$conversation_id]) || !is_array($store[$conversation_id])) {
+                return ['ok' => true, 'valid' => false];
+            }
+
+            $stored_token = (string) ($store[$conversation_id]['token'] ?? '');
+            return ['ok' => true, 'valid' => $stored_token !== '' && hash_equals($stored_token, $conversation_token)];
+        }
+
+        if ($action === 'validate_credentials') {
+            $username = sanitize_user((string) ($payload['username'] ?? ''));
+            $password = (string) ($payload['password'] ?? '');
+            if ($username === '' || $password === '') {
+                return ['ok' => false, 'error' => 'username and password are required'];
+            }
+
+            $user = get_user_by('login', $username);
+            if (!$user || !wp_check_password($password, $user->user_pass, $user->ID)) {
+                return ['ok' => true, 'valid' => false];
+            }
+
+            return [
+                'ok' => true,
+                'valid' => true,
+                'user_id' => $user->ID,
+                'user_login' => $user->user_login,
+                'has_capability' => user_can($user, Restatify_Ai_Multichat_Plugin::SUPPORT_CAPABILITY) || user_can($user, 'manage_options'),
+            ];
+        }
+
+        if ($action === 'generate_api_key') {
+            $user_id = (int) ($payload['user_id'] ?? 0);
+            $user_login = sanitize_user((string) ($payload['user_login'] ?? ''));
+            if ($user_id <= 0) {
+                return ['ok' => false, 'error' => 'user_id is required'];
+            }
+
+            $keys_option = 'restatify_support_api_keys';
+            $keys = get_option($keys_option, []);
+            $keys = is_array($keys) ? $keys : [];
+            $valid = array_values(array_filter($keys, static function ($entry) {
+                return is_array($entry) && !empty($entry['key']);
+            }));
+
+            $same_user = static function (array $entry) use ($user_id, $user_login): bool {
+                $entry_user_id = (int) ($entry['user_id'] ?? 0);
+                $entry_user_login = sanitize_user((string) ($entry['user_login'] ?? ''));
+
+                if ($entry_user_id > 0 && $entry_user_id === $user_id) {
+                    return true;
+                }
+
+                return $user_login !== '' && $entry_user_login !== '' && hash_equals($entry_user_login, $user_login);
+            };
+
+            $existing_for_user = [];
+            foreach ($valid as $entry) {
+                if ($same_user($entry)) {
+                    $existing_for_user[] = $entry;
+                }
+            }
+
+            if (count($existing_for_user) > 0) {
+                usort($existing_for_user, static function ($a, $b): int {
+                    $a_created = strtotime((string) ($a['created_at'] ?? '')) ?: 0;
+                    $b_created = strtotime((string) ($b['created_at'] ?? '')) ?: 0;
+                    return $b_created <=> $a_created;
+                });
+
+                $selected = $existing_for_user[0];
+                $selected_key = (string) ($selected['key'] ?? '');
+                $deduped = [];
+                $kept_for_user = false;
+                foreach ($valid as $entry) {
+                    if ($same_user($entry)) {
+                        if (!$kept_for_user && hash_equals((string) ($entry['key'] ?? ''), $selected_key)) {
+                            $deduped[] = $entry;
+                            $kept_for_user = true;
+                        }
+                        continue;
+                    }
+
+                    $deduped[] = $entry;
+                }
+
+                if (count($deduped) !== count($keys)) {
+                    update_option($keys_option, $deduped, false);
+                }
+
+                return ['ok' => true, 'api_key' => $selected_key];
+            }
+
+            $new_key = 'rsa-' . bin2hex(random_bytes(24));
+            $valid[] = [
+                'key' => $new_key,
+                'user_id' => $user_id,
+                'user_login' => $user_login,
+                'created_at' => gmdate('c'),
+            ];
+            update_option($keys_option, $valid, false);
+
+            return ['ok' => true, 'api_key' => $new_key];
+        }
+
+        if ($action === 'load_api_keys') {
+            $keys = get_option('restatify_support_api_keys', []);
+            $keys = is_array($keys) ? $keys : [];
+            $valid = array_values(array_filter($keys, static function ($entry) {
+                return is_array($entry) && !empty($entry['key']);
+            }));
+
+            usort($valid, static function ($a, $b): int {
+                $a_created = strtotime((string) ($a['created_at'] ?? '')) ?: 0;
+                $b_created = strtotime((string) ($b['created_at'] ?? '')) ?: 0;
+                return $b_created <=> $a_created;
+            });
+
+            $deduped = [];
+            $seen_users = [];
+            foreach ($valid as $entry) {
+                $entry_user_id = (int) ($entry['user_id'] ?? 0);
+                $entry_user_login = sanitize_user((string) ($entry['user_login'] ?? ''));
+                $user_key = $entry_user_id > 0 ? ('uid:' . $entry_user_id) : ('uln:' . $entry_user_login);
+
+                if ($user_key === 'uln:') {
+                    $deduped[] = $entry;
+                    continue;
+                }
+
+                if (isset($seen_users[$user_key])) {
+                    continue;
+                }
+
+                $seen_users[$user_key] = true;
+                $deduped[] = $entry;
+            }
+
+            if (count($deduped) !== count($keys)) {
+                update_option('restatify_support_api_keys', $deduped, false);
+            }
+
+            return ['ok' => true, 'keys' => $deduped];
+        }
+
+        return ['ok' => false, 'error' => 'Unsupported action'];
     }
 
 }

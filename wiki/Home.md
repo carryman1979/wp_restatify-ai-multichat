@@ -4,7 +4,7 @@ Produktname (ab 2.0.0): Restatify-AI-Multichat
 WordPress-Slug (ab 2.0.0): wp_restatify-ai-multichat  
 Website: https://www.restatify.tech
 
-Stand: Version 2.1.1, getestet bis WordPress 6.9.
+Stand: Version 2.1.2, getestet bis WordPress 6.9.
 
 Diese Seite ist als zentrale One-Page-Dokumentation für Einrichtung, Betrieb, Support und Release gedacht.
 
@@ -124,6 +124,12 @@ Wenn der Chat eine Buchungsabsicht erkennt, schaltet Session 1 um und oeffnet da
 
 Dabei werden bereits erkannte Daten wie Name, E-Mail, Kontaktkanal, Kontaktdaten und Zeithinweise als Prefill uebergeben, sodass der Besucher die Angaben nur noch kontrollieren, ergaenzen und absenden muss.
 
+### Split-Server Support-API
+
+- Die Support-API kann oeffentlich fuer App- und Desktop-Clients bereitgestellt werden.
+- WordPress und Support-API duerfen auf getrennten Servern mit eigenen FQDNs laufen.
+- Fuer produktive Split-Server-Setups nutzt das Plugin eine private WordPress-Bridge fuer serverseitige Support-Operationen.
+
 ---
 
 ## KI-Auto-Reply
@@ -211,12 +217,13 @@ Prüfen:
 - Bei KI-Nutzung werden Inhalte an den konfigurierten Endpoint übertragen
 - Die aktuelle Plugin-Wartung verbessert zusätzlich die IDE- und Analyzer-Kompatibilität der internen Trait-Struktur
 
-## Release-Prep Status (2026-07-21)
+## Release-Prep Status (2026-07-22)
 
-- Dokumentation und Versionsangaben auf 2.1.1 angehoben.
+- Dokumentation und Versionsangaben auf 2.1.2 angehoben.
 - WebSocket-Live-Updates fuer den Besucherchat inklusive Reconnect/Fallback dokumentiert.
 - EU-AI-Act-Basisanpassung ergaenzt: konfigurierbarer KI-Zusatztext im Datenschutzhinweis.
 - Support-API-Key-Management im Admin (Uebersicht + revoke-all) aufgenommen.
+- Private Split-Server-Bridge fuer oeffentliche Support-API und separate WordPress-Instanz aufgenommen.
 
 To-do für Betreiber:
 
@@ -234,6 +241,7 @@ To-do für Betreiber:
 4. Release-ZIP erzeugen.
 5. Smoke-Test auf externer Testinstanz durchführen.
 
+- [Release 2.1.2](Release-2.1.2)
 - [Release 2.1.1](Release-2.1.1)
 - [Release 2.1.0](Release-2.1.0)
 - [Release 2.0.11](Release-2.0.11)

@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.1.1
+Stable tag: 2.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -153,6 +153,11 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.1.2 =
+* Added a private WordPress REST bridge endpoint for the public Support API, so WordPress and Support API can run on separate servers.
+* Preserved WordPress-backed support chat, API key, booking trigger and AI reply operations across the new server-to-server boundary.
+* Updated release documentation and deployment guidance for split-server Support API production setups.
+
 = 2.1.1 =
 * Maintenance release consolidating router/state/runtime updates from current local integration work.
 * Explicit EU AI ACT support built in for compliant booking/contact trigger confirmation flow with localized yes/no prompts.
@@ -237,6 +242,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.1.2 =
+Adds the private WordPress bridge required when the public Support API and WordPress run on separate servers.
 
 = 2.1.1 =
 Maintenance update for current router/runtime consolidation and release metadata sync, including explicit EU AI ACT support for compliant trigger confirmations.
