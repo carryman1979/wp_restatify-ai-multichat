@@ -74,18 +74,31 @@ class Restatify_Ai_Dual_Session_State_Machine {
         return [
             'current_session' => 'general_chat', // Default to general chat
             'booking_flow_active' => false,
+            'contact_flow_active' => false,
             'confidence' => 0.0,
             'clarification_attempts' => 0,
             'booking_attempt_count' => 0,
+            'contact_attempt_count' => 0,
+            'booking_field_retry_counts' => [],
+            'booking_skipped_fields' => [],
+            'contact_field_retry_counts' => [],
+            'contact_skipped_fields' => [],
             'customer_turns' => 0,
             'support_turns' => 0,
             'collected_fields' => [],
+            'contact_collected_fields' => [],
             'preloaded_slots' => [],
             'slot_cache_time' => 0,
             'reask_attempts' => 0,
             'forced_conversion' => false,
             'force_overlay' => false,
             'partial_prefill' => [],
+            'pending_confirmation_action' => '',
+            'pending_confirmation_payload' => [],
+            'pending_confirmation_retry_count' => 0,
+            'pending_confirmation_language_code' => 'de',
+            'pending_abort_followup' => false,
+            'pending_abort_source' => '',
             'created_at' => time(),
             'updated_at' => time(),
         ];
@@ -108,6 +121,13 @@ class Restatify_Ai_Dual_Session_State_Machine {
 
         if (empty($state['current_session'])) {
             $state['current_session'] = 'general_chat';
+        }
+
+        $defaults = $this->get_default_state();
+        foreach ($defaults as $key => $value) {
+            if (!array_key_exists($key, $state)) {
+                $state[$key] = $value;
+            }
         }
 
         return $state;

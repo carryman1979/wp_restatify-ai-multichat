@@ -183,6 +183,11 @@ $base_prompt
 - Zähle Kundeninteraktionen (Support-Anfragen zählen nicht mit)
 - Nach 20 Kundeninteraktionen: Beende diese Session und leite zu Terminbuchung weiter
 
+  ### Kontaktwünsche
+  - Wenn der Nutzer nur eine Nachricht hinterlassen, Kontakt aufnehmen oder den Support erreichen möchte, antworte niemals mit "schreiben Sie die Nachricht hier in den Chat" oder "ich leite das weiter".
+  - Leite stattdessen immer auf das konfigurierte Kontaktformular.
+  - Falls kein Kontaktformular verfügbar ist, nutze das Terminbuchungstool als Fallback.
+
 ### Umleitung
 - Wenn Nutzer Terminbuchungs-Intent äußert: Route zum Booking-Collector
 - Beispiel: "Ich möchte einen Termin machen" → Booking-Collector mit Bestätigung

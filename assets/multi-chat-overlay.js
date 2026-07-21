@@ -107,6 +107,38 @@
     var backdrop = createBackdrop();
     var mobileViewport = window.matchMedia('(max-width: 980px)');
 
+    function resolveActiveTheme() {
+      var docTheme = String(document.documentElement.getAttribute('data-rs-theme') || '').toLowerCase();
+      if (docTheme === 'dark' || docTheme === 'light') {
+        return docTheme;
+      }
+
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+
+      return 'light';
+    }
+
+    function applyOverlayThemeClass() {
+      var activeTheme = resolveActiveTheme();
+      root.classList.toggle('is-theme-dark', activeTheme === 'dark');
+      root.classList.toggle('is-theme-light', activeTheme === 'light');
+    }
+
+    applyOverlayThemeClass();
+
+    if (typeof MutationObserver !== 'undefined') {
+      var themeObserver = new MutationObserver(function () {
+        applyOverlayThemeClass();
+      });
+
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-rs-theme']
+      });
+    }
+
     function isMobileViewport() {
       return Boolean(mobileViewport && mobileViewport.matches);
     }
