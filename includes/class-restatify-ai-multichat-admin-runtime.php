@@ -67,6 +67,8 @@ public function enqueue_support_inbox_assets(): void {
 
         $api_key_notice = '';
         $api_key_notice_type = '';
+        $config_notice = '';
+        $config_notice_type = '';
         if (
             strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST'
             && isset($_POST['restatify_mco_api_keys_action'])
@@ -85,6 +87,29 @@ public function enqueue_support_inbox_assets(): void {
             }
         }
 
+        if (
+            strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST'
+            && isset($_POST['restatify_mco_support_api_config_action'])
+        ) {
+            $action = sanitize_key(wp_unslash($_POST['restatify_mco_support_api_config_action']));
+            if ($action === 'save') {
+                $nonce = sanitize_text_field(wp_unslash($_POST['restatify_mco_support_api_config_nonce'] ?? ''));
+                if (!wp_verify_nonce($nonce, 'restatify_mco_support_api_config_action')) {
+                    $config_notice_type = 'error';
+                    $config_notice = __('Sicherheitsprüfung für die Support-API-Konfiguration fehlgeschlagen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+                } else {
+                    $api_endpoint = esc_url_raw(trim((string) wp_unslash($_POST['restatify_support_api_endpoint'] ?? '')));
+                    $bridge_api_key = sanitize_text_field((string) wp_unslash($_POST['restatify_support_bridge_api_key'] ?? ''));
+
+                    update_option('restatify_support_api_endpoint', $api_endpoint !== '' ? $api_endpoint : 'http://127.0.0.1:8089', false);
+                    update_option('restatify_support_bridge_api_key', $bridge_api_key, false);
+
+                    $config_notice_type = 'success';
+                    $config_notice = __('Support-API-Konfiguration gespeichert.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN);
+                }
+            }
+        }
+
         $options = $this->get_options(false);
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Support Chat', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</h1>';
@@ -93,17 +118,41 @@ public function enqueue_support_inbox_assets(): void {
             echo '<div class="notice notice-' . esc_attr($api_key_notice_type) . ' is-dismissible"><p>' . esc_html($api_key_notice) . '</p></div>';
         }
 
+        if ($config_notice !== '') {
+            echo '<div class="notice notice-' . esc_attr($config_notice_type) . ' is-dismissible"><p>' . esc_html($config_notice) . '</p></div>';
+        }
+
         // API-Konfiguration für Desktop-App
         $api_endpoint = get_option('restatify_support_api_endpoint', 'http://127.0.0.1:8089');
+        $bridge_api_key = get_option('restatify_support_bridge_api_key', '');
         $api_keys_raw = get_option('restatify_support_api_keys', []);
         $api_keys = is_array($api_keys_raw) ? $api_keys_raw : [];
+        $bridge_key_from_constant = defined('RESTATIFY_SUPPORT_BRIDGE_API_KEY') && trim((string) constant('RESTATIFY_SUPPORT_BRIDGE_API_KEY')) !== '';
 
         echo '<div style="background:#f0f6fc;border:1px solid #c2d8f0;border-radius:6px;padding:16px 20px;margin:16px 0 24px;">';
         echo '<h2 style="margin:0 0 10px;">' . esc_html__('Desktop-App Konfiguration', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</h2>';
         echo '<p style="margin:0 0 12px;color:#3c434a;">' . esc_html__('Diese Zugangsdaten in der Support-Chat-App unter Einstellungen eintragen.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+        echo '<form method="post" style="margin:0 0 14px;">';
+        echo '<input type="hidden" name="restatify_mco_support_api_config_action" value="save" />';
+        wp_nonce_field('restatify_mco_support_api_config_action', 'restatify_mco_support_api_config_nonce');
+        echo '<table class="form-table" style="margin:0;max-width:820px;">';
+        echo '<tr><th style="padding:4px 20px 4px 0;white-space:nowrap;">' . esc_html__('API-Endpunkt', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+        echo '<td><input class="regular-text code" type="url" name="restatify_support_api_endpoint" value="' . esc_attr((string) $api_endpoint) . '" placeholder="https://api.example.test" /></td></tr>';
+        echo '<tr><th style="padding:4px 20px 4px 0;white-space:nowrap;">' . esc_html__('Bridge-API-Schlüssel', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+        echo '<td><input class="regular-text code" type="password" name="restatify_support_bridge_api_key" value="' . esc_attr((string) $bridge_api_key) . '" autocomplete="new-password" placeholder="rst_bridge_..." />';
+        echo '<p class="description" style="margin:6px 0 0;">' . esc_html__('Wird von der öffentlichen Support-API verwendet, um die private WordPress-Bridge serverseitig zu authentifizieren.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+        if ($bridge_key_from_constant) {
+            echo '<p class="description" style="margin:6px 0 0;color:#b32d2e;">' . esc_html__('Hinweis: Eine Konstante in wp-config.php überschreibt aktuell den hier gespeicherten Bridge-Schlüssel.', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</p>';
+        }
+        echo '</td></tr>';
+        echo '</table>';
+        echo '<p style="margin:12px 0 0;"><button type="submit" class="button button-primary">' . esc_html__('Support-API-Konfiguration speichern', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</button></p>';
+        echo '</form>';
         echo '<table class="form-table" style="margin:0;">';
         echo '<tr><th style="padding:4px 20px 4px 0;white-space:nowrap;">' . esc_html__('API-Endpunkt', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
         echo '<td><code style="font-size:13px;">' . esc_html($api_endpoint) . '</code></td></tr>';
+        echo '<tr><th style="padding:4px 20px 4px 0;white-space:nowrap;">' . esc_html__('Bridge-API-Schlüssel', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN) . '</th>';
+        echo '<td><code style="font-size:13px;">' . esc_html($bridge_api_key !== '' ? '••••••••••••••••' : __('Nicht gesetzt', Restatify_Ai_Multichat_Plugin::TEXT_DOMAIN)) . '</code></td></tr>';
         echo '</table>';
 
         if (count($api_keys) > 0) {

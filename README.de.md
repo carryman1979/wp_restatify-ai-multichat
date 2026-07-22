@@ -1,12 +1,12 @@
 # Restatify Multi Chat Overlay - Anleitung (DE)
 
-Stand: Version 2.1.2, getestet bis WordPress 6.9.
+Stand: Version 2.1.3, getestet bis WordPress 6.9.
 
 Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Support-Ablauf.
 
 ## Release-Prep Update (2026-07-22)
 
-- Versionssprung auf 2.1.2 fuer die private Support-Bridge zwischen oeffentlicher Support-API und separater WordPress-Instanz.
+- Versionssprung auf 2.1.3 fuer editierbare Support-API- und Bridge-Key-Konfiguration direkt im WordPress-Admin.
 - EU AI ACT Support explizit eingebaut: compliance-konforme Trigger-Bestaetigungen (Ja/Nein) inkl. lokalisierbarer Compliance-Texte.
 - Frontend-Chat kann Live-Updates per WebSocket nutzen (Reconnect + Polling-Fallback nur bei Bedarf).
 - KI-Zusatztext fuer Datenschutzhinweis als Option aufgenommen und fuer Polylang-Übersetzung registriert.
@@ -17,6 +17,7 @@ Diese Anleitung erklaert die Einrichtung des Plugins in WordPress sowie den Supp
 - Die Support-API darf oeffentlich fuer Apps erreichbar sein.
 - WordPress und Support-API duerfen auf zwei getrennten Servern mit eigenen FQDNs laufen.
 - Die WordPress-Operationen des Support-Chats laufen dafuer ueber eine private REST-Bridge nur fuer Server-zu-Server-Kommunikation.
+- API-Endpunkt und Bridge-API-Schluessel koennen jetzt direkt im Support-Chat-Adminbereich gepflegt werden.
 
 ## 1) Plugin aktivieren
 
