@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -153,6 +153,10 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.1.3 =
+* Added editable Support API endpoint and private bridge key fields to the WordPress Support Chat admin UI.
+* Keeps split-server Support API configuration manageable inside WordPress without editing `wp-config.php` or running WP-CLI.
+
 = 2.1.2 =
 * Added a private WordPress REST bridge endpoint for the public Support API, so WordPress and Support API can run on separate servers.
 * Preserved WordPress-backed support chat, API key, booking trigger and AI reply operations across the new server-to-server boundary.
@@ -242,6 +246,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.1.3 =
+Adds editable Support API and bridge key settings in the WordPress admin for split-server deployments.
 
 = 2.1.2 =
 Adds the private WordPress bridge required when the public Support API and WordPress run on separate servers.
