@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Restatify AI Multichat
  * Description: Floating multi-channel chat overlay with configurable links, integrated website chat, support inbox and optional AI replies.
- * Version: 2.1.3
+ * Version: 2.2.0
  * Author: Restatify
  * License: GPL-2.0-or-later
  */
@@ -380,31 +380,9 @@ final class Restatify_Ai_Multichat_Plugin extends Restatify_Ai_Multichat_Admin_R
     }
 
     public function resolve_live_updates_ws_url(string $configured_url): string {
-        $configured_url = trim($configured_url);
-        if ($configured_url !== '') {
-            return $configured_url;
-        }
+        unset($configured_url);
 
-        $api_endpoint = trim((string) get_option('restatify_support_api_endpoint', 'http://127.0.0.1:8089'));
-        if ($api_endpoint === '') {
-            return '';
-        }
-
-        $parsed = wp_parse_url($api_endpoint);
-        if (!is_array($parsed)) {
-            return '';
-        }
-
-        $scheme = strtolower((string) ($parsed['scheme'] ?? ''));
-        $host = (string) ($parsed['host'] ?? '');
-        if ($host === '' || ($scheme !== 'http' && $scheme !== 'https' && $scheme !== 'ws' && $scheme !== 'wss')) {
-            return '';
-        }
-
-        $ws_scheme = $scheme === 'https' || $scheme === 'wss' ? 'wss' : 'ws';
-        $port = isset($parsed['port']) ? ':' . (int) $parsed['port'] : '';
-
-        return sprintf('%s://%s%s/v1/support/ws/visitor-updates', $ws_scheme, $host, $port);
+        return home_url('/restatify-support/ws/visitor-updates');
     }
 
     public function maybe_install_runtime_schema(): void {
