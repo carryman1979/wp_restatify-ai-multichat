@@ -4,7 +4,7 @@ Produktname (ab 2.0.0): Restatify-AI-Multichat
 WordPress-Slug (ab 2.0.0): wp_restatify-ai-multichat  
 Website: https://www.restatify.tech
 
-Stand: Version 2.1.3, getestet bis WordPress 6.9.
+Stand: Version 2.2.0, getestet bis WordPress 6.9.
 
 Diese Seite ist als zentrale One-Page-Dokumentation für Einrichtung, Betrieb, Support und Release gedacht.
 
@@ -220,6 +220,8 @@ Prüfen:
 
 ## Release-Prep Status (2026-07-22)
 
+- Besucher-Live-Updates verwenden einen Same-Origin-WebSocket-Pfad; der Browser erhaelt keine interne Support-API-Adresse.
+- Sprachfaehigkeits-Fragen werden im General-Chat verarbeitet, nicht als Out-of-Domain abgewiesen.
 - Dokumentation und Versionsangaben auf 2.1.3 angehoben.
 - WebSocket-Live-Updates fuer den Besucherchat inklusive Reconnect/Fallback dokumentiert.
 - EU-AI-Act-Basisanpassung ergaenzt: konfigurierbarer KI-Zusatztext im Datenschutzhinweis.
@@ -242,6 +244,7 @@ To-do für Betreiber:
 4. Release-ZIP erzeugen.
 5. Smoke-Test auf externer Testinstanz durchführen.
 
+- [Release 2.2.0](Release-2.2.0)
 - [Release 2.1.3](Release-2.1.3)
 - [Release 2.1.2](Release-2.1.2)
 - [Release 2.1.1](Release-2.1.1)

@@ -4,7 +4,7 @@ Tags: chat, support, whatsapp, telegram, messenger, ai
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.1.3
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -153,6 +153,11 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 
 == Changelog ==
 
+= 2.2.0 =
+* Uses a same-origin WebSocket path for visitor live updates so browser clients no longer receive the internal Support API address.
+* Keeps AJAX polling as the live-update fallback when the WebSocket reverse proxy is unavailable.
+* Treats questions about the assistant's supported languages as in-scope general chat instead of rejecting them as out of domain.
+
 = 2.1.3 =
 * Added editable Support API endpoint and private bridge key fields to the WordPress Support Chat admin UI.
 * Keeps split-server Support API configuration manageable inside WordPress without editing `wp-config.php` or running WP-CLI.
@@ -246,6 +251,9 @@ Die Datenschutzerklaerung sollte entsprechend angepasst werden.
 * Multi-Channel-Floating-Overlay mit Auto-Open-Verzoegerung und Dismiss-Speicher hinzugefuegt.
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+Routes visitor live updates through the WordPress origin. Configure the matching reverse-proxy WebSocket location before relying on live updates.
 
 = 2.1.3 =
 Adds editable Support API and bridge key settings in the WordPress admin for split-server deployments.
